@@ -1,4 +1,4 @@
-# Simple FIFO Cache in C#
+# Simple FIFO Cache
 
 The Caching library provides a simple FIFO cache.  It is written in C# and is designed to be thread-safe.
 
