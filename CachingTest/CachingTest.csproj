@@ -43,6 +43,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Program.Utilities.cs" />
+    <Compile Include="Program.LRUCacheTest.cs" />
+    <Compile Include="Program.FIFOCacheTest.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

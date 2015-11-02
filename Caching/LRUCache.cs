@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Caching
 {
-    public class FIFOCache
+    public class LRUCache
     {
         public int capacity;
         public int evict_count;
@@ -16,32 +16,33 @@ namespace Caching
 
         private static readonly Mutex mutex = new Mutex();
         
-        private List<Tuple<string, object, DateTime>> cache { get; set; }
+        private List<Tuple<string, object, DateTime, DateTime>> cache { get; set; }
+        // key, data, added, last_used
 
-        public FIFOCache(int capacity, int evict_count, bool debug)
+        public LRUCache(int capacity, int evict_count, bool debug)
         {
             this.capacity = capacity;
             this.evict_count = evict_count;
             this.debug = debug;
-            this.cache = new List<Tuple<string, object, DateTime>>();
+            this.cache = new List<Tuple<string, object, DateTime, DateTime>>();
 
             if (this.evict_count > this.capacity)
             {
                 throw new ArgumentException("Evict count must be less than or equal to capacity.");
             }
 
-            log("FIFOCache initialized successfully with capacity " + capacity + " evict_count " + evict_count);
+            log("LRUCache initialized successfully with capacity " + capacity + " evict_count " + evict_count);
         }
 
         public int count()
         {
             DateTime start_time = DateTime.Now;
             mutex.WaitOne();
-            log("FIFOCache count acquired mutex");
+            log("LRUCache count acquired mutex");
 
             try
             {
-                log("FIFOCache count " + this.cache.Count);
+                log("LRUCache count " + this.cache.Count);
                 return this.cache.Count;
             }
             catch (Exception e)
@@ -52,10 +53,10 @@ namespace Caching
             finally
             {
                 mutex.ReleaseMutex();
-                log("FIFOCache count released mutex, exiting after " + total_time_from(start_time));
+                log("LRUCache count released mutex, exiting after " + total_time_from(start_time));
             }
         }
-
+        
         public string oldest()
         {
             if (this.cache == null) return null;
@@ -63,12 +64,12 @@ namespace Caching
 
             DateTime start_time = DateTime.Now;
             mutex.WaitOne();
-            log("FIFOCache oldest acquired mutex");
+            log("LRUCache oldest acquired mutex");
 
             try
             {
-                Tuple<string, object, DateTime> oldest = this.cache.Where(x => x.Item3 != null).OrderBy(x => x.Item3).First();
-                log("FIFOCache oldest key " + oldest.Item1 + ": " + oldest.Item3.ToString("MM/dd/yyyy hh:mm:ss"));
+                Tuple<string, object, DateTime, DateTime> oldest = this.cache.Where(x => x.Item3 != null).OrderBy(x => x.Item3).First();
+                log("LRUCache oldest key " + oldest.Item1 + ": " + oldest.Item3.ToString("MM/dd/yyyy hh:mm:ss"));
                 return oldest.Item1;
             }
             catch (Exception e)
@@ -79,7 +80,7 @@ namespace Caching
             finally
             {
                 mutex.ReleaseMutex();
-                log("FIFOCache oldest released mutex, exiting after " + total_time_from(start_time));
+                log("LRUCache oldest released mutex, exiting after " + total_time_from(start_time));
             }
         }
 
@@ -90,12 +91,12 @@ namespace Caching
 
             DateTime start_time = DateTime.Now;
             mutex.WaitOne();
-            log("FIFOCache newest acquired mutex");
+            log("LRUCache newest acquired mutex");
 
             try
             {
-                Tuple<string, object, DateTime> newest = this.cache.Where(x => x.Item3 != null).OrderBy(x => x.Item3).Last();
-                log("FIFOCache newest key " + newest.Item1 + ": " + newest.Item3.ToString("MM/dd/yyyy hh:mm:ss"));
+                Tuple<string, object, DateTime, DateTime> newest = this.cache.Where(x => x.Item3 != null).OrderBy(x => x.Item3).Last();
+                log("LRUCache newest key " + newest.Item1 + ": " + newest.Item3.ToString("MM/dd/yyyy hh:mm:ss"));
                 return newest.Item1;
             }
             catch (Exception e)
@@ -106,7 +107,34 @@ namespace Caching
             finally
             {
                 mutex.ReleaseMutex();
-                log("FIFOCache newest released mutex, exiting after " + total_time_from(start_time));
+                log("LRUCache newest released mutex, exiting after " + total_time_from(start_time));
+            }
+        }
+
+        public string last_used()
+        {
+            if (this.cache == null) return null;
+            if (this.cache.Count < 1) return null;
+
+            DateTime start_time = DateTime.Now;
+            mutex.WaitOne();
+            log("LRUCache last_used acquired mutex");
+
+            try
+            {
+                Tuple<string, object, DateTime, DateTime> newest = this.cache.Where(x => x.Item4 != null).OrderBy(x => x.Item4).Last();
+                log("LRUCache last_used key " + newest.Item1 + ": " + newest.Item4.ToString("MM/dd/yyyy hh:mm:ss"));
+                return newest.Item1;
+            }
+            catch (Exception e)
+            {
+                log_exception(e);
+                throw e;
+            }
+            finally
+            {
+                mutex.ReleaseMutex();
+                log("LRUCache last_used released mutex, exiting after " + total_time_from(start_time));
             }
         }
 
@@ -114,12 +142,12 @@ namespace Caching
         {
             DateTime start_time = DateTime.Now;
             mutex.WaitOne();
-            log("FIFOCache clear acquired mutex");
+            log("LRUCache clear acquired mutex");
 
             try
             {
-                this.cache = new List<Tuple<string, object, DateTime>>();
-                log("FIFOCache clear successful");
+                this.cache = new List<Tuple<string, object, DateTime, DateTime>>();
+                log("LRUCache clear successful");
                 return;
             }
             catch (Exception e)
@@ -130,7 +158,7 @@ namespace Caching
             finally
             {
                 mutex.ReleaseMutex();
-                log("FIFOCache clear released mutex, exiting after " + total_time_from(start_time));
+                log("LRUCache clear released mutex, exiting after " + total_time_from(start_time));
             }
         }
 
@@ -140,11 +168,11 @@ namespace Caching
 
             DateTime start_time = DateTime.Now;
             mutex.WaitOne();
-            log("FIFOCache get acquired mutex");
+            log("LRUCache get acquired mutex");
 
             try
             {
-                List<Tuple<string, object, DateTime>> entries = new List<Tuple<string, object, DateTime>>();
+                List<Tuple<string, object, DateTime, DateTime>> entries = new List<Tuple<string, object, DateTime, DateTime>>();
 
                 if (cache.Count > 0) entries = cache.Where(x => x.Item1 == key).ToList();
                 else entries = null;
@@ -153,7 +181,7 @@ namespace Caching
                 {
                     #region No-Entries
 
-                    log("FIFOCache get no entries exist (null)");
+                    log("LRUCache get no entries exist (null)");
                     return null;
 
                     #endregion
@@ -164,15 +192,18 @@ namespace Caching
 
                     if (entries.Count > 0)
                     {
-                        log("FIFOCache get " + entries.Count + " existing entries for key " + key + ", returning first");
-                        foreach (Tuple<string, object, DateTime> curr in entries)
+                        log("LRUCache get " + entries.Count + " existing entries for key " + key + ", returning first");
+                        foreach (Tuple<string, object, DateTime, DateTime> curr in entries)
                         {
+                            cache.Remove(curr);
+                            Tuple<string, object, DateTime, DateTime> curr_updated = new Tuple<string, object, DateTime, DateTime>(curr.Item1, curr.Item2, curr.Item3, DateTime.Now);
+                            cache.Add(curr_updated);
                             return curr.Item2;
                         }
                     }
                     else
                     {
-                        log("FIFOCache get no entries found for key " + key + ", returning null");
+                        log("LRUCache get no entries found for key " + key + ", returning null");
                     }
 
                     return null;
@@ -188,7 +219,7 @@ namespace Caching
             finally
             {
                 mutex.ReleaseMutex();
-                log("FIFOCache get released mutex, exiting after " + total_time_from(start_time));
+                log("LRUCache get released mutex, exiting after " + total_time_from(start_time));
             }
         }
 
@@ -198,7 +229,7 @@ namespace Caching
 
             DateTime start_time = DateTime.Now;
             mutex.WaitOne();
-            log("FIFOCache add_replace acquired mutex");
+            log("LRUCache add_replace acquired mutex");
 
             try
             {
@@ -206,14 +237,14 @@ namespace Caching
                 {
                     #region Eviction
 
-                    log("FIFOCache add_replace cache full, evicting " + evict_count);
-                    cache = cache.OrderBy(x => x.Item3).Skip(evict_count).ToList();
-                    log("FIFOCache add_replace cache full, eviction successful, " + cache.Count + " entries remain");
+                    log("LRUCache add_replace cache full, evicting " + evict_count);
+                    cache = cache.OrderBy(x => x.Item4).Skip(evict_count).ToList();
+                    log("LRUCache add_replace cache full, eviction successful, " + cache.Count + " entries remain");
 
                     #endregion
                 }
 
-                List<Tuple<string, object, DateTime>> dupes = new List<Tuple<string, object, DateTime>>();
+                List<Tuple<string, object, DateTime, DateTime>> dupes = new List<Tuple<string, object, DateTime, DateTime>>();
 
                 if (cache.Count > 0) dupes = cache.Where(x => x.Item1.ToLower() == key).ToList();
                 else dupes = null;
@@ -222,9 +253,9 @@ namespace Caching
                 {
                     #region New-Entry
 
-                    log("FIFOCache add_replace adding new entry for key " + key);
-                    cache.Add(new Tuple<string, object, DateTime>(key, val, DateTime.Now));
-                    log("FIFOCache add_replace key " + key + " added successfully");
+                    log("LRUCache add_replace adding new entry for key " + key);
+                    cache.Add(new Tuple<string, object, DateTime, DateTime>(key, val, DateTime.Now, DateTime.Now));
+                    log("LRUCache add_replace key " + key + " added successfully");
                     return true;
 
                     #endregion
@@ -233,16 +264,16 @@ namespace Caching
                 {
                     #region Duplicate-Entries-Exist
 
-                    log("FIFOCache removing existing entries for key " + key);
+                    log("LRUCache removing existing entries for key " + key);
 
-                    foreach (Tuple<string, object, DateTime> curr in dupes)
+                    foreach (Tuple<string, object, DateTime, DateTime> curr in dupes)
                     {
                         cache.Remove(curr);
                     }
 
-                    log("FIFOCache add_replace " + dupes.Count + " entries for key " + key + " removed successfully, adding new entry");
-                    cache.Add(new Tuple<string, object, DateTime>(key, val, DateTime.Now));
-                    log("FIFOCache add_replace key " + key + " added successfully");
+                    log("LRUCache add_replace " + dupes.Count + " entries for key " + key + " removed successfully, adding new entry");
+                    cache.Add(new Tuple<string, object, DateTime, DateTime>(key, val, DateTime.Now, DateTime.Now));
+                    log("LRUCache add_replace key " + key + " added successfully");
                     return true;
 
                     #endregion
@@ -251,9 +282,9 @@ namespace Caching
                 {
                     #region New-Entry
 
-                    log("FIFOCache add_replace adding new entry for key " + key);
-                    cache.Add(new Tuple<string, object, DateTime>(key, val, DateTime.Now));
-                    log("FIFOCache add_replace key " + key + " added successfully");
+                    log("LRUCache add_replace adding new entry for key " + key);
+                    cache.Add(new Tuple<string, object, DateTime, DateTime>(key, val, DateTime.Now, DateTime.Now));
+                    log("LRUCache add_replace key " + key + " added successfully");
                     return true;
 
                     #endregion
@@ -267,7 +298,7 @@ namespace Caching
             finally
             {
                 mutex.ReleaseMutex();
-                log("FIFOCache add_replace released mutex, exiting after " + total_time_from(start_time));
+                log("LRUCache add_replace released mutex, exiting after " + total_time_from(start_time));
             }
         }
 
@@ -277,11 +308,11 @@ namespace Caching
 
             DateTime start_time = DateTime.Now;
             mutex.WaitOne();
-            log("FIFOCache remove acquired mutex");
+            log("LRUCache remove acquired mutex");
 
             try
             {
-                List<Tuple<string, object, DateTime>> dupes = new List<Tuple<string, object, DateTime>>();
+                List<Tuple<string, object, DateTime, DateTime>> dupes = new List<Tuple<string, object, DateTime, DateTime>>();
 
                 if (cache.Count > 0) dupes = cache.Where(x => x.Item1.ToLower() == key).ToList();
                 else dupes = null;
@@ -290,7 +321,7 @@ namespace Caching
                 {
                     #region No-Entries-NULL
 
-                    log("FIFOCache remove no entries for key " + key + " (null)");
+                    log("LRUCache remove no entries for key " + key + " (null)");
                     return true;
 
                     #endregion
@@ -299,7 +330,7 @@ namespace Caching
                 {
                     #region No-Entries-EMPTY
 
-                    log("FIFOCache remove no entries for key " + key + " (empty)");
+                    log("LRUCache remove no entries for key " + key + " (empty)");
                     return true;
 
                     #endregion
@@ -308,14 +339,14 @@ namespace Caching
                 {
                     #region Entries-Exist
 
-                    log("FIFOCache remove " + dupes.Count + " entries for key " + key);
+                    log("LRUCache remove " + dupes.Count + " entries for key " + key);
 
-                    foreach (Tuple<string, object, DateTime> curr in dupes)
+                    foreach (Tuple<string, object, DateTime, DateTime> curr in dupes)
                     {
                         cache.Remove(curr);
                     }
 
-                    log("FIFOCache remove " + dupes.Count + " entries for key " + key + " removed successfully");
+                    log("LRUCache remove " + dupes.Count + " entries for key " + key + " removed successfully");
                     return true;
 
                     #endregion
@@ -329,7 +360,7 @@ namespace Caching
             finally
             {
                 mutex.ReleaseMutex();
-                log("FIFOCache remove released mutex, exiting after " + total_time_from(start_time));
+                log("LRUCache remove released mutex, exiting after " + total_time_from(start_time));
             }
         }
 
