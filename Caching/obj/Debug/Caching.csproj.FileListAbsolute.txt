@@ -1,0 +1,5 @@
+c:\code\misc\Caching\Caching\obj\Debug\Caching.csprojResolveAssemblyReference.cache
+c:\code\misc\Caching\Caching\bin\Debug\Caching.dll
+c:\code\misc\Caching\Caching\bin\Debug\Caching.pdb
+c:\code\misc\Caching\Caching\obj\Debug\Caching.dll
+c:\code\misc\Caching\Caching\obj\Debug\Caching.pdb

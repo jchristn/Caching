@@ -1,0 +1,8 @@
+c:\Code\Misc\Caching\CachingTest\bin\Debug\CachingTest.exe.config
+c:\Code\Misc\Caching\CachingTest\bin\Debug\CachingTest.exe
+c:\Code\Misc\Caching\CachingTest\bin\Debug\CachingTest.pdb
+c:\Code\Misc\Caching\CachingTest\obj\Debug\CachingTest.csprojResolveAssemblyReference.cache
+c:\Code\Misc\Caching\CachingTest\obj\Debug\CachingTest.exe
+c:\Code\Misc\Caching\CachingTest\obj\Debug\CachingTest.pdb
+c:\Code\Misc\Caching\CachingTest\bin\Debug\Caching.dll
+c:\Code\Misc\Caching\CachingTest\bin\Debug\Caching.pdb
