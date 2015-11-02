@@ -7,11 +7,14 @@ Two projects are included in the solution:
 - Caching: the FIFO cache class
 - CachingTest: a simple test client
 
-The underlying implementation is a List<Tuple<string, object, DateTime>> with Mutex for FIFO.   The underlying implementation is a List<Tuple<string, object, DateTime, DateTime>> with Mutex for LRU. 
-- string: key
-- object: data
-- DateTime: added
-- DateTime: last_used (only for LRUCache)
+The underlying implementation is:
+```
+// For FIFO
+List<Tuple<string, object, DateTime>>             // key, data, added
+
+// For LRU
+List<Tuple<string, object, DateTime, DateTime>>   // key, data, added, last_used
+```
 
 ## Usage
 
