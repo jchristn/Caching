@@ -1,6 +1,10 @@
 # Simple FIFO and LRU Cache
 
+<<<<<<< HEAD
 The Caching library provides a simple implementation of a FIFO cache (first-in-first-out) and two LRU (least-recently-used) caches, one based on a List and the second based on a BTree (CSharpTest.Net.Collections).  It is written in C# and is designed to be thread-safe.
+=======
+The Caching library provides a simple implementation of a FIFO cache (first-in-first-out) and a LRU (least-recently-used) cache.  It is written in C# and is designed to be thread-safe.  The underlying implementation uses a list, which is appropriate for small record counts.  If you require a solution for large record counts, I recommend using something based on a B-Tree.  
+>>>>>>> 14fc047cbfa362feceeada1aa78c0abff2a69f2d
 
 Two projects are included in the solution:
 
