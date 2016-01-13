@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<package >
+  <metadata>
+    <id>Caching.dll</id>
+    <version>1.0.1</version>
+    <authors>Joel Christner</authors>
+    <owners>Joel Christner</owners>
+    <licenseUrl>https://github.com/jchristn/Caching/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/jchristn/Caching</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Simple C# caching library including a FIFO and LRU cache</description>
+    <releaseNotes>NA</releaseNotes>
+    <copyright>Copyright 2016</copyright>
+    <tags>FIFO LRU cache</tags>
+    <dependencies>
+      <dependency id="CSharpTest.Net.Collections" version="14.906.1403.1082" />
+    </dependencies>
+  </metadata>
+</package>

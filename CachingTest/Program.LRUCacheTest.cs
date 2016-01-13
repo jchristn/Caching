@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Caching;
 
@@ -17,11 +18,12 @@ namespace CachingTest
                 int capacity = 2048;
                 int evict_count = 512;
                 int load_count = 256;
-                bool cache_debug = false;
+                bool cache_debug = true;
                 int byte_array_len = 4096;
                 byte[] data = init_byte_array(byte_array_len, 0x00);
 
                 LRUCache cache = new LRUCache(capacity, evict_count, cache_debug);
+                Thread.Sleep(250);
 
                 while (run_forever)
                 {
@@ -30,6 +32,7 @@ namespace CachingTest
                     Console.WriteLine("  get              Get entry by key");
                     Console.WriteLine("  load             Load " + load_count + " new records");
                     Console.WriteLine("  last_used        Get the last used entry");
+                    Console.WriteLine("  first_used       Get the first used entry");
                     Console.WriteLine("  oldest           Get the oldest entry");
                     Console.WriteLine("  newest           Get the newest entry");
                     Console.WriteLine("  count            Get the count of cached entries");
@@ -71,6 +74,10 @@ namespace CachingTest
 
                         case "last_used":
                             Console.WriteLine("Last used key: " + cache.last_used());
+                            break;
+
+                        case "first_used":
+                            Console.WriteLine("First used key: " + cache.first_used());
                             break;
 
                         case "oldest":

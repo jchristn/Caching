@@ -10,7 +10,7 @@ namespace CachingTest
 {
     partial class Program
     {
-        static void FIFOCacheTest()
+        static void LRUCacheBTreeTest()
         {
             try
             {
@@ -22,15 +22,17 @@ namespace CachingTest
                 int byte_array_len = 4096;
                 byte[] data = init_byte_array(byte_array_len, 0x00);
 
-                FIFOCache cache = new FIFOCache(capacity, evict_count, cache_debug);
+                LRUCacheBTree cache = new LRUCacheBTree(capacity, evict_count, cache_debug);
                 Thread.Sleep(250);
-
+                
                 while (run_forever)
                 {
                     Console.WriteLine("-------------------------------------------------------------------------------");
-                    Console.WriteLine("Available commands (FIFO Cache Test):");
+                    Console.WriteLine("Available commands (LRU Cache BTree Test):");
                     Console.WriteLine("  get              Get entry by key");
                     Console.WriteLine("  load             Load " + load_count + " new records");
+                    Console.WriteLine("  last_used        Get the last used entry");
+                    Console.WriteLine("  first_used       Get the first used entry");
                     Console.WriteLine("  oldest           Get the oldest entry");
                     Console.WriteLine("  newest           Get the newest entry");
                     Console.WriteLine("  count            Get the count of cached entries");
@@ -68,6 +70,14 @@ namespace CachingTest
                                 "Loaded " + load_count +
                                 " records in " + total_time_from(start_time) + ": " +
                                 decimal_tostring(total_ms_from(start_time) / load_count) + "ms per entry");
+                            break;
+
+                        case "last_used":
+                            Console.WriteLine("Last used key: " + cache.last_used());
+                            break;
+
+                        case "first_used":
+                            Console.WriteLine("First used key: " + cache.first_used());
                             break;
 
                         case "oldest":

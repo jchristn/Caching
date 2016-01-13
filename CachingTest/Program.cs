@@ -18,6 +18,7 @@ namespace CachingTest
                 Console.WriteLine("Select which cache you wish to test");
                 Console.WriteLine("  fifo");
                 Console.WriteLine("  lru");
+                Console.WriteLine("  lrubtree");
                 Console.WriteLine("");
                 Console.Write("Selection > ");
                 string user_input = Console.ReadLine();
@@ -32,6 +33,11 @@ namespace CachingTest
 
                     case "lru":
                         LRUCacheTest();
+                        run_forever = false;
+                        break;
+
+                    case "lrubtree":
+                        LRUCacheBTreeTest();
                         run_forever = false;
                         break;
 
