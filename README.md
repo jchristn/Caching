@@ -1,5 +1,10 @@
 # Simple FIFO and LRU Cache
 
+[![][nuget-img]][nuget]
+
+[nuget]:     https://www.nuget.org/packages/Caching.dll/
+[nuget-img]: https://badge.fury.io/nu/Object.svg
+
 The Caching library provides a simple implementation of a FIFO cache (first-in-first-out) and two LRU (least-recently-used) caches, one based on a List and the second based on a BTree (CSharpTest.Net.Collections).  It is written in C# and is designed to be thread-safe.
 
 Two projects are included in the solution:
