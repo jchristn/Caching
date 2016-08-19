@@ -1,0 +1,10 @@
+D:\code\misc\CachingWithBtree\CachingTest\bin\Release\CachingTest.exe.config
+D:\code\misc\CachingWithBtree\CachingTest\bin\Release\CachingTest.exe
+D:\code\misc\CachingWithBtree\CachingTest\bin\Release\CachingTest.pdb
+D:\code\misc\CachingWithBtree\CachingTest\bin\Release\Caching.dll
+D:\code\misc\CachingWithBtree\CachingTest\bin\Release\CSharpTest.Net.Collections.dll
+D:\code\misc\CachingWithBtree\CachingTest\bin\Release\Caching.pdb
+D:\code\misc\CachingWithBtree\CachingTest\bin\Release\CSharpTest.Net.Collections.xml
+D:\code\misc\CachingWithBtree\CachingTest\obj\Release\CachingTest.csprojResolveAssemblyReference.cache
+D:\code\misc\CachingWithBtree\CachingTest\obj\Release\CachingTest.exe
+D:\code\misc\CachingWithBtree\CachingTest\obj\Release\CachingTest.pdb

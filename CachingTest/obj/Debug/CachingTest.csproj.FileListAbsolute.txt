@@ -17,6 +17,13 @@ C:\code\misc\CachingWithBtree\CachingTest\bin\Debug\Caching.pdb
 C:\code\misc\CachingWithBtree\CachingTest\bin\Debug\CSharpTest.Net.Collections.xml
 C:\code\misc\CachingWithBtree\CachingTest\obj\Debug\CachingTest.csprojResolveAssemblyReference.cache
 C:\code\misc\CachingWithBtree\CachingTest\bin\Debug\Caching.dll.nuspec
-D:\Code\Misc\CachingWithBtree\CachingTest\bin\Debug\CachingTest.exe.config
-D:\Code\Misc\CachingWithBtree\CachingTest\obj\Debug\CachingTest.exe
-D:\Code\Misc\CachingWithBtree\CachingTest\obj\Debug\CachingTest.pdb
+D:\code\misc\CachingWithBtree\CachingTest\bin\Debug\CachingTest.exe.config
+D:\code\misc\CachingWithBtree\CachingTest\bin\Debug\CachingTest.exe
+D:\code\misc\CachingWithBtree\CachingTest\bin\Debug\CachingTest.pdb
+D:\code\misc\CachingWithBtree\CachingTest\bin\Debug\Caching.dll
+D:\code\misc\CachingWithBtree\CachingTest\bin\Debug\CSharpTest.Net.Collections.dll
+D:\code\misc\CachingWithBtree\CachingTest\bin\Debug\Caching.pdb
+D:\code\misc\CachingWithBtree\CachingTest\bin\Debug\CSharpTest.Net.Collections.xml
+D:\code\misc\CachingWithBtree\CachingTest\obj\Debug\CachingTest.csprojResolveAssemblyReference.cache
+D:\code\misc\CachingWithBtree\CachingTest\obj\Debug\CachingTest.exe
+D:\code\misc\CachingWithBtree\CachingTest\obj\Debug\CachingTest.pdb

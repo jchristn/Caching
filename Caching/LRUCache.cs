@@ -8,281 +8,286 @@ using System.Threading.Tasks;
 
 namespace Caching
 {
+    /// <summary>
+    /// LRU cache that internally uses tuples.
+    /// </summary>
     public class LRUCache
     {
-        public int capacity;
-        public int evict_count;
-        public bool debug;
+        /// <summary>
+        /// Enable or disable console debugging.
+        /// </summary>
+        public bool Debug;
 
-        private static readonly Mutex mutex = new Mutex();
-        
-        private List<Tuple<string, object, DateTime, DateTime>> cache { get; set; }
+        private int Capacity;
+        private int EvictCount;
+        private static readonly Mutex Mtx = new Mutex();
+        private List<Tuple<string, object, DateTime, DateTime>> Cache { get; set; }
         // key, data, added, last_used
 
-        public LRUCache(int capacity, int evict_count, bool debug)
+        /// <summary>
+        /// Initialize the cache.
+        /// </summary>
+        /// <param name="capacity">Maximum number of entries.</param>
+        /// <param name="evictCount">Number to evict when capacity is reached.</param>
+        /// <param name="debug">Enable or disable console debugging.</param>
+        public LRUCache(int capacity, int evictCount, bool debug)
         {
-            this.capacity = capacity;
-            this.evict_count = evict_count;
-            this.debug = debug;
-            this.cache = new List<Tuple<string, object, DateTime, DateTime>>();
+            Capacity = capacity;
+            EvictCount = evictCount;
+            Debug = debug;
+            Cache = new List<Tuple<string, object, DateTime, DateTime>>();
 
-            if (this.evict_count > this.capacity)
+            if (EvictCount > Capacity)
             {
                 throw new ArgumentException("Evict count must be less than or equal to capacity.");
             }
 
-            log("LRUCache initialized successfully with capacity " + capacity + " evict_count " + evict_count);
+            Log("LRUCache initialized successfully with capacity " + capacity + " evictCount " + evictCount);
         }
 
-        public int count()
+        /// <summary>
+        /// Retrieve the current number of entries in the cache.
+        /// </summary>
+        /// <returns>An integer containing the number of entries.</returns>
+        public int Count()
         {
-            DateTime start_time = DateTime.Now;
-            mutex.WaitOne();
-            log("LRUCache count acquired mutex");
+            DateTime startTime = DateTime.Now;
+            Mtx.WaitOne();
 
             try
             {
-                log("LRUCache count " + this.cache.Count);
-                return this.cache.Count;
+                Log("LRUCache count " + Cache.Count);
+                return Cache.Count;
             }
             catch (Exception e)
             {
-                log_exception(e);
+                LogException(e);
                 throw e;
             }
             finally
             {
-                mutex.ReleaseMutex();
-                log("LRUCache count released mutex, exiting after " + total_time_from(start_time));
+                Mtx.ReleaseMutex();
             }
         }
-        
-        public string oldest()
-        {
-            if (this.cache == null) return null;
-            if (this.cache.Count < 1) return null;
 
-            DateTime start_time = DateTime.Now;
-            mutex.WaitOne();
-            log("LRUCache oldest acquired mutex");
+        /// <summary>
+        /// Retrieve the key of the oldest entry in the cache.
+        /// </summary>
+        /// <returns>String containing the key.</returns>
+        public string Oldest()
+        {
+            if (Cache == null) return null;
+            if (Cache.Count < 1) return null;
+
+            DateTime startTime = DateTime.Now;
+            Mtx.WaitOne();
 
             try
             {
-                Tuple<string, object, DateTime, DateTime> oldest = this.cache.Where(x => x.Item3 != null).OrderBy(x => x.Item3).First();
-                log("LRUCache oldest key " + oldest.Item1 + ": " + oldest.Item3.ToString("MM/dd/yyyy hh:mm:ss"));
+                Tuple<string, object, DateTime, DateTime> oldest = Cache.Where(x => x.Item3 != null).OrderBy(x => x.Item3).First();
+                Log("LRUCache oldest key " + oldest.Item1 + ": " + oldest.Item3.ToString("MM/dd/yyyy hh:mm:ss"));
                 return oldest.Item1;
             }
             catch (Exception e)
             {
-                log_exception(e);
+                LogException(e);
                 throw e;
             }
             finally
             {
-                mutex.ReleaseMutex();
-                log("LRUCache oldest released mutex, exiting after " + total_time_from(start_time));
+                Mtx.ReleaseMutex();
             }
         }
 
-        public string newest()
+        /// <summary>
+        /// Retrieve the key of the newest entry in the cache.
+        /// </summary>
+        /// <returns>String containing the key.</returns>
+        public string Newest()
         {
-            if (this.cache == null) return null;
-            if (this.cache.Count < 1) return null;
+            if (Cache == null) return null;
+            if (Cache.Count < 1) return null;
 
-            DateTime start_time = DateTime.Now;
-            mutex.WaitOne();
-            log("LRUCache newest acquired mutex");
+            DateTime startTime = DateTime.Now;
+            Mtx.WaitOne();
 
             try
             {
-                Tuple<string, object, DateTime, DateTime> newest = this.cache.Where(x => x.Item3 != null).OrderBy(x => x.Item3).Last();
-                log("LRUCache newest key " + newest.Item1 + ": " + newest.Item3.ToString("MM/dd/yyyy hh:mm:ss"));
+                Tuple<string, object, DateTime, DateTime> newest = Cache.Where(x => x.Item3 != null).OrderBy(x => x.Item3).Last();
+                Log("LRUCache newest key " + newest.Item1 + ": " + newest.Item3.ToString("MM/dd/yyyy hh:mm:ss"));
                 return newest.Item1;
             }
             catch (Exception e)
             {
-                log_exception(e);
+                LogException(e);
                 throw e;
             }
             finally
             {
-                mutex.ReleaseMutex();
-                log("LRUCache newest released mutex, exiting after " + total_time_from(start_time));
+                Mtx.ReleaseMutex();
             }
         }
 
-        public string last_used()
+        /// <summary>
+        /// Retrieve the key of the last used entry in the cache.
+        /// </summary>
+        /// <returns>String containing the key.</returns>
+        public string LastUsed()
         {
-            if (this.cache == null) return null;
-            if (this.cache.Count < 1) return null;
+            if (Cache == null) return null;
+            if (Cache.Count < 1) return null;
 
-            DateTime start_time = DateTime.Now;
-            mutex.WaitOne();
-            log("LRUCache last_used acquired mutex");
+            DateTime startTime = DateTime.Now;
+            Mtx.WaitOne();
 
             try
             {
-                Tuple<string, object, DateTime, DateTime> newest = this.cache.Where(x => x.Item4 != null).OrderBy(x => x.Item4).Last();
-                log("LRUCache last_used key " + newest.Item1 + ": " + newest.Item4.ToString("MM/dd/yyyy hh:mm:ss"));
+                Tuple<string, object, DateTime, DateTime> newest = Cache.Where(x => x.Item4 != null).OrderBy(x => x.Item4).Last();
+                Log("LRUCache last used key " + newest.Item1 + ": " + newest.Item4.ToString("MM/dd/yyyy hh:mm:ss"));
                 return newest.Item1;
             }
             catch (Exception e)
             {
-                log_exception(e);
+                LogException(e);
                 throw e;
             }
             finally
             {
-                mutex.ReleaseMutex();
-                log("LRUCache last_used released mutex, exiting after " + total_time_from(start_time));
+                Mtx.ReleaseMutex();
             }
         }
 
-        public string first_used()
+        /// <summary>
+        /// Retrieve the key of the first used entry in the cache.
+        /// </summary>
+        /// <returns>String containing the key.</returns>
+        public string FirstUsed()
         {
-            if (this.cache == null) return null;
-            if (this.cache.Count < 1) return null;
+            if (Cache == null) return null;
+            if (Cache.Count < 1) return null;
 
-            DateTime start_time = DateTime.Now;
-            mutex.WaitOne();
-            log("LRUCache last_used acquired mutex");
+            DateTime startTime = DateTime.Now;
+            Mtx.WaitOne();
 
             try
             {
-                Tuple<string, object, DateTime, DateTime> oldest = this.cache.Where(x => x.Item4 != null).OrderBy(x => x.Item4).First();
-                log("LRUCache first_used key " + oldest.Item1 + ": " + oldest.Item4.ToString("MM/dd/yyyy hh:mm:ss"));
+                Tuple<string, object, DateTime, DateTime> oldest = Cache.Where(x => x.Item4 != null).OrderBy(x => x.Item4).First();
+                Log("LRUCache first used key " + oldest.Item1 + ": " + oldest.Item4.ToString("MM/dd/yyyy hh:mm:ss"));
                 return oldest.Item1;
             }
             catch (Exception e)
             {
-                log_exception(e);
+                LogException(e);
                 throw e;
             }
             finally
             {
-                mutex.ReleaseMutex();
-                log("LRUCache first_used released mutex, exiting after " + total_time_from(start_time));
+                Mtx.ReleaseMutex();
             }
         }
 
-        public void clear()
+        /// <summary>
+        /// Clear the cache.
+        /// </summary>
+        public void Clear()
         {
-            DateTime start_time = DateTime.Now;
-            mutex.WaitOne();
-            log("LRUCache clear acquired mutex");
+            DateTime startTime = DateTime.Now;
+            Mtx.WaitOne();
 
             try
             {
-                this.cache = new List<Tuple<string, object, DateTime, DateTime>>();
-                log("LRUCache clear successful");
+                Cache = new List<Tuple<string, object, DateTime, DateTime>>();
                 return;
             }
             catch (Exception e)
             {
-                log_exception(e);
+                LogException(e);
                 throw e;
             }
             finally
             {
-                mutex.ReleaseMutex();
-                log("LRUCache clear released mutex, exiting after " + total_time_from(start_time));
+                Mtx.ReleaseMutex();
             }
         }
 
-        public object get(string key)
+        /// <summary>
+        /// Retrieve a key's value from the cache.
+        /// </summary>
+        /// <param name="key">The key associated with the data you wish to retrieve.</param>
+        /// <returns>The object data associated with the key.</returns>
+        public object Get(string key)
         {
-            if (String.IsNullOrEmpty(key)) throw new ArgumentNullException("key");
+            if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
-            DateTime start_time = DateTime.Now;
-            mutex.WaitOne();
-            log("LRUCache get acquired mutex");
+            DateTime startTime = DateTime.Now;
+            Mtx.WaitOne();
 
             try
             {
                 List<Tuple<string, object, DateTime, DateTime>> entries = new List<Tuple<string, object, DateTime, DateTime>>();
 
-                if (cache.Count > 0) entries = cache.Where(x => x.Item1 == key).ToList();
+                if (Cache.Count > 0) entries = Cache.Where(x => x.Item1 == key).ToList();
                 else entries = null;
 
-                if (entries == null)
-                {
-                    #region No-Entries
-
-                    log("LRUCache get no entries exist (null)");
-                    return null;
-
-                    #endregion
-                }
+                if (entries == null) return null;
                 else
                 {
-                    #region Entries-Exist
-
                     if (entries.Count > 0)
                     {
-                        log("LRUCache get " + entries.Count + " existing entries for key " + key + ", returning first");
                         foreach (Tuple<string, object, DateTime, DateTime> curr in entries)
                         {
-                            cache.Remove(curr);
-                            Tuple<string, object, DateTime, DateTime> curr_updated = new Tuple<string, object, DateTime, DateTime>(curr.Item1, curr.Item2, curr.Item3, DateTime.Now);
-                            cache.Add(curr_updated);
+                            Cache.Remove(curr);
+                            Tuple<string, object, DateTime, DateTime> updated = new Tuple<string, object, DateTime, DateTime>(curr.Item1, curr.Item2, curr.Item3, DateTime.Now);
+                            Cache.Add(updated);
                             return curr.Item2;
                         }
                     }
-                    else
-                    {
-                        log("LRUCache get no entries found for key " + key + ", returning null");
-                    }
 
                     return null;
-
-                    #endregion
                 }
             }
             catch (Exception e)
             {
-                log_exception(e);
+                LogException(e);
                 throw e;
             }
             finally
             {
-                mutex.ReleaseMutex();
-                log("LRUCache get released mutex, exiting after " + total_time_from(start_time));
+                Mtx.ReleaseMutex();
             }
         }
 
-        public bool add_replace(string key, object val)
+        /// <summary>
+        /// Add or replace a key's value in the cache.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <param name="val">The value associated with the key.</param>
+        /// <returns>Boolean indicating success.</returns>
+        public bool AddReplace(string key, object val)
         {
-            if (String.IsNullOrEmpty(key)) throw new ArgumentNullException("key");
+            if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
-            DateTime start_time = DateTime.Now;
-            mutex.WaitOne();
-            log("LRUCache add_replace acquired mutex");
+            DateTime startTime = DateTime.Now;
+            Mtx.WaitOne();
 
             try
             {
-                if (cache.Count >= capacity)
-                {
-                    #region Eviction
-
-                    log("LRUCache add_replace cache full, evicting " + evict_count);
-                    cache = cache.OrderBy(x => x.Item4).Skip(evict_count).ToList();
-                    log("LRUCache add_replace cache full, eviction successful, " + cache.Count + " entries remain");
-
-                    #endregion
+                if (Cache.Count >= Capacity)
+                { 
+                    Log("LRUCache cache full, evicting " + EvictCount);
+                    Cache = Cache.OrderBy(x => x.Item4).Skip(EvictCount).ToList();
                 }
 
                 List<Tuple<string, object, DateTime, DateTime>> dupes = new List<Tuple<string, object, DateTime, DateTime>>();
 
-                if (cache.Count > 0) dupes = cache.Where(x => x.Item1.ToLower() == key).ToList();
+                if (Cache.Count > 0) dupes = Cache.Where(x => x.Item1.ToLower() == key).ToList();
                 else dupes = null;
 
                 if (dupes == null)
                 {
                     #region New-Entry
-
-                    log("LRUCache add_replace adding new entry for key " + key);
-                    cache.Add(new Tuple<string, object, DateTime, DateTime>(key, val, DateTime.Now, DateTime.Now));
-                    log("LRUCache add_replace key " + key + " added successfully");
+                    
+                    Cache.Add(new Tuple<string, object, DateTime, DateTime>(key, val, DateTime.Now, DateTime.Now));
                     return true;
 
                     #endregion
@@ -290,17 +295,13 @@ namespace Caching
                 else if (dupes.Count > 0)
                 {
                     #region Duplicate-Entries-Exist
-
-                    log("LRUCache removing existing entries for key " + key);
-
+                    
                     foreach (Tuple<string, object, DateTime, DateTime> curr in dupes)
                     {
-                        cache.Remove(curr);
+                        Cache.Remove(curr);
                     }
-
-                    log("LRUCache add_replace " + dupes.Count + " entries for key " + key + " removed successfully, adding new entry");
-                    cache.Add(new Tuple<string, object, DateTime, DateTime>(key, val, DateTime.Now, DateTime.Now));
-                    log("LRUCache add_replace key " + key + " added successfully");
+                    
+                    Cache.Add(new Tuple<string, object, DateTime, DateTime>(key, val, DateTime.Now, DateTime.Now));
                     return true;
 
                     #endregion
@@ -308,10 +309,8 @@ namespace Caching
                 else
                 {
                     #region New-Entry
-
-                    log("LRUCache add_replace adding new entry for key " + key);
-                    cache.Add(new Tuple<string, object, DateTime, DateTime>(key, val, DateTime.Now, DateTime.Now));
-                    log("LRUCache add_replace key " + key + " added successfully");
+                    
+                    Cache.Add(new Tuple<string, object, DateTime, DateTime>(key, val, DateTime.Now, DateTime.Now));
                     return true;
 
                     #endregion
@@ -319,150 +318,75 @@ namespace Caching
             }
             catch (Exception e)
             {
-                log_exception(e);
+                LogException(e);
                 throw e;
             }
             finally
             {
-                mutex.ReleaseMutex();
-                log("LRUCache add_replace released mutex, exiting after " + total_time_from(start_time));
+                Mtx.ReleaseMutex();
             }
         }
 
-        public bool remove(string key)
+        /// <summary>
+        /// Remove a key from the cache.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <returns>Boolean indicating success.</returns>
+        public bool Remove(string key)
         {
-            if (String.IsNullOrEmpty(key)) throw new ArgumentNullException("key");
+            if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
-            DateTime start_time = DateTime.Now;
-            mutex.WaitOne();
-            log("LRUCache remove acquired mutex");
+            DateTime startTime = DateTime.Now;
+            Mtx.WaitOne();
 
             try
             {
                 List<Tuple<string, object, DateTime, DateTime>> dupes = new List<Tuple<string, object, DateTime, DateTime>>();
 
-                if (cache.Count > 0) dupes = cache.Where(x => x.Item1.ToLower() == key).ToList();
+                if (Cache.Count > 0) dupes = Cache.Where(x => x.Item1.ToLower() == key).ToList();
                 else dupes = null;
 
-                if (dupes == null)
-                {
-                    #region No-Entries-NULL
-
-                    log("LRUCache remove no entries for key " + key + " (null)");
-                    return true;
-
-                    #endregion
-                }
-                else if (dupes.Count < 1)
-                {
-                    #region No-Entries-EMPTY
-
-                    log("LRUCache remove no entries for key " + key + " (empty)");
-                    return true;
-
-                    #endregion
-                }
+                if (dupes == null) return true;
+                else if (dupes.Count < 1) return true;
                 else
                 {
-                    #region Entries-Exist
-
-                    log("LRUCache remove " + dupes.Count + " entries for key " + key);
-
                     foreach (Tuple<string, object, DateTime, DateTime> curr in dupes)
                     {
-                        cache.Remove(curr);
+                        Cache.Remove(curr);
                     }
 
-                    log("LRUCache remove " + dupes.Count + " entries for key " + key + " removed successfully");
                     return true;
-
-                    #endregion
                 }
             }
             catch (Exception e)
             {
-                log_exception(e);
+                LogException(e);
                 throw e;
             }
             finally
             {
-                mutex.ReleaseMutex();
-                log("LRUCache remove released mutex, exiting after " + total_time_from(start_time));
+                Mtx.ReleaseMutex();
             }
         }
 
-        private void log(string message)
+        private void Log(string message)
         {
-            if (debug)
+            if (Debug)
             {
                 Console.WriteLine(message);
             }
         }
 
-        private void log_exception(Exception e)
+        private void LogException(Exception e)
         {
-            log("================================================================================");
-            log("Exception Type: " + e.GetType().ToString());
-            log("Exception Data: " + e.Data);
-            log("Inner Exception: " + e.InnerException);
-            log("Exception Message: " + e.Message);
-            log("Exception Source: " + e.Source);
-            log("Exception StackTrace: " + e.StackTrace);
-            log("================================================================================");
-        }
-
-        private static string total_time_from(DateTime start_time)
-        {
-            DateTime end_time = DateTime.Now;
-            TimeSpan total_time = (end_time - start_time);
-
-            if (total_time.TotalDays > 1)
-            {
-                return decimal_tostring(total_time.TotalDays) + "days";
-            }
-            else if (total_time.TotalHours > 1)
-            {
-                return decimal_tostring(total_time.TotalHours) + "hrs";
-            }
-            else if (total_time.TotalMinutes > 1)
-            {
-                return decimal_tostring(total_time.TotalMinutes) + "mins";
-            }
-            else if (total_time.TotalSeconds > 1)
-            {
-                return decimal_tostring(total_time.TotalSeconds) + "sec";
-            }
-            else if (total_time.TotalMilliseconds > 0)
-            {
-                return decimal_tostring(total_time.TotalMilliseconds) + "ms";
-            }
-            else
-            {
-                return "<unknown>";
-            }
-        }
-
-        private static double total_ms_from(DateTime start_time)
-        {
-            try
-            {
-                DateTime end_time = DateTime.Now;
-                TimeSpan total_time = (end_time - start_time);
-                return total_time.TotalMilliseconds;
-            }
-            catch (Exception)
-            {
-                return -1;
-            }
-        }
-
-        private static string decimal_tostring(object obj)
-        {
-            if (obj == null) return null;
-            if (obj is string) if (String.IsNullOrEmpty(obj.ToString())) return null;
-            string ret = string.Format("{0:N2}", obj);
-            ret = ret.Replace(",", "");
-            return ret;
+            Log("================================================================================");
+            Log("Exception Type: " + e.GetType().ToString());
+            Log("Exception Data: " + e.Data);
+            Log("Inner Exception: " + e.InnerException);
+            Log("Exception Message: " + e.Message);
+            Log("Exception Source: " + e.Source);
+            Log("Exception StackTrace: " + e.StackTrace);
+            Log("================================================================================");
         }
     }
 }

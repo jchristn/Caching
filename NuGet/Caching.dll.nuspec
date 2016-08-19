@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Caching.dll</id>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <authors>Joel Christner</authors>
     <owners>Joel Christner</owners>
     <licenseUrl>https://github.com/jchristn/Caching/blob/master/LICENSE</licenseUrl>

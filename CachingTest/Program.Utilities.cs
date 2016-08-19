@@ -9,7 +9,7 @@ namespace CachingTest
 {
     partial class Program
     {
-        public static byte[] init_byte_array(int count, byte val)
+        public static byte[] InitByteArray(int count, byte val)
         {
             byte[] ret = new byte[count];
             for (int i = 0; i < ret.Length; i++)
@@ -19,30 +19,30 @@ namespace CachingTest
             return ret;
         }
 
-        private static string total_time_from(DateTime start_time)
+        private static string TotalTimeFrom(DateTime startTime)
         {
-            DateTime end_time = DateTime.Now;
-            TimeSpan total_time = (end_time - start_time);
+            DateTime endTime = DateTime.Now;
+            TimeSpan totalTime = (endTime - startTime);
 
-            if (total_time.TotalDays > 1)
+            if (totalTime.TotalDays > 1)
             {
-                return decimal_tostring(total_time.TotalDays) + "days";
+                return DecimalToString(totalTime.TotalDays) + "days";
             }
-            else if (total_time.TotalHours > 1)
+            else if (totalTime.TotalHours > 1)
             {
-                return decimal_tostring(total_time.TotalHours) + "hrs";
+                return DecimalToString(totalTime.TotalHours) + "hrs";
             }
-            else if (total_time.TotalMinutes > 1)
+            else if (totalTime.TotalMinutes > 1)
             {
-                return decimal_tostring(total_time.TotalMinutes) + "mins";
+                return DecimalToString(totalTime.TotalMinutes) + "mins";
             }
-            else if (total_time.TotalSeconds > 1)
+            else if (totalTime.TotalSeconds > 1)
             {
-                return decimal_tostring(total_time.TotalSeconds) + "sec";
+                return DecimalToString(totalTime.TotalSeconds) + "sec";
             }
-            else if (total_time.TotalMilliseconds > 0)
+            else if (totalTime.TotalMilliseconds > 0)
             {
-                return decimal_tostring(total_time.TotalMilliseconds) + "ms";
+                return DecimalToString(totalTime.TotalMilliseconds) + "ms";
             }
             else
             {
@@ -50,13 +50,13 @@ namespace CachingTest
             }
         }
 
-        private static double total_ms_from(DateTime start_time)
+        private static double TotalMsFrom(DateTime startTime)
         {
             try
             {
-                DateTime end_time = DateTime.Now;
-                TimeSpan total_time = (end_time - start_time);
-                return total_time.TotalMilliseconds;
+                DateTime endTime = DateTime.Now;
+                TimeSpan totalTime = (endTime - startTime);
+                return totalTime.TotalMilliseconds;
             }
             catch (Exception)
             {
@@ -64,7 +64,7 @@ namespace CachingTest
             }
         }
 
-        private static string decimal_tostring(object obj)
+        private static string DecimalToString(object obj)
         {
             if (obj == null) return null;
             if (obj is string) if (String.IsNullOrEmpty(obj.ToString())) return null;
@@ -73,7 +73,7 @@ namespace CachingTest
             return ret;
         }
 
-        static void print_exception(Exception e)
+        static void PrintException(Exception e)
         {
             Console.WriteLine("================================================================================");
             Console.WriteLine("Exception Type: " + e.GetType().ToString());

@@ -11,8 +11,8 @@ namespace CachingTest
     {
         static void Main(string[] args)
         {
-            bool run_forever = true;
-            while (run_forever)
+            bool runForever = true;
+            while (runForever)
             {
                 Console.WriteLine("-------------------------------------------------------------------------------");
                 Console.WriteLine("Select which cache you wish to test");
@@ -21,24 +21,24 @@ namespace CachingTest
                 Console.WriteLine("  lrubtree");
                 Console.WriteLine("");
                 Console.Write("Selection > ");
-                string user_input = Console.ReadLine();
-                if (String.IsNullOrEmpty(user_input)) continue;
+                string userInput = Console.ReadLine();
+                if (String.IsNullOrEmpty(userInput)) continue;
 
-                switch (user_input.ToLower())
+                switch (userInput.ToLower())
                 {
                     case "fifo":
                         FIFOCacheTest();
-                        run_forever = false;
+                        runForever = false;
                         break;
 
                     case "lru":
                         LRUCacheTest();
-                        run_forever = false;
+                        runForever = false;
                         break;
 
                     case "lrubtree":
                         LRUCacheBTreeTest();
-                        run_forever = false;
+                        runForever = false;
                         break;
 
                     default:

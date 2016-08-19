@@ -9,14 +9,14 @@ The Caching library provides a simple implementation of a FIFO cache (first-in-f
 
 Two projects are included in the solution:
 
-- Caching: the FIFO cache class
+- Caching: the cache classes
 - CachingTest: a simple test client
 
 Three caches are included; the use case for each is also listed:
 
 - FIFOCache - uses a List<Tuple>, only for small caches (10s of thousands of entries)
 - LRUCache - uses a List<Tuple>, only for small caches (10s of thousands of entries)
-- LRUCacheBTree - uses a BTree, suitable for larger cache sizes
+- LRUCacheBTree - uses a BTree (from CSharpTest.Net.Collections), suitable for larger cache sizes
 
 The underlying implementations are:
 ```
@@ -24,10 +24,10 @@ The underlying implementations are:
 List<Tuple<string, object, DateTime>>             // key, data, added
 
 // LRUCache
-List<Tuple<string, object, DateTime, DateTime>>   // key, data, added, last_used
+List<Tuple<string, object, DateTime, DateTime>>   // key, data, added, lastUsed
 
-// LRUCacheBTree
-BPlusTree<string, Tuple<object, DateTime, DateTime>>   // key, <data, added, last_used>
+// LRUCacheBTree (refer to CSharpTest.Net.Collections)
+BPlusTree<string, Tuple<object, DateTime, DateTime>>   // key, <data, added, lastUsed>
 ```
 
 ## Usage
@@ -39,39 +39,39 @@ using Caching;
 
 Initialize the desired cache:
 ```
-FIFOCache cache = new FIFOCache(capacity, evict_count, cache_debug);
-LRUCache = new LRUCache(capacity, evict_count, cache_debug)
-LRUCacheBTree cache = new LRUCacheBTree(capacity, evict_count, cache_debug);
+FIFOCache cache = new FIFOCache(capacity, evictCount, debug);
+LRUCache = new LRUCache(capacity, evictCount, debug)
+LRUCacheBTree cache = new LRUCacheBTree(capacity, evictCount, debug);
 
 // capacity (int) is the maximum number of entries
-// evict_count (int) is the number to remove when the cache filles
-// cache_debug (boolean) enables a LOT of Console.WriteLine statements
+// evictCount (int) is the number to remove when the cache fills
+// debug (boolean) enables console logging (use sparingly)
 ```
 
 Add an item to the cache:
 ```
-cache.add_replace(key, data);
+cache.AddReplace(key, data);
 // key (string) is a unique identifier
 // data (object) is whatever data you like
 ```
 
 Get an item from the cache:
 ```
-object data = cache.get(key);
+object data = cache.Get(key);
 // returns null if not present
 ```
 
 Remove an item from the cache:
 ```
-cache.remove(key);
+cache.Remove(key);
 ```
 
 Other helpful methods:
 ```
-string oldest_key = cache.oldest();
-string newest_key = cache.newest();
-string last_used = cache.last_used();  // only on LRUCache
-string first_used = cache.first_used();  // only on LRUCache
-int num_entries = cache.count();
-cache.clear();
+string oldestKey = cache.Oldest();
+string newestKey = cache.Newest();
+string lastUsed = cache.LastUsed();  	// only on LRUCache
+string firstUsed = cache.FirstUsed();   // only on LRUCache
+int numEntries = cache.Count();
+cache.Clear();
 ```
