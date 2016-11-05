@@ -248,7 +248,7 @@ namespace Caching
                             Cache.Remove(curr.Key);
                             Tuple<object, DateTime, DateTime> val = new Tuple<object, DateTime, DateTime>(curr.Value.Item1, curr.Value.Item2, DateTime.Now);
                             Cache.Add(curr.Key, val);
-                            return curr.Key;
+                            return curr.Value.Item1;
                         }
                     }
 
