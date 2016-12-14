@@ -22,7 +22,7 @@ namespace Caching
 
         private int Capacity;
         private int EvictCount;
-        private static readonly Mutex Mtx = new Mutex();
+        private readonly object CacheLock = new object();
         private BPlusTree<string, Tuple<object, DateTime, DateTime>> Cache = new BPlusTree<string, Tuple<object, DateTime, DateTime>>();
         // key, data, added, last_used
 
@@ -44,8 +44,6 @@ namespace Caching
             {
                 throw new ArgumentException("Evict count must be less than or equal to capacity.");
             }
-
-            Log("BTreeLRUCache initialized successfully with capacity " + capacity + " evictCount " + evictCount);
         }
 
         /// <summary>
@@ -54,22 +52,9 @@ namespace Caching
         /// <returns>An integer containing the number of entries.</returns>
         public int Count()
         {
-            DateTime startTime = DateTime.Now;
-            Mtx.WaitOne();
-
-            try
+            lock (CacheLock)
             {
-                Log("BTreeLRUCache count " + Cache.Count);
                 return Cache.Count;
-            }
-            catch (Exception e)
-            {
-                LogException(e);
-                throw e;
-            }
-            finally
-            {
-                Mtx.ReleaseMutex();
             }
         }
 
@@ -79,27 +64,13 @@ namespace Caching
         /// <returns>String containing the key.</returns>
         public string Oldest()
         {
-            if (Cache == null) return null;
-            if (Cache.Count < 1) return null;
+            if (Cache == null || Cache.Count < 1) return null;
 
-            DateTime startTime = DateTime.Now;
-            Mtx.WaitOne();
-
-            try
+            lock (CacheLock)
             {
                 // key, Tuple<data, added, last_used>
                 KeyValuePair<string, Tuple<object, DateTime, DateTime>> oldest = Cache.Where(x => x.Value.Item2 != null).OrderBy(x => x.Value.Item2).First();
-                Log("BTreeLRUCache oldest key " + oldest.Key + ": " + oldest.Value.Item2.ToString("MM/dd/yyyy hh:mm:ss"));
                 return oldest.Key;
-            }
-            catch (Exception e)
-            {
-                LogException(e);
-                throw e;
-            }
-            finally
-            {
-                Mtx.ReleaseMutex();
             }
         }
 
@@ -109,27 +80,13 @@ namespace Caching
         /// <returns>String containing the key.</returns>
         public string Newest()
         {
-            if (Cache == null) return null;
-            if (Cache.Count < 1) return null;
+            if (Cache == null || Cache.Count < 1) return null;
 
-            DateTime startTime = DateTime.Now;
-            Mtx.WaitOne();
-
-            try
-            {                
+            lock (CacheLock)
+            {
                 // key, Tuple<data, added, last_used>
                 KeyValuePair<string, Tuple<object, DateTime, DateTime>> newest = Cache.Where(x => x.Value.Item2 != null).OrderBy(x => x.Value.Item2).Last();
-                Log("BTreeLRUCache newest key " + newest.Key + ": " + newest.Value.Item2.ToString("MM/dd/yyyy hh:mm:ss"));
                 return newest.Key;
-            }
-            catch (Exception e)
-            {
-                LogException(e);
-                throw e;
-            }
-            finally
-            {
-                Mtx.ReleaseMutex();
             }
         }
 
@@ -139,27 +96,13 @@ namespace Caching
         /// <returns>String containing the key.</returns>
         public string LastUsed()
         {
-            if (Cache == null) return null;
-            if (Cache.Count < 1) return null;
+            if (Cache == null || Cache.Count < 1) return null;
 
-            DateTime startTime = DateTime.Now;
-            Mtx.WaitOne();
-
-            try
+            lock (CacheLock)
             {
                 // key, Tuple<data, added, last_used>
                 KeyValuePair<string, Tuple<object, DateTime, DateTime>> newest = Cache.Where(x => x.Value.Item2 != null).OrderBy(x => x.Value.Item3).Last();
-                Log("BTreeLRUCache last used key " + newest.Key + ": " + newest.Value.Item3.ToString("MM/dd/yyyy hh:mm:ss"));
                 return newest.Key;
-            }
-            catch (Exception e)
-            {
-                LogException(e);
-                throw e;
-            }
-            finally
-            {
-                Mtx.ReleaseMutex();
             }
         }
 
@@ -169,27 +112,13 @@ namespace Caching
         /// <returns>String containing the key.</returns>
         public string FirstUsed()
         {
-            if (Cache == null) return null;
-            if (Cache.Count < 1) return null;
+            if (Cache == null || Cache.Count < 1) return null;
 
-            DateTime startTime = DateTime.Now;
-            Mtx.WaitOne();
-
-            try
+            lock (CacheLock)
             {
                 // key, Tuple<data, added, last_used>
                 KeyValuePair<string, Tuple<object, DateTime, DateTime>> oldest = Cache.Where(x => x.Value.Item2 != null).OrderBy(x => x.Value.Item3).First();
-                Log("BTreeLRUCache first used key " + oldest.Key + ": " + oldest.Value.Item3.ToString("MM/dd/yyyy hh:mm:ss"));
                 return oldest.Key;
-            }
-            catch (Exception e)
-            {
-                LogException(e);
-                throw e;
-            }
-            finally
-            {
-                Mtx.ReleaseMutex();
             }
         }
 
@@ -198,23 +127,11 @@ namespace Caching
         /// </summary>
         public void Clear()
         {
-            DateTime startTime = DateTime.Now;
-            Mtx.WaitOne();
-
-            try
+            lock (CacheLock)
             {
                 Cache = new BPlusTree<string, Tuple<object, DateTime, DateTime>>();
                 Cache.EnableCount();
                 return;
-            }
-            catch (Exception e)
-            {
-                LogException(e);
-                throw e;
-            }
-            finally
-            {
-                Mtx.ReleaseMutex();
             }
         }
 
@@ -227,10 +144,7 @@ namespace Caching
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
-            DateTime startTime = DateTime.Now;
-            Mtx.WaitOne();
-
-            try
+            lock (CacheLock)
             {
                 // key, Tuple<data, added, last_used>
                 List<KeyValuePair<string, Tuple<object, DateTime, DateTime>>> entries = new List<KeyValuePair<string, Tuple<object, DateTime, DateTime>>>();
@@ -255,15 +169,6 @@ namespace Caching
                     return null;
                 }
             }
-            catch (Exception e)
-            {
-                LogException(e);
-                throw e;
-            }
-            finally
-            {
-                Mtx.ReleaseMutex();
-            }
         }
 
         /// <summary>
@@ -276,15 +181,10 @@ namespace Caching
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
-            DateTime startTime = DateTime.Now;
-            Mtx.WaitOne();
-
-            try
+            lock (CacheLock)
             {
                 if (Cache.Count >= Capacity)
                 {
-                    Log("BTreeLRUCache cache full, evicting " + EvictCount);
-
                     int evictedCount = 0;
                     while (evictedCount < EvictCount)
                     {
@@ -334,15 +234,6 @@ namespace Caching
                     #endregion
                 }
             }
-            catch (Exception e)
-            {
-                LogException(e);
-                throw e;
-            }
-            finally
-            {
-                Mtx.ReleaseMutex();
-            }
         }
 
         /// <summary>
@@ -354,10 +245,7 @@ namespace Caching
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
-            DateTime startTime = DateTime.Now;
-            Mtx.WaitOne();
-
-            try
+            lock (CacheLock)
             {
                 List<KeyValuePair<string, Tuple<object, DateTime, DateTime>>> dupes = new List<KeyValuePair<string, Tuple<object, DateTime, DateTime>>>();
 
@@ -376,35 +264,6 @@ namespace Caching
                     return true;
                 }
             }
-            catch (Exception e)
-            {
-                LogException(e);
-                throw e;
-            }
-            finally
-            {
-                Mtx.ReleaseMutex();
-            }
-        }
-
-        private void Log(string message)
-        {
-            if (Debug)
-            {
-                Console.WriteLine(message);
-            }
-        }
-
-        private void LogException(Exception e)
-        {
-            Log("================================================================================");
-            Log("Exception Type: " + e.GetType().ToString());
-            Log("Exception Data: " + e.Data);
-            Log("Inner Exception: " + e.InnerException);
-            Log("Exception Message: " + e.Message);
-            Log("Exception Source: " + e.Source);
-            Log("Exception StackTrace: " + e.StackTrace);
-            Log("================================================================================");
         }
     }
 }

@@ -20,7 +20,7 @@ namespace Caching
 
         private int Capacity;
         private int EvictCount;
-        private static readonly Mutex Mtx = new Mutex();
+        private readonly object CacheLock = new object();
         private List<Tuple<string, object, DateTime, DateTime>> Cache { get; set; }
         // key, data, added, last_used
 
@@ -41,8 +41,6 @@ namespace Caching
             {
                 throw new ArgumentException("Evict count must be less than or equal to capacity.");
             }
-
-            Log("LRUCache initialized successfully with capacity " + capacity + " evictCount " + evictCount);
         }
 
         /// <summary>
@@ -51,22 +49,9 @@ namespace Caching
         /// <returns>An integer containing the number of entries.</returns>
         public int Count()
         {
-            DateTime startTime = DateTime.Now;
-            Mtx.WaitOne();
-
-            try
-            {
-                Log("LRUCache count " + Cache.Count);
+            lock (CacheLock)
+            { 
                 return Cache.Count;
-            }
-            catch (Exception e)
-            {
-                LogException(e);
-                throw e;
-            }
-            finally
-            {
-                Mtx.ReleaseMutex();
             }
         }
 
@@ -76,26 +61,12 @@ namespace Caching
         /// <returns>String containing the key.</returns>
         public string Oldest()
         {
-            if (Cache == null) return null;
-            if (Cache.Count < 1) return null;
+            if (Cache == null || Cache.Count < 1) return null;
 
-            DateTime startTime = DateTime.Now;
-            Mtx.WaitOne();
-
-            try
-            {
+            lock (CacheLock)
+            { 
                 Tuple<string, object, DateTime, DateTime> oldest = Cache.Where(x => x.Item3 != null).OrderBy(x => x.Item3).First();
-                Log("LRUCache oldest key " + oldest.Item1 + ": " + oldest.Item3.ToString("MM/dd/yyyy hh:mm:ss"));
                 return oldest.Item1;
-            }
-            catch (Exception e)
-            {
-                LogException(e);
-                throw e;
-            }
-            finally
-            {
-                Mtx.ReleaseMutex();
             }
         }
 
@@ -105,26 +76,12 @@ namespace Caching
         /// <returns>String containing the key.</returns>
         public string Newest()
         {
-            if (Cache == null) return null;
-            if (Cache.Count < 1) return null;
+            if (Cache == null || Cache.Count < 1) return null;
 
-            DateTime startTime = DateTime.Now;
-            Mtx.WaitOne();
-
-            try
-            {
+            lock (CacheLock)
+            { 
                 Tuple<string, object, DateTime, DateTime> newest = Cache.Where(x => x.Item3 != null).OrderBy(x => x.Item3).Last();
-                Log("LRUCache newest key " + newest.Item1 + ": " + newest.Item3.ToString("MM/dd/yyyy hh:mm:ss"));
                 return newest.Item1;
-            }
-            catch (Exception e)
-            {
-                LogException(e);
-                throw e;
-            }
-            finally
-            {
-                Mtx.ReleaseMutex();
             }
         }
 
@@ -134,26 +91,12 @@ namespace Caching
         /// <returns>String containing the key.</returns>
         public string LastUsed()
         {
-            if (Cache == null) return null;
-            if (Cache.Count < 1) return null;
+            if (Cache == null || Cache.Count < 1) return null;
 
-            DateTime startTime = DateTime.Now;
-            Mtx.WaitOne();
-
-            try
+            lock (CacheLock)
             {
                 Tuple<string, object, DateTime, DateTime> newest = Cache.Where(x => x.Item4 != null).OrderBy(x => x.Item4).Last();
-                Log("LRUCache last used key " + newest.Item1 + ": " + newest.Item4.ToString("MM/dd/yyyy hh:mm:ss"));
                 return newest.Item1;
-            }
-            catch (Exception e)
-            {
-                LogException(e);
-                throw e;
-            }
-            finally
-            {
-                Mtx.ReleaseMutex();
             }
         }
 
@@ -163,26 +106,12 @@ namespace Caching
         /// <returns>String containing the key.</returns>
         public string FirstUsed()
         {
-            if (Cache == null) return null;
-            if (Cache.Count < 1) return null;
+            if (Cache == null || Cache.Count < 1) return null;
 
-            DateTime startTime = DateTime.Now;
-            Mtx.WaitOne();
-
-            try
+            lock (CacheLock)
             {
                 Tuple<string, object, DateTime, DateTime> oldest = Cache.Where(x => x.Item4 != null).OrderBy(x => x.Item4).First();
-                Log("LRUCache first used key " + oldest.Item1 + ": " + oldest.Item4.ToString("MM/dd/yyyy hh:mm:ss"));
                 return oldest.Item1;
-            }
-            catch (Exception e)
-            {
-                LogException(e);
-                throw e;
-            }
-            finally
-            {
-                Mtx.ReleaseMutex();
             }
         }
 
@@ -191,22 +120,10 @@ namespace Caching
         /// </summary>
         public void Clear()
         {
-            DateTime startTime = DateTime.Now;
-            Mtx.WaitOne();
-
-            try
+            lock (CacheLock)
             {
                 Cache = new List<Tuple<string, object, DateTime, DateTime>>();
                 return;
-            }
-            catch (Exception e)
-            {
-                LogException(e);
-                throw e;
-            }
-            finally
-            {
-                Mtx.ReleaseMutex();
             }
         }
 
@@ -219,10 +136,7 @@ namespace Caching
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
-            DateTime startTime = DateTime.Now;
-            Mtx.WaitOne();
-
-            try
+            lock (CacheLock)
             {
                 List<Tuple<string, object, DateTime, DateTime>> entries = new List<Tuple<string, object, DateTime, DateTime>>();
 
@@ -246,15 +160,6 @@ namespace Caching
                     return null;
                 }
             }
-            catch (Exception e)
-            {
-                LogException(e);
-                throw e;
-            }
-            finally
-            {
-                Mtx.ReleaseMutex();
-            }
         }
 
         /// <summary>
@@ -267,14 +172,10 @@ namespace Caching
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
-            DateTime startTime = DateTime.Now;
-            Mtx.WaitOne();
-
-            try
+            lock (CacheLock)
             {
                 if (Cache.Count >= Capacity)
                 { 
-                    Log("LRUCache cache full, evicting " + EvictCount);
                     Cache = Cache.OrderBy(x => x.Item4).Skip(EvictCount).ToList();
                 }
 
@@ -316,15 +217,6 @@ namespace Caching
                     #endregion
                 }
             }
-            catch (Exception e)
-            {
-                LogException(e);
-                throw e;
-            }
-            finally
-            {
-                Mtx.ReleaseMutex();
-            }
         }
 
         /// <summary>
@@ -336,10 +228,7 @@ namespace Caching
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
-            DateTime startTime = DateTime.Now;
-            Mtx.WaitOne();
-
-            try
+            lock (CacheLock)
             {
                 List<Tuple<string, object, DateTime, DateTime>> dupes = new List<Tuple<string, object, DateTime, DateTime>>();
 
@@ -358,35 +247,6 @@ namespace Caching
                     return true;
                 }
             }
-            catch (Exception e)
-            {
-                LogException(e);
-                throw e;
-            }
-            finally
-            {
-                Mtx.ReleaseMutex();
-            }
-        }
-
-        private void Log(string message)
-        {
-            if (Debug)
-            {
-                Console.WriteLine(message);
-            }
-        }
-
-        private void LogException(Exception e)
-        {
-            Log("================================================================================");
-            Log("Exception Type: " + e.GetType().ToString());
-            Log("Exception Data: " + e.Data);
-            Log("Inner Exception: " + e.InnerException);
-            Log("Exception Message: " + e.Message);
-            Log("Exception Source: " + e.Source);
-            Log("Exception StackTrace: " + e.StackTrace);
-            Log("================================================================================");
         }
     }
 }
