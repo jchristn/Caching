@@ -22,7 +22,7 @@ namespace CachingTest
                 int dataLen = 4096;
                 byte[] data = InitByteArray(dataLen, 0x00);
 
-                FIFOCache cache = new FIFOCache(capacity, evictCount, cacheDebug);
+                FIFOCache<byte[]> cache = new FIFOCache<byte[]>(capacity, evictCount, cacheDebug);
                 Thread.Sleep(250);
 
                 while (runForever)
@@ -49,7 +49,7 @@ namespace CachingTest
                             Console.Write("Key > ");
                             string getKey = Console.ReadLine();
                             if (String.IsNullOrEmpty(getKey)) break;
-                            byte[] keyData = (byte[])cache.Get(getKey);
+                            byte[] keyData = cache.Get(getKey);
                             if (keyData == null) Console.WriteLine("Cache miss");
                             else Console.WriteLine("Cache hit");
                             break;

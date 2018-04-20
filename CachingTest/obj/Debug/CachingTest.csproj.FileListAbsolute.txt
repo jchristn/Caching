@@ -27,3 +27,5 @@ D:\Code\Misc\CachingWithBtree\CachingTest\bin\Debug\CSharpTest.Net.Collections.x
 D:\Code\Misc\CachingWithBtree\CachingTest\obj\Debug\CachingTest.csprojResolveAssemblyReference.cache
 D:\Code\Misc\CachingWithBtree\CachingTest\obj\Debug\CachingTest.exe
 D:\Code\Misc\CachingWithBtree\CachingTest\obj\Debug\CachingTest.pdb
+D:\code\misc\CachingWithBtree\CachingTest\obj\Debug\CachingTest.csproj.CoreCompileInputs.cache
+D:\code\misc\CachingWithBtree\CachingTest\obj\Debug\CachingTest.csproj.CopyComplete

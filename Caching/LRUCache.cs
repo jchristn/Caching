@@ -11,17 +11,17 @@ namespace Caching
     /// <summary>
     /// LRU cache that internally uses tuples.
     /// </summary>
-    public class LRUCache
+    public class LRUCache<T>
     {
         /// <summary>
         /// Enable or disable console debugging.
         /// </summary>
         public bool Debug;
 
-        private int Capacity;
-        private int EvictCount;
-        private readonly object CacheLock = new object();
-        private List<Tuple<string, object, DateTime, DateTime>> Cache { get; set; }
+        private int _Capacity;
+        private int _EvictCount;
+        private readonly object _CacheLock = new object();
+        private List<Tuple<string, T, DateTime, DateTime>> _Cache { get; set; }
         // key, data, added, last_used
 
         /// <summary>
@@ -32,12 +32,12 @@ namespace Caching
         /// <param name="debug">Enable or disable console debugging.</param>
         public LRUCache(int capacity, int evictCount, bool debug)
         {
-            Capacity = capacity;
-            EvictCount = evictCount;
+            _Capacity = capacity;
+            _EvictCount = evictCount;
             Debug = debug;
-            Cache = new List<Tuple<string, object, DateTime, DateTime>>();
+            _Cache = new List<Tuple<string, T, DateTime, DateTime>>();
 
-            if (EvictCount > Capacity)
+            if (_EvictCount > _Capacity)
             {
                 throw new ArgumentException("Evict count must be less than or equal to capacity.");
             }
@@ -49,9 +49,9 @@ namespace Caching
         /// <returns>An integer containing the number of entries.</returns>
         public int Count()
         {
-            lock (CacheLock)
+            lock (_CacheLock)
             { 
-                return Cache.Count;
+                return _Cache.Count;
             }
         }
 
@@ -61,11 +61,11 @@ namespace Caching
         /// <returns>String containing the key.</returns>
         public string Oldest()
         {
-            if (Cache == null || Cache.Count < 1) return null;
+            if (_Cache == null || _Cache.Count < 1) return null;
 
-            lock (CacheLock)
+            lock (_CacheLock)
             { 
-                Tuple<string, object, DateTime, DateTime> oldest = Cache.Where(x => x.Item3 != null).OrderBy(x => x.Item3).First();
+                Tuple<string, T, DateTime, DateTime> oldest = _Cache.Where(x => x.Item3 != null).OrderBy(x => x.Item3).First();
                 return oldest.Item1;
             }
         }
@@ -76,11 +76,11 @@ namespace Caching
         /// <returns>String containing the key.</returns>
         public string Newest()
         {
-            if (Cache == null || Cache.Count < 1) return null;
+            if (_Cache == null || _Cache.Count < 1) return null;
 
-            lock (CacheLock)
+            lock (_CacheLock)
             { 
-                Tuple<string, object, DateTime, DateTime> newest = Cache.Where(x => x.Item3 != null).OrderBy(x => x.Item3).Last();
+                Tuple<string, T, DateTime, DateTime> newest = _Cache.Where(x => x.Item3 != null).OrderBy(x => x.Item3).Last();
                 return newest.Item1;
             }
         }
@@ -91,11 +91,11 @@ namespace Caching
         /// <returns>String containing the key.</returns>
         public string LastUsed()
         {
-            if (Cache == null || Cache.Count < 1) return null;
+            if (_Cache == null || _Cache.Count < 1) return null;
 
-            lock (CacheLock)
+            lock (_CacheLock)
             {
-                Tuple<string, object, DateTime, DateTime> newest = Cache.Where(x => x.Item4 != null).OrderBy(x => x.Item4).Last();
+                Tuple<string, T, DateTime, DateTime> newest = _Cache.Where(x => x.Item4 != null).OrderBy(x => x.Item4).Last();
                 return newest.Item1;
             }
         }
@@ -106,11 +106,11 @@ namespace Caching
         /// <returns>String containing the key.</returns>
         public string FirstUsed()
         {
-            if (Cache == null || Cache.Count < 1) return null;
+            if (_Cache == null || _Cache.Count < 1) return null;
 
-            lock (CacheLock)
+            lock (_CacheLock)
             {
-                Tuple<string, object, DateTime, DateTime> oldest = Cache.Where(x => x.Item4 != null).OrderBy(x => x.Item4).First();
+                Tuple<string, T, DateTime, DateTime> oldest = _Cache.Where(x => x.Item4 != null).OrderBy(x => x.Item4).First();
                 return oldest.Item1;
             }
         }
@@ -120,9 +120,9 @@ namespace Caching
         /// </summary>
         public void Clear()
         {
-            lock (CacheLock)
+            lock (_CacheLock)
             {
-                Cache = new List<Tuple<string, object, DateTime, DateTime>>();
+                _Cache = new List<Tuple<string, T, DateTime, DateTime>>();
                 return;
             }
         }
@@ -132,32 +132,32 @@ namespace Caching
         /// </summary>
         /// <param name="key">The key associated with the data you wish to retrieve.</param>
         /// <returns>The object data associated with the key.</returns>
-        public object Get(string key)
+        public T Get(string key)
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
-            lock (CacheLock)
+            lock (_CacheLock)
             {
-                List<Tuple<string, object, DateTime, DateTime>> entries = new List<Tuple<string, object, DateTime, DateTime>>();
+                List<Tuple<string, T, DateTime, DateTime>> entries = new List<Tuple<string, T, DateTime, DateTime>>();
 
-                if (Cache.Count > 0) entries = Cache.Where(x => x.Item1 == key).ToList();
+                if (_Cache.Count > 0) entries = _Cache.Where(x => x.Item1 == key).ToList();
                 else entries = null;
 
-                if (entries == null) return null;
+                if (entries == null) throw new KeyNotFoundException();
                 else
                 {
                     if (entries.Count > 0)
                     {
-                        foreach (Tuple<string, object, DateTime, DateTime> curr in entries)
+                        foreach (Tuple<string, T, DateTime, DateTime> curr in entries)
                         {
-                            Cache.Remove(curr);
-                            Tuple<string, object, DateTime, DateTime> updated = new Tuple<string, object, DateTime, DateTime>(curr.Item1, curr.Item2, curr.Item3, DateTime.Now);
-                            Cache.Add(updated);
+                            _Cache.Remove(curr);
+                            Tuple<string, T, DateTime, DateTime> updated = new Tuple<string, T, DateTime, DateTime>(curr.Item1, curr.Item2, curr.Item3, DateTime.Now);
+                            _Cache.Add(updated);
                             return curr.Item2;
                         }
                     }
 
-                    return null;
+                    throw new KeyNotFoundException();
                 }
             }
         }
@@ -168,27 +168,27 @@ namespace Caching
         /// <param name="key">The key.</param>
         /// <param name="val">The value associated with the key.</param>
         /// <returns>Boolean indicating success.</returns>
-        public bool AddReplace(string key, object val)
+        public bool AddReplace(string key, T val)
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
-            lock (CacheLock)
+            lock (_CacheLock)
             {
-                if (Cache.Count >= Capacity)
+                if (_Cache.Count >= _Capacity)
                 { 
-                    Cache = Cache.OrderBy(x => x.Item4).Skip(EvictCount).ToList();
+                    _Cache = _Cache.OrderBy(x => x.Item4).Skip(_EvictCount).ToList();
                 }
 
-                List<Tuple<string, object, DateTime, DateTime>> dupes = new List<Tuple<string, object, DateTime, DateTime>>();
+                List<Tuple<string, T, DateTime, DateTime>> dupes = new List<Tuple<string, T, DateTime, DateTime>>();
 
-                if (Cache.Count > 0) dupes = Cache.Where(x => x.Item1.ToLower() == key).ToList();
+                if (_Cache.Count > 0) dupes = _Cache.Where(x => x.Item1.ToLower() == key).ToList();
                 else dupes = null;
 
                 if (dupes == null)
                 {
                     #region New-Entry
                     
-                    Cache.Add(new Tuple<string, object, DateTime, DateTime>(key, val, DateTime.Now, DateTime.Now));
+                    _Cache.Add(new Tuple<string, T, DateTime, DateTime>(key, val, DateTime.Now, DateTime.Now));
                     return true;
 
                     #endregion
@@ -197,12 +197,12 @@ namespace Caching
                 {
                     #region Duplicate-Entries-Exist
                     
-                    foreach (Tuple<string, object, DateTime, DateTime> curr in dupes)
+                    foreach (Tuple<string, T, DateTime, DateTime> curr in dupes)
                     {
-                        Cache.Remove(curr);
+                        _Cache.Remove(curr);
                     }
                     
-                    Cache.Add(new Tuple<string, object, DateTime, DateTime>(key, val, DateTime.Now, DateTime.Now));
+                    _Cache.Add(new Tuple<string, T, DateTime, DateTime>(key, val, DateTime.Now, DateTime.Now));
                     return true;
 
                     #endregion
@@ -211,7 +211,7 @@ namespace Caching
                 {
                     #region New-Entry
                     
-                    Cache.Add(new Tuple<string, object, DateTime, DateTime>(key, val, DateTime.Now, DateTime.Now));
+                    _Cache.Add(new Tuple<string, T, DateTime, DateTime>(key, val, DateTime.Now, DateTime.Now));
                     return true;
 
                     #endregion
@@ -228,25 +228,25 @@ namespace Caching
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
-            lock (CacheLock)
+            lock (_CacheLock)
             {
-                List<Tuple<string, object, DateTime, DateTime>> dupes = new List<Tuple<string, object, DateTime, DateTime>>();
+                List<Tuple<string, T, DateTime, DateTime>> dupes = new List<Tuple<string, T, DateTime, DateTime>>();
 
-                if (Cache.Count > 0) dupes = Cache.Where(x => x.Item1.ToLower() == key).ToList();
+                if (_Cache.Count > 0) dupes = _Cache.Where(x => x.Item1.ToLower() == key).ToList();
                 else dupes = null;
 
                 if (dupes == null) return true;
                 else if (dupes.Count < 1) return true;
                 else
                 {
-                    foreach (Tuple<string, object, DateTime, DateTime> curr in dupes)
+                    foreach (Tuple<string, T, DateTime, DateTime> curr in dupes)
                     {
-                        Cache.Remove(curr);
+                        _Cache.Remove(curr);
                     }
 
                     return true;
                 }
             }
-        }
+        } 
     }
 }

@@ -8,3 +8,5 @@ D:\Code\Misc\CachingWithBtree\CachingTest\bin\Release\CSharpTest.Net.Collections
 D:\Code\Misc\CachingWithBtree\CachingTest\obj\Release\CachingTest.csprojResolveAssemblyReference.cache
 D:\Code\Misc\CachingWithBtree\CachingTest\obj\Release\CachingTest.exe
 D:\Code\Misc\CachingWithBtree\CachingTest\obj\Release\CachingTest.pdb
+D:\code\misc\CachingWithBtree\CachingTest\obj\Release\CachingTest.csproj.CoreCompileInputs.cache
+D:\code\misc\CachingWithBtree\CachingTest\obj\Release\CachingTest.csproj.CopyComplete
