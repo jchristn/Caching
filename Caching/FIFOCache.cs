@@ -21,7 +21,7 @@ namespace Caching
         private int _Capacity;
         private int _EvictCount;
         private readonly object _CacheLock = new object();
-        private List<Tuple<string, T, DateTime>> _Lock { get; set; }
+        private Dictionary<string, DataNode<T>> _Cache;
 
         /// <summary>
         /// Initialize the cache.
@@ -33,7 +33,7 @@ namespace Caching
         {
             _Capacity = capacity;
             _EvictCount = evictCount;
-            _Lock = new List<Tuple<string, T, DateTime>>();
+            _Cache = new Dictionary<string, DataNode<T>>();
 
             Debug = debug;
 
@@ -51,7 +51,7 @@ namespace Caching
         {
             lock (_CacheLock)
             { 
-                return _Lock.Count;
+                return _Cache.Count;
             }
         }
 
@@ -61,10 +61,12 @@ namespace Caching
         /// <returns>String containing the key.</returns>
         public string Oldest()
         {
+            if (_Cache == null || _Cache.Count < 1) return null;
+
             lock (_CacheLock)
-            { 
-                Tuple<string, T, DateTime> oldest = _Lock.Where(x => x.Item3 != null).OrderBy(x => x.Item3).First();
-                return oldest.Item1;
+            {
+                KeyValuePair<string, DataNode<T>> oldest = _Cache.Where(x => x.Value.Added != null).OrderBy(x => x.Value.Added).First();
+                return oldest.Key;
             }
         }
 
@@ -74,10 +76,12 @@ namespace Caching
         /// <returns>String containing the key.</returns>
         public string Newest()
         {
+            if (_Cache == null || _Cache.Count < 1) return null;
+
             lock (_CacheLock)
-            { 
-                Tuple<string, T, DateTime> newest = _Lock.Where(x => x.Item3 != null).OrderBy(x => x.Item3).Last();
-                return newest.Item1;
+            {
+                KeyValuePair<string, DataNode<T>> newest = _Cache.Where(x => x.Value.Added != null).OrderBy(x => x.Value.Added).Last();
+                return newest.Key;
             }
         }
 
@@ -87,8 +91,8 @@ namespace Caching
         public void Clear()
         {
             lock (_CacheLock)
-            { 
-                _Lock = new List<Tuple<string, T, DateTime>>();
+            {
+                _Cache = new Dictionary<string, DataNode<T>>();
                 return;
             }
         }
@@ -103,23 +107,21 @@ namespace Caching
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
             lock (_CacheLock)
-            { 
-                List<Tuple<string, T, DateTime>> entries = new List<Tuple<string, T, DateTime>>();
+            {
+                if (_Cache.ContainsKey(key))
+                {
+                    KeyValuePair<string, DataNode<T>> curr = _Cache.Where(x => x.Key.Equals(key)).First();
 
-                if (_Lock.Count > 0) entries = _Lock.Where(x => x.Item1 == key).ToList();
-                else entries = null;
+                    // update LastUsed
+                    _Cache.Remove(key);
+                    curr.Value.LastUsed = DateTime.Now;
+                    _Cache.Add(key, curr.Value);
 
-                if (entries == null) throw new KeyNotFoundException();
+                    // return data
+                    return curr.Value.Data;
+                }
                 else
                 {
-                    if (entries.Count > 0)
-                    {
-                        foreach (Tuple<string, T, DateTime> curr in entries)
-                        {
-                            return curr.Item2;
-                        }
-                    }
-
                     throw new KeyNotFoundException();
                 }
             }
@@ -129,86 +131,45 @@ namespace Caching
         /// Add or replace a key's value in the cache.
         /// </summary>
         /// <param name="key">The key.</param>
-        /// <param name="val">The value associated with the key.</param>
-        /// <returns>Boolean indicating success.</returns>
-        public bool AddReplace(string key, T val)
+        /// <param name="val">The value associated with the key.</param> 
+        public void AddReplace(string key, T val)
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
             lock (_CacheLock)
-            { 
-                if (_Lock.Count >= _Capacity)
+            {
+                if (_Cache.ContainsKey(key))
                 {
-                    _Lock = _Lock.OrderBy(x => x.Item3).Skip(_EvictCount).ToList();
+                    _Cache.Remove(key);
                 }
 
-                List<Tuple<string, T, DateTime>> dupes = new List<Tuple<string, T, DateTime>>();
-
-                if (_Lock.Count > 0) dupes = _Lock.Where(x => x.Item1.ToLower() == key).ToList();
-                else dupes = null;
-
-                if (dupes == null)
+                if (_Cache.Count >= _Capacity)
                 {
-                    #region New-Entry
-
-                    _Lock.Add(new Tuple<string, T, DateTime>(key, val, DateTime.Now));
-                    return true;
-
-                    #endregion
+                    _Cache = _Cache.OrderBy(x => x.Value.Added).Skip(_EvictCount).ToDictionary(x => x.Key, x => x.Value);
                 }
-                else if (dupes.Count > 0)
-                {
-                    #region Duplicate-Entries-Exist
-
-                    foreach (Tuple<string, T, DateTime> curr in dupes)
-                    {
-                        _Lock.Remove(curr);
-                    }
-
-                    _Lock.Add(new Tuple<string, T, DateTime>(key, val, DateTime.Now));
-                    return true;
-
-                    #endregion
-                }
-                else
-                {
-                    #region New-Entry
-
-                    _Lock.Add(new Tuple<string, T, DateTime>(key, val, DateTime.Now));
-                    return true;
-
-                    #endregion
-                }
+                 
+                DataNode<T> curr = new DataNode<T>(val);
+                _Cache.Add(key, curr);
+                return;
             }
         }
 
         /// <summary>
         /// Remove a key from the cache.
         /// </summary>
-        /// <param name="key">The key.</param>
-        /// <returns>Boolean indicating success.</returns>
-        public bool Remove(string key)
+        /// <param name="key">The key.</param> 
+        public void Remove(string key)
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
             lock (_CacheLock)
-            { 
-                List<Tuple<string, T, DateTime>> dupes = new List<Tuple<string, T, DateTime>>();
-
-                if (_Lock.Count > 0) dupes = _Lock.Where(x => x.Item1.ToLower() == key).ToList();
-                else dupes = null;
-
-                if (dupes == null) return true;
-                else if (dupes.Count < 1) return true;
-                else
+            {
+                if (_Cache.ContainsKey(key))
                 {
-                    foreach (Tuple<string, T, DateTime> curr in dupes)
-                    {
-                        _Lock.Remove(curr);
-                    }
-
-                    return true;
+                    _Cache.Remove(key);
                 }
+
+                return;
             }
         }
     }

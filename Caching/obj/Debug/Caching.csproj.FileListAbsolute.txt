@@ -19,3 +19,4 @@ D:\Code\Misc\CachingWithBtree\Caching\obj\Debug\Caching.dll
 D:\Code\Misc\CachingWithBtree\Caching\obj\Debug\Caching.pdb
 D:\code\misc\CachingWithBtree\Caching\obj\Debug\Caching.csproj.CoreCompileInputs.cache
 D:\code\misc\CachingWithBtree\Caching\obj\Debug\Caching.csproj.CopyComplete
+D:\Code\Misc\CachingWithBtree\Caching\obj\Debug\Caching.csprojResolveAssemblyReference.cache
