@@ -53,6 +53,9 @@ Get an item from the cache:
 ```
 Person data = cache.Get(key);
 // throws KeyNotFoundException if not present
+
+if (!cache.TryGet(key, out data)) { // handle errors }
+else { // use your data! }
 ```
 
 Remove an item from the cache:

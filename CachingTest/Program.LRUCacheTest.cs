@@ -21,6 +21,7 @@ namespace CachingTest
                 bool cacheDebug = true;
                 int dataLen = 4096;
                 byte[] data = InitByteArray(dataLen, 0x00);
+                byte[] keyData;
 
                 LRUCache<byte[]> cache = new LRUCache<byte[]>(capacity, evictCount, cacheDebug);
                 Thread.Sleep(250);
@@ -51,9 +52,8 @@ namespace CachingTest
                             Console.Write("Key > ");
                             string getKey = Console.ReadLine();
                             if (String.IsNullOrEmpty(getKey)) break;
-                            byte[] keyData = cache.Get(getKey);
-                            if (keyData == null) Console.WriteLine("Cache miss");
-                            else Console.WriteLine("Cache hit");
+                            if (cache.TryGet(getKey, out keyData)) Console.WriteLine("Cache hit");
+                            else Console.WriteLine("Cache miss");
                             break;
 
                         case "load":

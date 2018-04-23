@@ -158,6 +158,39 @@ namespace Caching
         }
 
         /// <summary>
+        /// Retrieve a key's value from the cache.
+        /// </summary>
+        /// <param name="key">The key associated with the data you wish to retrieve.</param>
+        /// <param name="val">The value associated with the key.</param>
+        /// <returns>True if key is found.</returns>
+        public bool TryGet(string key, out T val)
+        {
+            if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
+
+            lock (_CacheLock)
+            {
+                if (_Cache.ContainsKey(key))
+                {
+                    KeyValuePair<string, DataNode<T>> curr = _Cache.Where(x => x.Key.Equals(key)).First();
+
+                    // update LastUsed
+                    _Cache.Remove(key);
+                    curr.Value.LastUsed = DateTime.Now;
+                    _Cache.Add(key, curr.Value);
+
+                    // return data
+                    val = curr.Value.Data;
+                    return true;
+                }
+                else
+                {
+                    val = default(T);
+                    return false;
+                }
+            }
+        }
+
+        /// <summary>
         /// Add or replace a key's value in the cache.
         /// </summary>
         /// <param name="key">The key.</param>
