@@ -67,5 +67,6 @@ string newestKey = cache.Newest();
 string lastUsed = cache.LastUsed();  	// only on LRUCache
 string firstUsed = cache.FirstUsed();   // only on LRUCache
 int numEntries = cache.Count();
+List<string> keys = cache.GetKeys();
 cache.Clear();
 ```

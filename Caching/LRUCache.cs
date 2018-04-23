@@ -202,6 +202,19 @@ namespace Caching
 
                 return; 
             }
-        } 
+        }
+
+        /// <summary>
+        /// Retrieve all keys in the cache.
+        /// </summary>
+        /// <returns>List of string.</returns>
+        public List<string> GetKeys()
+        {
+            lock (_CacheLock)
+            {
+                List<string> keys = new List<string>(_Cache.Keys);
+                return keys;
+            }
+        }
     }
 }

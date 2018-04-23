@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>Caching.dll</id>
+    <version>1.1.2</version>
+    <title>Caching.dll</title>
+    <authors>Joel Christner</authors>
+    <owners>Joel Christner</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <licenseUrl>https://github.com/jchristn/Caching/blob/master/LICENSE.txt</licenseUrl>
+    <projectUrl>https://github.com/jchristn/Caching</projectUrl>
+    <description>Simple C# caching library including a FIFO and LRU cache</description>
+    <summary>Simple C# caching library including a FIFO and LRU cache</summary>
+    <releaseNotes>Method to retrieve list of cached keys</releaseNotes>
+    <copyright>(c)2018 Joel Christner</copyright>
+    <tags>FIFO LRU BTree cache</tags>
+    <dependencies>
+      <dependency id="CSharpTest.Net.Collections" version="14.906.1403.1082" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="lib\Caching.dll" target="lib\Caching.dll" />
+    <file src="lib\Caching.pdb" target="lib\Caching.pdb" />
+  </files>
+</package>
