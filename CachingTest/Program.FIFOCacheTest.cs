@@ -23,7 +23,7 @@ namespace CachingTest
                 byte[] data = InitByteArray(dataLen, 0x00);
                 byte[] keyData;
 
-                FIFOCache<byte[]> cache = new FIFOCache<byte[]>(capacity, evictCount, cacheDebug);
+                FIFOCache<string, byte[]> cache = new FIFOCache<string, byte[]>(capacity, evictCount, cacheDebug);
                 Thread.Sleep(250);
 
                 while (runForever)

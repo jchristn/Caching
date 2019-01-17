@@ -33,10 +33,12 @@ class Person
   public string LastName;
 }
 
-FIFOCache<Person> cache = new FIFOCache<Person>(capacity, evictCount, debug);
-LRUCache<Person> cache = new LRUCache<Person>(capacity, evictCount, debug)
-LRUCacheBTree<Person> cache = new LRUCacheBTree<Person>(capacity, evictCount, debug);
+FIFOCache<string, Person> cache = new FIFOCache<string, Person>(capacity, evictCount, debug);
+LRUCache<string, Person> cache = new LRUCache<string, Person>(capacity, evictCount, debug)
+LRUCacheBTree<string, Person> cache = new LRUCacheBTree<string, Person>(capacity, evictCount, debug);
 
+// T1 is the type of the key
+// T2 is the type of the value
 // capacity (int) is the maximum number of entries
 // evictCount (int) is the number to remove when the cache reaches capacity
 // debug (boolean) enables console logging (use sparingly)
@@ -45,8 +47,8 @@ LRUCacheBTree<Person> cache = new LRUCacheBTree<Person>(capacity, evictCount, de
 Add an item to the cache:
 ```
 cache.AddReplace(key, data);
-// key (string) is a unique identifier
-// data (object) is whatever data you like
+// key (T1) is a unique identifier
+// data (T2) is whatever data you like
 ```
 
 Get an item from the cache:
@@ -65,11 +67,11 @@ cache.Remove(key);
 
 Other helpful methods:
 ```
-string oldestKey = cache.Oldest();
-string newestKey = cache.Newest();
-string lastUsed = cache.LastUsed();  	// only on LRUCache
-string firstUsed = cache.FirstUsed();   // only on LRUCache
+T1 oldestKey = cache.Oldest();
+T1 newestKey = cache.Newest();
+T1 lastUsed = cache.LastUsed();  	// only on LRUCache
+T1 firstUsed = cache.FirstUsed();   // only on LRUCache
 int numEntries = cache.Count();
-List<string> keys = cache.GetKeys();
+List<T1> keys = cache.GetKeys();
 cache.Clear();
 ```

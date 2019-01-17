@@ -23,7 +23,7 @@ namespace CachingTest
                 byte[] data = InitByteArray(dataLen, 0x00);
                 byte[] keyData;
 
-                LRUCacheBTree<byte[]> cache = new LRUCacheBTree<byte[]>(capacity, evictCount, cacheDebug);
+                LRUCacheBTree<string, byte[]> cache = new LRUCacheBTree<string, byte[]>(capacity, evictCount, cacheDebug);
                 Thread.Sleep(250);
                 
                 while (runForever)

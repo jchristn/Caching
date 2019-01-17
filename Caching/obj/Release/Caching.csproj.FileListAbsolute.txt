@@ -7,3 +7,12 @@ D:\Code\Misc\CachingWithBtree\Caching\obj\Release\Caching.pdb
 D:\Code\Misc\CachingWithBtree\Caching\obj\Release\Caching.csprojResolveAssemblyReference.cache
 D:\code\misc\CachingWithBtree\Caching\obj\Release\Caching.csproj.CoreCompileInputs.cache
 D:\code\misc\CachingWithBtree\Caching\obj\Release\Caching.csproj.CopyComplete
+C:\code\misc\CachingWithBtree\Caching\bin\Release\Caching.dll
+C:\code\misc\CachingWithBtree\Caching\bin\Release\Caching.pdb
+C:\code\misc\CachingWithBtree\Caching\bin\Release\CSharpTest.Net.Collections.dll
+C:\code\misc\CachingWithBtree\Caching\bin\Release\CSharpTest.Net.Collections.xml
+C:\code\misc\CachingWithBtree\Caching\obj\Release\Caching.csprojAssemblyReference.cache
+C:\code\misc\CachingWithBtree\Caching\obj\Release\Caching.csproj.CoreCompileInputs.cache
+C:\code\misc\CachingWithBtree\Caching\obj\Release\Caching.csproj.CopyComplete
+C:\code\misc\CachingWithBtree\Caching\obj\Release\Caching.dll
+C:\code\misc\CachingWithBtree\Caching\obj\Release\Caching.pdb

@@ -10,3 +10,15 @@ D:\Code\Misc\CachingWithBtree\CachingTest\obj\Release\CachingTest.exe
 D:\Code\Misc\CachingWithBtree\CachingTest\obj\Release\CachingTest.pdb
 D:\code\misc\CachingWithBtree\CachingTest\obj\Release\CachingTest.csproj.CoreCompileInputs.cache
 D:\code\misc\CachingWithBtree\CachingTest\obj\Release\CachingTest.csproj.CopyComplete
+C:\code\misc\CachingWithBtree\CachingTest\bin\Release\CachingTest.exe.config
+C:\code\misc\CachingWithBtree\CachingTest\bin\Release\CachingTest.exe
+C:\code\misc\CachingWithBtree\CachingTest\bin\Release\CachingTest.pdb
+C:\code\misc\CachingWithBtree\CachingTest\bin\Release\Caching.dll
+C:\code\misc\CachingWithBtree\CachingTest\bin\Release\CSharpTest.Net.Collections.dll
+C:\code\misc\CachingWithBtree\CachingTest\bin\Release\Caching.pdb
+C:\code\misc\CachingWithBtree\CachingTest\bin\Release\CSharpTest.Net.Collections.xml
+C:\code\misc\CachingWithBtree\CachingTest\obj\Release\CachingTest.csprojAssemblyReference.cache
+C:\code\misc\CachingWithBtree\CachingTest\obj\Release\CachingTest.csproj.CoreCompileInputs.cache
+C:\code\misc\CachingWithBtree\CachingTest\obj\Release\CachingTest.csproj.CopyComplete
+C:\code\misc\CachingWithBtree\CachingTest\obj\Release\CachingTest.exe
+C:\code\misc\CachingWithBtree\CachingTest\obj\Release\CachingTest.pdb

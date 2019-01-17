@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 namespace Caching
 {
     /// <summary>
-    /// LRU cache that internally uses tuples.
+    /// LRU cache that internally uses tuples.  T1 is the type of the key, and T2 is the type of the value.
     /// </summary>
-    public class LRUCache<T>
+    public class LRUCache<T1, T2>
     {
         /// <summary>
         /// Enable or disable console debugging.
@@ -21,7 +21,7 @@ namespace Caching
         private int _Capacity;
         private int _EvictCount;
         private readonly object _CacheLock = new object();
-        private Dictionary<string, DataNode<T>> _Cache; 
+        private Dictionary<T1, DataNode<T2>> _Cache; 
 
         /// <summary>
         /// Initialize the cache.
@@ -34,7 +34,7 @@ namespace Caching
             _Capacity = capacity;
             _EvictCount = evictCount;
             Debug = debug;
-            _Cache = new Dictionary<string, DataNode<T>>();
+            _Cache = new Dictionary<T1, DataNode<T2>>();
             // _Cache = new List<Tuple<string, T, DateTime, DateTime>>();
 
             if (_EvictCount > _Capacity)
@@ -59,13 +59,13 @@ namespace Caching
         /// Retrieve the key of the oldest entry in the cache.
         /// </summary>
         /// <returns>String containing the key.</returns>
-        public string Oldest()
+        public T1 Oldest()
         {
-            if (_Cache == null || _Cache.Count < 1) return null;
+            if (_Cache == null || _Cache.Count < 1) throw new KeyNotFoundException();
 
             lock (_CacheLock)
             {
-                KeyValuePair<string, DataNode<T>> oldest = _Cache.Where(x => x.Value.Added != null).OrderBy(x => x.Value.Added).First();
+                KeyValuePair<T1, DataNode<T2>> oldest = _Cache.Where(x => x.Value.Added != null).OrderBy(x => x.Value.Added).First();
                 return oldest.Key;
             }
         }
@@ -74,13 +74,13 @@ namespace Caching
         /// Retrieve the key of the newest entry in the cache.
         /// </summary>
         /// <returns>String containing the key.</returns>
-        public string Newest()
+        public T1 Newest()
         {
-            if (_Cache == null || _Cache.Count < 1) return null;
+            if (_Cache == null || _Cache.Count < 1) throw new KeyNotFoundException();
 
             lock (_CacheLock)
             {
-                KeyValuePair<string, DataNode<T>> newest = _Cache.Where(x => x.Value.Added != null).OrderBy(x => x.Value.Added).Last();
+                KeyValuePair<T1, DataNode<T2>> newest = _Cache.Where(x => x.Value.Added != null).OrderBy(x => x.Value.Added).Last();
                 return newest.Key;
             }
         }
@@ -89,13 +89,13 @@ namespace Caching
         /// Retrieve the key of the last used entry in the cache.
         /// </summary>
         /// <returns>String containing the key.</returns>
-        public string LastUsed()
+        public T1 LastUsed()
         {
-            if (_Cache == null || _Cache.Count < 1) return null;
+            if (_Cache == null || _Cache.Count < 1) throw new KeyNotFoundException();
 
             lock (_CacheLock)
             {
-                KeyValuePair<string, DataNode<T>> lastUsed = _Cache.Where(x => x.Value.LastUsed != null).OrderBy(x => x.Value.LastUsed).Last();
+                KeyValuePair<T1, DataNode<T2>> lastUsed = _Cache.Where(x => x.Value.LastUsed != null).OrderBy(x => x.Value.LastUsed).Last();
                 return lastUsed.Key; 
             }
         }
@@ -104,13 +104,13 @@ namespace Caching
         /// Retrieve the key of the first used entry in the cache.
         /// </summary>
         /// <returns>String containing the key.</returns>
-        public string FirstUsed()
+        public T1 FirstUsed()
         {
-            if (_Cache == null || _Cache.Count < 1) return null;
+            if (_Cache == null || _Cache.Count < 1) throw new KeyNotFoundException();
 
             lock (_CacheLock)
             {
-                KeyValuePair<string, DataNode<T>> firstUsed = _Cache.Where(x => x.Value.LastUsed != null).OrderBy(x => x.Value.LastUsed).First();
+                KeyValuePair<T1, DataNode<T2>> firstUsed = _Cache.Where(x => x.Value.LastUsed != null).OrderBy(x => x.Value.LastUsed).First();
                 return firstUsed.Key;
             }
         }
@@ -122,7 +122,7 @@ namespace Caching
         {
             lock (_CacheLock)
             {
-                _Cache = new Dictionary<string, DataNode<T>>();
+                _Cache = new Dictionary<T1, DataNode<T2>>();
                 return;
             }
         }
@@ -132,15 +132,15 @@ namespace Caching
         /// </summary>
         /// <param name="key">The key associated with the data you wish to retrieve.</param>
         /// <returns>The object data associated with the key.</returns>
-        public T Get(string key)
+        public T2 Get(T1 key)
         {
-            if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
+            if (key == null) throw new ArgumentNullException(nameof(key));
 
             lock (_CacheLock)
             {
                 if (_Cache.ContainsKey(key))
                 {
-                    KeyValuePair<string, DataNode<T>> curr = _Cache.Where(x => x.Key.Equals(key)).First();
+                    KeyValuePair<T1, DataNode<T2>> curr = _Cache.Where(x => x.Key.Equals(key)).First();
 
                     // update LastUsed
                     _Cache.Remove(key);
@@ -163,15 +163,15 @@ namespace Caching
         /// <param name="key">The key associated with the data you wish to retrieve.</param>
         /// <param name="val">The value associated with the key.</param>
         /// <returns>True if key is found.</returns>
-        public bool TryGet(string key, out T val)
+        public bool TryGet(T1 key, out T2 val)
         {
-            if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
+            if (key == null) throw new ArgumentNullException(nameof(key));
 
             lock (_CacheLock)
             {
                 if (_Cache.ContainsKey(key))
                 {
-                    KeyValuePair<string, DataNode<T>> curr = _Cache.Where(x => x.Key.Equals(key)).First();
+                    KeyValuePair<T1, DataNode<T2>> curr = _Cache.Where(x => x.Key.Equals(key)).First();
 
                     // update LastUsed
                     _Cache.Remove(key);
@@ -184,7 +184,7 @@ namespace Caching
                 }
                 else
                 {
-                    val = default(T);
+                    val = default(T2);
                     return false;
                 }
             }
@@ -196,9 +196,9 @@ namespace Caching
         /// <param name="key">The key.</param>
         /// <param name="val">The value associated with the key.</param>
         /// <returns>Boolean indicating success.</returns>
-        public void AddReplace(string key, T val)
+        public void AddReplace(T1 key, T2 val)
         {
-            if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
+            if (key == null) throw new ArgumentNullException(nameof(key));
 
             lock (_CacheLock)
             {
@@ -212,7 +212,7 @@ namespace Caching
                     _Cache = _Cache.OrderBy(x => x.Value.LastUsed).Skip(_EvictCount).ToDictionary(x => x.Key, x => x.Value);
                 }
                  
-                DataNode<T> curr = new DataNode<T>(val);
+                DataNode<T2> curr = new DataNode<T2>(val);
                 _Cache.Add(key, curr);
                 return;
             }
@@ -222,9 +222,9 @@ namespace Caching
         /// Remove a key from the cache.
         /// </summary>
         /// <param name="key">The key.</param> 
-        public void Remove(string key)
+        public void Remove(T1 key)
         {
-            if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
+            if (key == null) throw new ArgumentNullException(nameof(key));
 
             lock (_CacheLock)
             {
@@ -241,11 +241,11 @@ namespace Caching
         /// Retrieve all keys in the cache.
         /// </summary>
         /// <returns>List of string.</returns>
-        public List<string> GetKeys()
+        public List<T1> GetKeys()
         {
             lock (_CacheLock)
             {
-                List<string> keys = new List<string>(_Cache.Keys);
+                List<T1> keys = new List<T1>(_Cache.Keys);
                 return keys;
             }
         }
