@@ -1,4 +1,8 @@
-# Simple FIFO and LRU Cache
+# Caching.dll
+
+Simple FIFO and LRU Cache
+
+As of release 1.2.1, Caching.dll is now targeted to both .NET Core 2.0 and .NET Framework 4.5.2
 
 [![][nuget-img]][nuget]
 
@@ -7,10 +11,11 @@
 
 The Caching library provides a simple implementation of a FIFO cache (first-in-first-out) and two LRU (least-recently-used) caches, one based on a dictionary and the second based on a BTree (CSharpTest.Net.Collections).  It is written in C# and is designed to be thread-safe.
 
-Two projects are included in the solution:
+Three projects are included in the solution:
 
 - Caching: the cache classes
-- CachingTest: a simple test client
+- TestNetFramework: a simple test client for .NET Framework 4.5.2
+- TestNetCore: a simple test client for .NET Core 2.0
 
 Three caches are included; the use case for each is also listed:
 

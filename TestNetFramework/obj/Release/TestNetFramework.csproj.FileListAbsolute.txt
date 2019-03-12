@@ -1,0 +1,11 @@
+C:\Code\Misc\CachingWithBtreeRetarget\TestNetFramework\bin\Release\CachingTest.exe.config
+C:\Code\Misc\CachingWithBtreeRetarget\TestNetFramework\bin\Release\CachingTest.exe
+C:\Code\Misc\CachingWithBtreeRetarget\TestNetFramework\bin\Release\CachingTest.pdb
+C:\Code\Misc\CachingWithBtreeRetarget\TestNetFramework\bin\Release\Caching.dll
+C:\Code\Misc\CachingWithBtreeRetarget\TestNetFramework\bin\Release\CSharpTest.Net.Collections.dll
+C:\Code\Misc\CachingWithBtreeRetarget\TestNetFramework\bin\Release\Caching.pdb
+C:\Code\Misc\CachingWithBtreeRetarget\TestNetFramework\obj\Release\TestNetFramework.csprojAssemblyReference.cache
+C:\Code\Misc\CachingWithBtreeRetarget\TestNetFramework\obj\Release\TestNetFramework.csproj.CoreCompileInputs.cache
+C:\Code\Misc\CachingWithBtreeRetarget\TestNetFramework\obj\Release\TestNetFramework.csproj.CopyComplete
+C:\Code\Misc\CachingWithBtreeRetarget\TestNetFramework\obj\Release\CachingTest.exe
+C:\Code\Misc\CachingWithBtreeRetarget\TestNetFramework\obj\Release\CachingTest.pdb
