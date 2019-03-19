@@ -2,15 +2,6 @@
   "version": 3,
   "targets": {
     ".NETCoreApp,Version=v2.2": {
-      "CSharpTest.Net.Collections/14.906.1403.1082": {
-        "type": "package",
-        "compile": {
-          "lib/net40/CSharpTest.Net.Collections.dll": {}
-        },
-        "runtime": {
-          "lib/net40/CSharpTest.Net.Collections.dll": {}
-        }
-      },
       "Microsoft.CSharp/4.5.0": {
         "type": "package",
         "compile": {
@@ -226,11 +217,10 @@
           "build/netstandard2.0/NETStandard.Library.targets": {}
         }
       },
-      "Caching.dll/1.2.1": {
+      "Caching.dll/1.3.1": {
         "type": "project",
         "framework": ".NETStandard,Version=v2.0",
         "dependencies": {
-          "CSharpTest.Net.Collections": "14.906.1403.1082",
           "Microsoft.CSharp": "4.5.0"
         },
         "compile": {
@@ -243,21 +233,6 @@
     }
   },
   "libraries": {
-    "CSharpTest.Net.Collections/14.906.1403.1082": {
-      "sha512": "31Pu0wcHG2c814AUVPSzyL/ijcfyvu4S524+uxOhx2d1dRiIJ9eMLLvRWUhhP7F0Q17cvQpnGnZk8+4DhdJPgg==",
-      "type": "package",
-      "path": "csharptest.net.collections/14.906.1403.1082",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "csharptest.net.collections.14.906.1403.1082.nupkg.sha512",
-        "csharptest.net.collections.nuspec",
-        "lib/net20/CSharpTest.Net.Collections.XML",
-        "lib/net20/CSharpTest.Net.Collections.dll",
-        "lib/net40/CSharpTest.Net.Collections.XML",
-        "lib/net40/CSharpTest.Net.Collections.dll"
-      ]
-    },
     "Microsoft.CSharp/4.5.0": {
       "sha512": "EGoBmf3Na2ppbhPePDE9PlX81r1HuOZH5twBrq7couJZiPTjUnD3648balerQJO6EJ8Sj+43+XuRwQ7r+3tE3w==",
       "type": "package",
@@ -794,7 +769,7 @@
         "netstandard.library.nuspec"
       ]
     },
-    "Caching.dll/1.2.1": {
+    "Caching.dll/1.3.1": {
       "type": "project",
       "path": "../Caching/Caching.csproj",
       "msbuildProject": "../Caching/Caching.csproj"
@@ -802,7 +777,7 @@
   },
   "projectFileDependencyGroups": {
     ".NETCoreApp,Version=v2.2": [
-      "Caching.dll >= 1.2.1",
+      "Caching.dll >= 1.3.1",
       "Microsoft.NETCore.App >= 2.2.0"
     ]
   },
@@ -813,11 +788,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Code\\Misc\\CachingWithBtreeRetarget\\TestNetCore\\TestNetCore.csproj",
+      "projectUniqueName": "C:\\code\\misc\\Caching\\TestNetCore\\TestNetCore.csproj",
       "projectName": "TestNetCore",
-      "projectPath": "C:\\Code\\Misc\\CachingWithBtreeRetarget\\TestNetCore\\TestNetCore.csproj",
+      "projectPath": "C:\\code\\misc\\Caching\\TestNetCore\\TestNetCore.csproj",
       "packagesPath": "C:\\Users\\joelc\\.nuget\\packages\\",
-      "outputPath": "C:\\Code\\Misc\\CachingWithBtreeRetarget\\TestNetCore\\obj\\",
+      "outputPath": "C:\\code\\misc\\Caching\\TestNetCore\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
@@ -836,8 +811,8 @@
       "frameworks": {
         "netcoreapp2.2": {
           "projectReferences": {
-            "C:\\Code\\Misc\\CachingWithBtreeRetarget\\Caching\\Caching.csproj": {
-              "projectPath": "C:\\Code\\Misc\\CachingWithBtreeRetarget\\Caching\\Caching.csproj"
+            "C:\\code\\misc\\Caching\\Caching\\Caching.csproj": {
+              "projectPath": "C:\\code\\misc\\Caching\\Caching\\Caching.csproj"
             }
           }
         }
@@ -865,17 +840,5 @@
         "warn": true
       }
     }
-  },
-  "logs": [
-    {
-      "code": "NU1701",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "Package 'CSharpTest.Net.Collections 14.906.1403.1082' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.2'. This package may not be fully compatible with your project.",
-      "libraryId": "CSharpTest.Net.Collections",
-      "targetGraphs": [
-        ".NETCoreApp,Version=v2.2"
-      ]
-    }
-  ]
+  }
 }

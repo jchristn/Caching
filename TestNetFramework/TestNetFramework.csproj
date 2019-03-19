@@ -43,7 +43,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.LRUCacheBTreeTest.cs" />
     <Compile Include="Program.Utilities.cs" />
     <Compile Include="Program.LRUCacheTest.cs" />
     <Compile Include="Program.FIFOCacheTest.cs" />

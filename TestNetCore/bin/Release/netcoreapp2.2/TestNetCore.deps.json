@@ -1,31 +1,22 @@
 {
   "runtimeTarget": {
     "name": ".NETCoreApp,Version=v2.2",
-    "signature": "1b378ed4e3a3e4ee7d406db82557a8452e321588"
+    "signature": "ddfaeae436e140dd5647a8209cb2004484674069"
   },
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v2.2": {
       "TestNetCore/1.0.0": {
         "dependencies": {
-          "Caching.dll": "1.2.1"
+          "Caching.dll": "1.3.1"
         },
         "runtime": {
           "TestNetCore.dll": {}
         }
       },
-      "CSharpTest.Net.Collections/14.906.1403.1082": {
-        "runtime": {
-          "lib/net40/CSharpTest.Net.Collections.dll": {
-            "assemblyVersion": "14.906.1403.1082",
-            "fileVersion": "14.906.1403.1082"
-          }
-        }
-      },
       "Microsoft.CSharp/4.5.0": {},
-      "Caching.dll/1.2.1": {
+      "Caching.dll/1.3.1": {
         "dependencies": {
-          "CSharpTest.Net.Collections": "14.906.1403.1082",
           "Microsoft.CSharp": "4.5.0"
         },
         "runtime": {
@@ -40,13 +31,6 @@
       "serviceable": false,
       "sha512": ""
     },
-    "CSharpTest.Net.Collections/14.906.1403.1082": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-31Pu0wcHG2c814AUVPSzyL/ijcfyvu4S524+uxOhx2d1dRiIJ9eMLLvRWUhhP7F0Q17cvQpnGnZk8+4DhdJPgg==",
-      "path": "csharptest.net.collections/14.906.1403.1082",
-      "hashPath": "csharptest.net.collections.14.906.1403.1082.nupkg.sha512"
-    },
     "Microsoft.CSharp/4.5.0": {
       "type": "package",
       "serviceable": true,
@@ -54,7 +38,7 @@
       "path": "microsoft.csharp/4.5.0",
       "hashPath": "microsoft.csharp.4.5.0.nupkg.sha512"
     },
-    "Caching.dll/1.2.1": {
+    "Caching.dll/1.3.1": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

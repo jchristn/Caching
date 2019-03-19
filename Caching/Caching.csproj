@@ -4,7 +4,7 @@
     <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>Caching.dll</PackageId>
-    <Version>1.2.1</Version>
+    <Version>1.3.1</Version>
     <Authors>Joel Christner</Authors>
     <Description>Simple C# caching library including a FIFO and LRU cache</Description>
     <Copyright>(c)2019 Joel Christner</Copyright>
@@ -12,11 +12,13 @@
     <RepositoryUrl>https://github.com/jchristn/caching</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
     <PackageLicenseUrl>https://github.com/jchristn/Caching/blob/master/LICENSE.txt</PackageLicenseUrl>
-    <PackageReleaseNotes>Retarget to .NET Core 2.0 and .NET Framework 4.5.2</PackageReleaseNotes>
+    <PackageReleaseNotes>Retarget to .NET Core 2.0 and .NET Framework 4.5.2, remove CSharpTest.Net.Collections (BTree support) due to licensing and compatibility with .NET Core 2.0</PackageReleaseNotes>
+    <AssemblyVersion>1.3.1.0</AssemblyVersion>
+    <FileVersion>1.3.1.0</FileVersion>
+    <PackageTags>fifo lru cache caching least recently used first in first out simple</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CSharpTest.Net.Collections" Version="14.906.1403.1082" />
     <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
   </ItemGroup>
 

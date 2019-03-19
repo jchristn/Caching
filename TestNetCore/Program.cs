@@ -17,8 +17,7 @@ namespace TestNetCore
                 Console.WriteLine("-------------------------------------------------------------------------------");
                 Console.WriteLine("Select which cache you wish to test");
                 Console.WriteLine("  fifo");
-                Console.WriteLine("  lru");
-                Console.WriteLine("  lrubtree");
+                Console.WriteLine("  lru"); 
                 Console.WriteLine("");
                 Console.Write("Selection > ");
                 string userInput = Console.ReadLine();
@@ -35,12 +34,7 @@ namespace TestNetCore
                         LRUCacheTest();
                         runForever = false;
                         break;
-
-                    case "lrubtree":
-                        LRUCacheBTreeTest();
-                        runForever = false;
-                        break;
-
+                         
                     default:
                         continue;
                 }

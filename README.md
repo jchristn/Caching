@@ -9,19 +9,13 @@ As of release 1.2.1, Caching.dll is now targeted to both .NET Core 2.0 and .NET 
 [nuget]:     https://www.nuget.org/packages/Caching.dll/
 [nuget-img]: https://badge.fury.io/nu/Object.svg
 
-The Caching library provides a simple implementation of a FIFO cache (first-in-first-out) and two LRU (least-recently-used) caches, one based on a dictionary and the second based on a BTree (CSharpTest.Net.Collections).  It is written in C# and is designed to be thread-safe.
+The Caching library provides a simple implementation of a FIFO cache (first-in-first-out) and an LRU (least-recently-used) cache.  It is written in C# and is designed to be thread-safe.
 
 Three projects are included in the solution:
 
 - Caching: the cache classes
 - TestNetFramework: a simple test client for .NET Framework 4.5.2
 - TestNetCore: a simple test client for .NET Core 2.0
-
-Three caches are included; the use case for each is also listed:
-
-- FIFOCache - First-in, first-out cache using a dictionary internally
-- LRUCache - Least-recently used cache with a dictionary internally 
-- LRUCacheBTree - uses a BTree (from CSharpTest.Net.Collections), suitable for larger cache sizes
  
 ## Usage
 
@@ -39,8 +33,7 @@ class Person
 }
 
 FIFOCache<string, Person> cache = new FIFOCache<string, Person>(capacity, evictCount, debug);
-LRUCache<string, Person> cache = new LRUCache<string, Person>(capacity, evictCount, debug)
-LRUCacheBTree<string, Person> cache = new LRUCacheBTree<string, Person>(capacity, evictCount, debug);
+LRUCache<string, Person> cache = new LRUCache<string, Person>(capacity, evictCount, debug) 
 
 // T1 is the type of the key
 // T2 is the type of the value
