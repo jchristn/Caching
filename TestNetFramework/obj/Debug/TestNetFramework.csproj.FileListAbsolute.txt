@@ -9,3 +9,13 @@ C:\Code\Misc\CachingWithBtreeRetarget\TestNetFramework\obj\Debug\TestNetFramewor
 C:\Code\Misc\CachingWithBtreeRetarget\TestNetFramework\obj\Debug\TestNetFramework.csproj.CopyComplete
 C:\Code\Misc\CachingWithBtreeRetarget\TestNetFramework\obj\Debug\CachingTest.exe
 C:\Code\Misc\CachingWithBtreeRetarget\TestNetFramework\obj\Debug\CachingTest.pdb
+C:\Code\Misc\Caching\TestNetFramework\bin\Debug\CachingTest.exe.config
+C:\Code\Misc\Caching\TestNetFramework\bin\Debug\CachingTest.exe
+C:\Code\Misc\Caching\TestNetFramework\bin\Debug\CachingTest.pdb
+C:\Code\Misc\Caching\TestNetFramework\bin\Debug\Caching.dll
+C:\Code\Misc\Caching\TestNetFramework\bin\Debug\Caching.pdb
+C:\Code\Misc\Caching\TestNetFramework\obj\Debug\TestNetFramework.csprojAssemblyReference.cache
+C:\Code\Misc\Caching\TestNetFramework\obj\Debug\TestNetFramework.csproj.CoreCompileInputs.cache
+C:\Code\Misc\Caching\TestNetFramework\obj\Debug\TestNetFramework.csproj.CopyComplete
+C:\Code\Misc\Caching\TestNetFramework\obj\Debug\CachingTest.exe
+C:\Code\Misc\Caching\TestNetFramework\obj\Debug\CachingTest.pdb

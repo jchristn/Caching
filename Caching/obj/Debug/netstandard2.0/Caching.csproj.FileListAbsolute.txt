@@ -7,3 +7,12 @@ C:\Code\Misc\CachingWithBtreeRetarget\Caching\obj\Debug\netstandard2.0\Caching.A
 C:\Code\Misc\CachingWithBtreeRetarget\Caching\obj\Debug\netstandard2.0\Caching.AssemblyInfo.cs
 C:\Code\Misc\CachingWithBtreeRetarget\Caching\obj\Debug\netstandard2.0\Caching.dll
 C:\Code\Misc\CachingWithBtreeRetarget\Caching\obj\Debug\netstandard2.0\Caching.pdb
+C:\Code\Misc\Caching\Caching\bin\Debug\netstandard2.0\Caching.deps.json
+C:\Code\Misc\Caching\Caching\bin\Debug\netstandard2.0\Caching.dll
+C:\Code\Misc\Caching\Caching\bin\Debug\netstandard2.0\Caching.pdb
+C:\Code\Misc\Caching\Caching\obj\Debug\netstandard2.0\Caching.csprojAssemblyReference.cache
+C:\Code\Misc\Caching\Caching\obj\Debug\netstandard2.0\Caching.csproj.CoreCompileInputs.cache
+C:\Code\Misc\Caching\Caching\obj\Debug\netstandard2.0\Caching.AssemblyInfoInputs.cache
+C:\Code\Misc\Caching\Caching\obj\Debug\netstandard2.0\Caching.AssemblyInfo.cs
+C:\Code\Misc\Caching\Caching\obj\Debug\netstandard2.0\Caching.dll
+C:\Code\Misc\Caching\Caching\obj\Debug\netstandard2.0\Caching.pdb
