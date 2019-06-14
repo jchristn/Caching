@@ -1,0 +1,12 @@
+C:\Code\Misc\Caching\Test\bin\Debug\net452\Test.exe.config
+C:\Code\Misc\Caching\Test\bin\Debug\net452\Test.exe
+C:\Code\Misc\Caching\Test\bin\Debug\net452\Test.pdb
+C:\Code\Misc\Caching\Test\bin\Debug\net452\Caching.dll
+C:\Code\Misc\Caching\Test\bin\Debug\net452\Caching.pdb
+C:\Code\Misc\Caching\Test\obj\Debug\net452\Test.csprojAssemblyReference.cache
+C:\Code\Misc\Caching\Test\obj\Debug\net452\Test.csproj.CoreCompileInputs.cache
+C:\Code\Misc\Caching\Test\obj\Debug\net452\Test.AssemblyInfoInputs.cache
+C:\Code\Misc\Caching\Test\obj\Debug\net452\Test.AssemblyInfo.cs
+C:\Code\Misc\Caching\Test\obj\Debug\net452\Test.csproj.CopyComplete
+C:\Code\Misc\Caching\Test\obj\Debug\net452\Test.exe
+C:\Code\Misc\Caching\Test\obj\Debug\net452\Test.pdb

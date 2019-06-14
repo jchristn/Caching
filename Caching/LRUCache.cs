@@ -191,6 +191,26 @@ namespace Caching
         }
 
         /// <summary>
+        /// See if a key exists in the cache.
+        /// </summary>
+        /// <param name="key">The key of the cached items.</param>
+        /// <returns>True if cached.</returns>
+        public bool Contains(T1 key)
+        {
+            if (key == null) throw new ArgumentNullException(nameof(key));
+
+            lock (_CacheLock)
+            {
+                if (_Cache.ContainsKey(key))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Add or replace a key's value in the cache.
         /// </summary>
         /// <param name="key">The key.</param>
