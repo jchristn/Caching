@@ -8,14 +8,14 @@
     ".NETCoreApp,Version=v2.2": {
       "Test/1.0.0": {
         "dependencies": {
-          "Caching.dll": "1.3.3"
+          "Caching.dll": "1.3.4"
         },
         "runtime": {
           "Test.dll": {}
         }
       },
       "Microsoft.CSharp/4.5.0": {},
-      "Caching.dll/1.3.3": {
+      "Caching.dll/1.3.4": {
         "dependencies": {
           "Microsoft.CSharp": "4.5.0"
         },
@@ -38,7 +38,7 @@
       "path": "microsoft.csharp/4.5.0",
       "hashPath": "microsoft.csharp.4.5.0.nupkg.sha512"
     },
-    "Caching.dll/1.3.3": {
+    "Caching.dll/1.3.4": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

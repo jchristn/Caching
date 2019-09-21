@@ -1,9 +1,7 @@
 # Caching.dll
 
-Simple FIFO and LRU Cache
-
-As of release 1.2.1, Caching.dll is now targeted to both .NET Core 2.0 and .NET Framework 4.5.2
-
+Simple, fast, effective FIFO and LRU Cache.
+ 
 [![][nuget-img]][nuget]
 
 [nuget]:     https://www.nuget.org/packages/Caching.dll/

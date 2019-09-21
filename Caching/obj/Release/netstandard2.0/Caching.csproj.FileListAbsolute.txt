@@ -15,3 +15,4 @@ C:\code\misc\Caching\Caching\obj\Release\netstandard2.0\Caching.AssemblyInfoInpu
 C:\code\misc\Caching\Caching\obj\Release\netstandard2.0\Caching.AssemblyInfo.cs
 C:\code\misc\Caching\Caching\obj\Release\netstandard2.0\Caching.dll
 C:\code\misc\Caching\Caching\obj\Release\netstandard2.0\Caching.pdb
+C:\Code\Misc\Caching\Caching\bin\Release\netstandard2.0\Caching.xml
