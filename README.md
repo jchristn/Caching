@@ -15,12 +15,12 @@ Three projects are included in the solution:
 ## Usage
 
 Add reference to the Caching DLL and include the Caching namespace:
-```
+```csharp
 using Caching;
 ```
 
 Initialize the desired cache:
-```
+```csharp
 class Person
 {
   public string FirstName;
@@ -38,28 +38,33 @@ LRUCache<string, Person> cache = new LRUCache<string, Person>(capacity, evictCou
 ```
 
 Add an item to the cache:
-```
+```csharp
 cache.AddReplace(key, data);
 // key (T1) is a unique identifier
 // data (T2) is whatever data you like
 ```
 
 Get an item from the cache:
-```
+```csharp
 Person data = cache.Get(key);
 // throws KeyNotFoundException if not present
 
-if (!cache.TryGet(key, out data)) { // handle errors }
-else { // use your data! }
+if (!cache.TryGet(key, out data)) 
+{ 
+  // handle errors 
+}
+else { 
+  // use your data! 
+}
 ```
 
 Remove an item from the cache:
-```
+```csharp
 cache.Remove(key);
 ```
 
 Other helpful methods:
-```
+```csharp
 T1 oldestKey = cache.Oldest();
 T1 newestKey = cache.Newest();
 T1 lastUsed = cache.LastUsed();  	// only on LRUCache
