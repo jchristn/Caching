@@ -11,36 +11,46 @@ namespace Caching
     /// <summary>
     /// FIFO cache that internally uses tuples.
     /// </summary>
-    public class FIFOCache<T1, T2>
+    public class FIFOCache<T1, T2> : IDisposable
     {
-        /// <summary>
-        /// Enable or disable console debugging.
-        /// </summary>
-        public bool Debug;
+        #region Private-Members
 
-        private int _Capacity;
-        private int _EvictCount;
+        private int _Capacity = 0;
+        private int _EvictCount = 0;
         private readonly object _CacheLock = new object();
         private Dictionary<T1, DataNode<T2>> _Cache;
+
+        #endregion
+
+        #region Constructors-and-Factories
 
         /// <summary>
         /// Initialize the cache.
         /// </summary>
         /// <param name="capacity">Maximum number of entries.</param>
         /// <param name="evictCount">Number to evict when capacity is reached.</param>
-        /// <param name="debug">Enable or disable console debugging.</param>
-        public FIFOCache(int capacity, int evictCount, bool debug)
+        public FIFOCache(int capacity, int evictCount)
         {
+            if (capacity < 1) throw new ArgumentOutOfRangeException(nameof(capacity));
+            if (evictCount < 1) throw new ArgumentOutOfRangeException(nameof(evictCount));
+            if (evictCount > capacity) throw new ArgumentOutOfRangeException(nameof(evictCount));
+
             _Capacity = capacity;
             _EvictCount = evictCount;
-            _Cache = new Dictionary<T1, DataNode<T2>>();
+            _Cache = new Dictionary<T1, DataNode<T2>>(); 
+        }
 
-            Debug = debug;
+        #endregion
 
-            if (_EvictCount > _Capacity)
-            {
-                throw new ArgumentException("Evict count must be less than or equal to capacity.");
-            }
+        #region Public-Methods
+
+        /// <summary>
+        /// Dispose of the object.  Do not use after disposal.
+        /// </summary>
+        public void Dispose()
+        { 
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
@@ -238,5 +248,28 @@ namespace Caching
                 return keys;
             }
         }
+
+        #endregion
+
+        #region Private-Methods
+
+        /// <summary>
+        /// Dispose of the object.  Do not use after disposal.
+        /// </summary>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                lock (_CacheLock)
+                {
+                    _Cache = null;
+                }
+                 
+                _Capacity = 0;
+                _EvictCount = 0;
+            }
+        }
+
+        #endregion
     }
 }

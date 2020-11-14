@@ -5,12 +5,6 @@ Simple, fast, effective FIFO and LRU Cache.
  [![NuGet Version](https://img.shields.io/nuget/v/Caching.dll.svg?style=flat)](https://www.nuget.org/packages/Caching.dll/) [![NuGet](https://img.shields.io/nuget/dt/Caching.dll.svg)](https://www.nuget.org/packages/Caching.dll) 
 
 The Caching library provides a simple implementation of a FIFO cache (first-in-first-out) and an LRU (least-recently-used) cache.  It is written in C# and is designed to be thread-safe.
-
-Three projects are included in the solution:
-
-- Caching: the cache classes
-- TestNetFramework: a simple test client for .NET Framework 4.5.2
-- TestNetCore: a simple test client for .NET Core 2.0
  
 ## Usage
 
@@ -27,8 +21,8 @@ class Person
   public string LastName;
 }
 
-FIFOCache<string, Person> cache = new FIFOCache<string, Person>(capacity, evictCount, debug);
-LRUCache<string, Person> cache = new LRUCache<string, Person>(capacity, evictCount, debug) 
+FIFOCache<string, Person> cache = new FIFOCache<string, Person>(capacity, evictCount);
+LRUCache<string, Person> cache = new LRUCache<string, Person>(capacity, evictCount) 
 
 // T1 is the type of the key
 // T2 is the type of the value

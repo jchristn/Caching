@@ -11,36 +11,46 @@ namespace Caching
     /// <summary>
     /// LRU cache that internally uses tuples.  T1 is the type of the key, and T2 is the type of the value.
     /// </summary>
-    public class LRUCache<T1, T2>
+    public class LRUCache<T1, T2> : IDisposable
     {
-        /// <summary>
-        /// Enable or disable console debugging.
-        /// </summary>
-        public bool Debug;
+        #region Private-Members
 
-        private int _Capacity;
-        private int _EvictCount;
+        private int _Capacity = 0;
+        private int _EvictCount = 0;
         private readonly object _CacheLock = new object();
-        private Dictionary<T1, DataNode<T2>> _Cache; 
+        private Dictionary<T1, DataNode<T2>> _Cache;
+
+        #endregion
+
+        #region Constructors-and-Factories
 
         /// <summary>
         /// Initialize the cache.
         /// </summary>
         /// <param name="capacity">Maximum number of entries.</param>
         /// <param name="evictCount">Number to evict when capacity is reached.</param>
-        /// <param name="debug">Enable or disable console debugging.</param>
-        public LRUCache(int capacity, int evictCount, bool debug)
+        public LRUCache(int capacity, int evictCount)
         {
+            if (capacity < 1) throw new ArgumentOutOfRangeException(nameof(capacity));
+            if (evictCount < 1) throw new ArgumentOutOfRangeException(nameof(evictCount));
+            if (evictCount > capacity) throw new ArgumentOutOfRangeException(nameof(evictCount));
+
             _Capacity = capacity;
             _EvictCount = evictCount;
-            Debug = debug;
             _Cache = new Dictionary<T1, DataNode<T2>>();
-            // _Cache = new List<Tuple<string, T, DateTime, DateTime>>();
+        }
 
-            if (_EvictCount > _Capacity)
-            {
-                throw new ArgumentException("Evict count must be less than or equal to capacity.");
-            }
+        #endregion
+
+        #region Public-Methods
+
+        /// <summary>
+        /// Dispose of the object.  Do not use after disposal.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
@@ -50,7 +60,7 @@ namespace Caching
         public int Count()
         {
             lock (_CacheLock)
-            { 
+            {
                 return _Cache.Count;
             }
         }
@@ -96,7 +106,7 @@ namespace Caching
             lock (_CacheLock)
             {
                 KeyValuePair<T1, DataNode<T2>> lastUsed = _Cache.Where(x => x.Value.LastUsed != null).OrderBy(x => x.Value.LastUsed).Last();
-                return lastUsed.Key; 
+                return lastUsed.Key;
             }
         }
 
@@ -231,7 +241,7 @@ namespace Caching
                 {
                     _Cache = _Cache.OrderBy(x => x.Value.LastUsed).Skip(_EvictCount).ToDictionary(x => x.Key, x => x.Value);
                 }
-                 
+
                 DataNode<T2> curr = new DataNode<T2>(val);
                 _Cache.Add(key, curr);
                 return;
@@ -253,7 +263,7 @@ namespace Caching
                     _Cache.Remove(key);
                 }
 
-                return; 
+                return;
             }
         }
 
@@ -269,5 +279,28 @@ namespace Caching
                 return keys;
             }
         }
+
+        #endregion
+
+        #region Private-Methods
+
+        /// <summary>
+        /// Dispose of the object.  Do not use after disposal.
+        /// </summary>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                lock (_CacheLock)
+                {
+                    _Cache = null;
+                }
+
+                _Capacity = 0;
+                _EvictCount = 0;
+            }
+        }
+
+        #endregion
     }
 }

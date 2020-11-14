@@ -17,13 +17,12 @@ namespace TestNetCore
                 bool runForever = true;
                 int capacity = 2048;
                 int evictCount = 512;
-                int loadCount = 256;
-                bool cacheDebug = true;
+                int loadCount = 256; 
                 int dataLen = 4096;
                 byte[] data = InitByteArray(dataLen, 0x00);
                 byte[] keyData;
 
-                FIFOCache<string, byte[]> cache = new FIFOCache<string, byte[]>(capacity, evictCount, cacheDebug);
+                FIFOCache<string, byte[]> cache = new FIFOCache<string, byte[]>(capacity, evictCount);
                 Thread.Sleep(250);
 
                 while (runForever)
@@ -37,7 +36,6 @@ namespace TestNetCore
                     Console.WriteLine("  count            Get the count of cached entries");
                     Console.WriteLine("  clear            Clear the cache");
                     Console.WriteLine("  quit             Exit the application");
-                    Console.WriteLine("  debug            Flip the cache debug flag (currently " + cache.Debug + ")");
 
                     Console.WriteLine("");
                     Console.Write("Command > ");
@@ -90,10 +88,6 @@ namespace TestNetCore
                         case "q":
                         case "quit":
                             runForever = false;
-                            break;
-
-                        case "debug":
-                            cache.Debug = !cache.Debug;
                             break;
 
                         default:
