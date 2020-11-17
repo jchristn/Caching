@@ -9,12 +9,13 @@
             FIFO cache that internally uses tuples.
             </summary>
         </member>
-        <member name="M:Caching.FIFOCache`2.#ctor(System.Int32,System.Int32)">
+        <member name="M:Caching.FIFOCache`2.#ctor(System.Int32,System.Int32,System.Boolean)">
             <summary>
             Initialize the cache.
             </summary>
             <param name="capacity">Maximum number of entries.</param>
             <param name="evictCount">Number to evict when capacity is reached.</param>
+            <param name="debug">Deprecated.</param>
         </member>
         <member name="M:Caching.FIFOCache`2.Dispose">
             <summary>
@@ -95,12 +96,13 @@
             LRU cache that internally uses tuples.  T1 is the type of the key, and T2 is the type of the value.
             </summary>
         </member>
-        <member name="M:Caching.LRUCache`2.#ctor(System.Int32,System.Int32)">
+        <member name="M:Caching.LRUCache`2.#ctor(System.Int32,System.Int32,System.Boolean)">
             <summary>
             Initialize the cache.
             </summary>
             <param name="capacity">Maximum number of entries.</param>
             <param name="evictCount">Number to evict when capacity is reached.</param>
+            <param name="debug">Deprecated.</param>
         </member>
         <member name="M:Caching.LRUCache`2.Dispose">
             <summary>

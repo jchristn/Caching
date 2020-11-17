@@ -29,7 +29,8 @@ namespace Caching
         /// </summary>
         /// <param name="capacity">Maximum number of entries.</param>
         /// <param name="evictCount">Number to evict when capacity is reached.</param>
-        public FIFOCache(int capacity, int evictCount)
+        /// <param name="debug">Deprecated.</param>
+        public FIFOCache(int capacity, int evictCount, bool debug = false)
         {
             if (capacity < 1) throw new ArgumentOutOfRangeException(nameof(capacity));
             if (evictCount < 1) throw new ArgumentOutOfRangeException(nameof(evictCount));

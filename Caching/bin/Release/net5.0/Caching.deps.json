@@ -6,7 +6,7 @@
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v5.0": {
-      "Caching/1.3.5": {
+      "Caching/1.3.5.1": {
         "dependencies": {
           "Microsoft.CSharp": "4.7.0"
         },
@@ -18,7 +18,7 @@
     }
   },
   "libraries": {
-    "Caching/1.3.5": {
+    "Caching/1.3.5.1": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

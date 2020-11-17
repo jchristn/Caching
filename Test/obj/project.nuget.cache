@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "P7uG9yphrS/qAPmmSk/d4fzzG+pQ/pM+FcVF+cbJwwTzlUYPRJ6+Ps0dpXVRl6YkfOC/BzSr69fj3ZUeHO5C9A==",
+  "dgSpecHash": "/VNB0GrpYv/ggEeQGMWYdNPIjGGPGAh4skIzGeh1WZLFIZ0g77UA+oIAn9sIk+N2oNuQ78haXC+vtGEsOJTPrA==",
   "success": true,
-  "projectFilePath": "C:\\code\\Misc\\Caching\\Test\\Test.csproj",
+  "projectFilePath": "C:\\code\\misc\\Caching\\Test\\Test.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\joelc\\.nuget\\packages\\microsoft.csharp\\4.7.0\\microsoft.csharp.4.7.0.nupkg.sha512"
   ],

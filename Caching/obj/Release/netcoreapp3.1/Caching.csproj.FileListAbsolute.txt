@@ -1,9 +1,8 @@
-C:\code\Misc\Caching\Caching\bin\Release\netcoreapp3.1\Caching.deps.json
-C:\code\Misc\Caching\Caching\bin\Release\netcoreapp3.1\Caching.dll
-C:\code\Misc\Caching\Caching\bin\Release\netcoreapp3.1\Caching.pdb
-C:\code\Misc\Caching\Caching\obj\Release\netcoreapp3.1\Caching.csprojAssemblyReference.cache
-C:\code\Misc\Caching\Caching\obj\Release\netcoreapp3.1\Caching.AssemblyInfoInputs.cache
-C:\code\Misc\Caching\Caching\obj\Release\netcoreapp3.1\Caching.AssemblyInfo.cs
-C:\code\Misc\Caching\Caching\obj\Release\netcoreapp3.1\Caching.csproj.CoreCompileInputs.cache
-C:\code\Misc\Caching\Caching\obj\Release\netcoreapp3.1\Caching.dll
-C:\code\Misc\Caching\Caching\obj\Release\netcoreapp3.1\Caching.pdb
+C:\code\misc\Caching\Caching\bin\Release\netcoreapp3.1\Caching.deps.json
+C:\code\misc\Caching\Caching\bin\Release\netcoreapp3.1\Caching.dll
+C:\code\misc\Caching\Caching\bin\Release\netcoreapp3.1\Caching.pdb
+C:\code\misc\Caching\Caching\obj\Release\netcoreapp3.1\Caching.AssemblyInfoInputs.cache
+C:\code\misc\Caching\Caching\obj\Release\netcoreapp3.1\Caching.AssemblyInfo.cs
+C:\code\misc\Caching\Caching\obj\Release\netcoreapp3.1\Caching.csproj.CoreCompileInputs.cache
+C:\code\misc\Caching\Caching\obj\Release\netcoreapp3.1\Caching.dll
+C:\code\misc\Caching\Caching\obj\Release\netcoreapp3.1\Caching.pdb
