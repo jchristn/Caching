@@ -16,3 +16,4 @@ C:\code\Misc\Caching\Caching\obj\Debug\netstandard2.0\Caching.AssemblyInfo.cs
 C:\code\Misc\Caching\Caching\obj\Debug\netstandard2.0\Caching.csproj.CoreCompileInputs.cache
 C:\code\Misc\Caching\Caching\obj\Debug\netstandard2.0\Caching.dll
 C:\code\Misc\Caching\Caching\obj\Debug\netstandard2.0\Caching.pdb
+C:\code\misc\Caching\Caching\bin\Debug\netstandard2.0\Caching.xml

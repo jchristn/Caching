@@ -40,6 +40,12 @@
             </summary>
             <returns>String containing the key.</returns>
         </member>
+        <member name="M:Caching.FIFOCache`2.All">
+            <summary>
+            Retrieve all entries from the cache.
+            </summary>
+            <returns>Dictionary.</returns>
+        </member>
         <member name="M:Caching.FIFOCache`2.Clear">
             <summary>
             Clear the cache.
@@ -126,6 +132,12 @@
             Retrieve the key of the newest entry in the cache.
             </summary>
             <returns>String containing the key.</returns>
+        </member>
+        <member name="M:Caching.LRUCache`2.All">
+            <summary>
+            Retrieve all entries from the cache.
+            </summary>
+            <returns>Dictionary.</returns>
         </member>
         <member name="M:Caching.LRUCache`2.LastUsed">
             <summary>

@@ -30,6 +30,7 @@ namespace TestNetCore
                     Console.WriteLine("-------------------------------------------------------------------------------");
                     Console.WriteLine("Available commands (FIFO Cache Test):");
                     Console.WriteLine("  get              Get entry by key");
+                    Console.WriteLine("  all              Get all entries");
                     Console.WriteLine("  load             Load " + loadCount + " new records");
                     Console.WriteLine("  oldest           Get the oldest entry");
                     Console.WriteLine("  newest           Get the newest entry");
@@ -50,6 +51,18 @@ namespace TestNetCore
                             if (String.IsNullOrEmpty(getKey)) break;
                             if (cache.TryGet(getKey, out keyData)) Console.WriteLine("Cache hit"); 
                             else Console.WriteLine("Cache miss"); 
+                            break;
+
+                        case "all":
+                            Dictionary<string, byte[]> dump = cache.All();
+                            if (dump != null && dump.Count > 0)
+                            {
+                                foreach (KeyValuePair<string, byte[]> entry in dump) Console.WriteLine(entry.Key + ": " + Encoding.UTF8.GetString(entry.Value));
+                            }
+                            else
+                            {
+                                Console.WriteLine("Empty");
+                            }
                             break;
 
                         case "load":

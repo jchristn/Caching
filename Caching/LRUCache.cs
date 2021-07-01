@@ -97,6 +97,28 @@ namespace Caching
         }
 
         /// <summary>
+        /// Retrieve all entries from the cache.
+        /// </summary>
+        /// <returns>Dictionary.</returns>
+        public Dictionary<T1, T2> All()
+        {
+            Dictionary<T1, T2> ret = new Dictionary<T1, T2>();
+            Dictionary<T1, DataNode<T2>> dump = null;
+
+            lock (_CacheLock)
+            {
+                dump = new Dictionary<T1, DataNode<T2>>(_Cache);
+            }
+
+            foreach (KeyValuePair<T1, DataNode<T2>> cached in dump)
+            {
+                ret.Add(cached.Key, cached.Value.Data);
+            }
+
+            return ret;
+        }
+
+        /// <summary>
         /// Retrieve the key of the last used entry in the cache.
         /// </summary>
         /// <returns>String containing the key.</returns>

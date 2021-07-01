@@ -1,0 +1,16 @@
+C:\code\misc\Caching\Test\bin\Release\net452\Test.exe.config
+C:\code\misc\Caching\Test\bin\Release\net452\Test.exe
+C:\code\misc\Caching\Test\bin\Release\net452\Test.pdb
+C:\code\misc\Caching\Test\bin\Release\net452\Caching.dll
+C:\code\misc\Caching\Test\bin\Release\net452\Caching.pdb
+C:\code\misc\Caching\Test\obj\Release\net452\Test.csprojAssemblyReference.cache
+C:\code\misc\Caching\Test\obj\Release\net452\Test.AssemblyInfoInputs.cache
+C:\code\misc\Caching\Test\obj\Release\net452\Test.AssemblyInfo.cs
+C:\code\misc\Caching\Test\obj\Release\net452\Test.csproj.CoreCompileInputs.cache
+C:\code\misc\Caching\Test\obj\Release\net452\Test.csproj.CopyComplete
+C:\code\misc\Caching\Test\obj\Release\net452\Test.exe
+C:\code\misc\Caching\Test\obj\Release\net452\Test.pdb
+C:\code\misc\Caching\Test\bin\Release\net452\assets\icon.ico
+C:\code\misc\Caching\Test\bin\Release\net452\assets\icon.png
+C:\code\misc\Caching\Test\bin\Release\net452\Caching.xml
+C:\code\misc\Caching\Test\bin\Release\net452\LICENSE.md

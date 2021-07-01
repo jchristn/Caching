@@ -67,3 +67,8 @@ int numEntries = cache.Count();
 List<T1> keys = cache.GetKeys();
 cache.Clear();
 ```
+
+Retrieve all cached contents (while preserving the cache):
+````csharp
+Dictionary<T1, T2> dump = cache.All();
+```
