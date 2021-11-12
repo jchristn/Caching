@@ -15,8 +15,9 @@ C:\code\misc\Caching\Caching\obj\Release\net452\Caching.AssemblyInfo.cs
 C:\code\misc\Caching\Caching\obj\Release\net452\Caching.csproj.CoreCompileInputs.cache
 C:\code\misc\Caching\Caching\obj\Release\net452\Caching.dll
 C:\code\misc\Caching\Caching\obj\Release\net452\Caching.pdb
-C:\code\misc\Caching\Caching\obj\Release\net452\Caching.csprojAssemblyReference.cache
 C:\code\misc\Caching\Caching\bin\Release\net452\assets\icon.ico
 C:\code\misc\Caching\Caching\bin\Release\net452\assets\icon.png
 C:\code\misc\Caching\Caching\bin\Release\net452\Caching.xml
 C:\code\misc\Caching\Caching\bin\Release\net452\LICENSE.md
+C:\code\Misc\Caching\Caching\obj\Release\net452\Caching.csproj.AssemblyReference.cache
+C:\code\Misc\Caching\Caching\obj\Release\net452\Caching.GeneratedMSBuildEditorConfig.editorconfig

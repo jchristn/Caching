@@ -9,8 +9,8 @@ C:\code\misc\Caching\Caching\obj\Release\net5.0\Caching.csproj.CoreCompileInputs
 C:\code\misc\Caching\Caching\obj\Release\net5.0\Caching.dll
 C:\code\misc\Caching\Caching\obj\Release\net5.0\ref\Caching.dll
 C:\code\misc\Caching\Caching\obj\Release\net5.0\Caching.pdb
-C:\code\misc\Caching\Caching\obj\Release\net5.0\Caching.csprojAssemblyReference.cache
 C:\code\misc\Caching\Caching\bin\Release\net5.0\assets\icon.ico
 C:\code\misc\Caching\Caching\bin\Release\net5.0\assets\icon.png
 C:\code\misc\Caching\Caching\bin\Release\net5.0\Caching.xml
 C:\code\misc\Caching\Caching\bin\Release\net5.0\LICENSE.md
+C:\code\Misc\Caching\Caching\obj\Release\net5.0\Caching.csproj.AssemblyReference.cache

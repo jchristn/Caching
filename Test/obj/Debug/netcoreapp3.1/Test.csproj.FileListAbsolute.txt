@@ -6,7 +6,6 @@ C:\code\Misc\Caching\Test\bin\Debug\netcoreapp3.1\Test.dll
 C:\code\Misc\Caching\Test\bin\Debug\netcoreapp3.1\Test.pdb
 C:\code\Misc\Caching\Test\bin\Debug\netcoreapp3.1\Caching.dll
 C:\code\Misc\Caching\Test\bin\Debug\netcoreapp3.1\Caching.pdb
-C:\code\Misc\Caching\Test\obj\Debug\netcoreapp3.1\Test.csprojAssemblyReference.cache
 C:\code\Misc\Caching\Test\obj\Debug\netcoreapp3.1\Test.AssemblyInfoInputs.cache
 C:\code\Misc\Caching\Test\obj\Debug\netcoreapp3.1\Test.AssemblyInfo.cs
 C:\code\Misc\Caching\Test\obj\Debug\netcoreapp3.1\Test.csproj.CoreCompileInputs.cache
@@ -14,3 +13,9 @@ C:\code\Misc\Caching\Test\obj\Debug\netcoreapp3.1\Test.csproj.CopyComplete
 C:\code\Misc\Caching\Test\obj\Debug\netcoreapp3.1\Test.dll
 C:\code\Misc\Caching\Test\obj\Debug\netcoreapp3.1\Test.pdb
 C:\code\Misc\Caching\Test\obj\Debug\netcoreapp3.1\Test.genruntimeconfig.cache
+C:\code\Misc\Caching\Test\bin\Debug\netcoreapp3.1\assets\icon.ico
+C:\code\Misc\Caching\Test\bin\Debug\netcoreapp3.1\assets\icon.png
+C:\code\Misc\Caching\Test\bin\Debug\netcoreapp3.1\Caching.xml
+C:\code\Misc\Caching\Test\bin\Debug\netcoreapp3.1\LICENSE.md
+C:\code\Misc\Caching\Test\obj\Debug\netcoreapp3.1\Test.csproj.AssemblyReference.cache
+C:\code\Misc\Caching\Test\obj\Debug\netcoreapp3.1\Test.GeneratedMSBuildEditorConfig.editorconfig

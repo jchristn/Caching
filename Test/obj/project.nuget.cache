@@ -1,11 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "BALO9t23m9fH+5gzIrcP/Ybme3nds4GonCcexxJcQT3oxlqKuMydh70VCcvwwE9dmBbqPmHEioUOelfKPs2BPw==",
+  "dgSpecHash": "+8XdVqvYrsJjFaRexkQh3/0CwF2GC3+NBBmhbwyE1lSA7hFcokkLDwj7/+esBOe3yEk6286yJxSSw96VAYWfVA==",
   "success": true,
-  "projectFilePath": "C:\\code\\misc\\Caching\\Test\\Test.csproj",
+  "projectFilePath": "C:\\code\\Misc\\Caching\\Test\\Test.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\joelc\\.nuget\\packages\\microsoft.csharp\\4.7.0\\microsoft.csharp.4.7.0.nupkg.sha512",
-    "C:\\Users\\joelc\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\3.1.13\\microsoft.netcore.app.host.win-x64.3.1.13.nupkg.sha512"
+    "C:\\Users\\joelc\\.nuget\\packages\\microsoft.csharp\\4.7.0\\microsoft.csharp.4.7.0.nupkg.sha512"
   ],
   "logs": []
 }

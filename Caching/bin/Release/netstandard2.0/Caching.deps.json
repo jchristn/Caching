@@ -7,7 +7,7 @@
   "targets": {
     ".NETStandard,Version=v2.0": {},
     ".NETStandard,Version=v2.0/": {
-      "Caching/1.4.0": {
+      "Caching/1.4.0.1": {
         "dependencies": {
           "Microsoft.CSharp": "4.7.0",
           "NETStandard.Library": "2.0.3"
@@ -33,7 +33,7 @@
     }
   },
   "libraries": {
-    "Caching/1.4.0": {
+    "Caching/1.4.0.1": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

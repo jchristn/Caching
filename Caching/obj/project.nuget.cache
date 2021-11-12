@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "9xUBvfbGcR6ELAgqO3hLYUWYlpnZrPy0eTRpVQY9WdgqMtAPZoT1bHhsodt7umac/EtMjAyyDWh3Oq2g0ZAU0w==",
+  "dgSpecHash": "kbpUklmTe3gLrv6tR2Ll6aUw8alEhzbmIdN8Jn5qSpWKhET4ki17Z4y3Zpa8JSmttmVb8/3YoxIR1/g2Llno6w==",
   "success": true,
-  "projectFilePath": "C:\\code\\misc\\Caching\\Caching\\Caching.csproj",
+  "projectFilePath": "C:\\code\\Misc\\Caching\\Caching\\Caching.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\joelc\\.nuget\\packages\\microsoft.csharp\\4.7.0\\microsoft.csharp.4.7.0.nupkg.sha512",
     "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder\\microsoft.netcore.platforms\\1.1.0\\microsoft.netcore.platforms.1.1.0.nupkg.sha512",

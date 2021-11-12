@@ -10,9 +10,13 @@ C:\Code\Misc\CachingWithBtreeRetarget\Caching\obj\Debug\net452\Caching.dll
 C:\Code\Misc\CachingWithBtreeRetarget\Caching\obj\Debug\net452\Caching.pdb
 C:\code\Misc\Caching\Caching\bin\Debug\net452\Caching.dll
 C:\code\Misc\Caching\Caching\bin\Debug\net452\Caching.pdb
-C:\code\Misc\Caching\Caching\obj\Debug\net452\Caching.csprojAssemblyReference.cache
 C:\code\Misc\Caching\Caching\obj\Debug\net452\Caching.AssemblyInfoInputs.cache
 C:\code\Misc\Caching\Caching\obj\Debug\net452\Caching.AssemblyInfo.cs
 C:\code\Misc\Caching\Caching\obj\Debug\net452\Caching.csproj.CoreCompileInputs.cache
 C:\code\Misc\Caching\Caching\obj\Debug\net452\Caching.dll
 C:\code\Misc\Caching\Caching\obj\Debug\net452\Caching.pdb
+C:\code\Misc\Caching\Caching\bin\Debug\net452\assets\icon.ico
+C:\code\Misc\Caching\Caching\bin\Debug\net452\assets\icon.png
+C:\code\Misc\Caching\Caching\bin\Debug\net452\Caching.xml
+C:\code\Misc\Caching\Caching\bin\Debug\net452\LICENSE.md
+C:\code\Misc\Caching\Caching\obj\Debug\net452\Caching.GeneratedMSBuildEditorConfig.editorconfig

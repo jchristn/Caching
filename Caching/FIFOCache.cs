@@ -18,7 +18,7 @@ namespace Caching
         private int _Capacity = 0;
         private int _EvictCount = 0;
         private readonly object _CacheLock = new object();
-        private Dictionary<T1, DataNode<T2>> _Cache;
+        private Dictionary<T1, DataNode<T2>> _Cache = new Dictionary<T1, DataNode<T2>>();
 
         #endregion
 
@@ -76,7 +76,7 @@ namespace Caching
 
             lock (_CacheLock)
             {
-                KeyValuePair<T1, DataNode<T2>> oldest = _Cache.Where(x => x.Value.Added != null).OrderBy(x => x.Value.Added).First();
+                KeyValuePair<T1, DataNode<T2>> oldest = _Cache.OrderBy(x => x.Value.Added).First();
                 return oldest.Key;
             }
         }
@@ -91,7 +91,7 @@ namespace Caching
 
             lock (_CacheLock)
             {
-                KeyValuePair<T1, DataNode<T2>> newest = _Cache.Where(x => x.Value.Added != null).OrderBy(x => x.Value.Added).Last();
+                KeyValuePair<T1, DataNode<T2>> newest = _Cache.OrderBy(x => x.Value.Added).Last();
                 return newest.Key;
             }
         }

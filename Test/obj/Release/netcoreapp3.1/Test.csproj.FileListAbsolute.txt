@@ -6,7 +6,6 @@ C:\code\misc\Caching\Test\bin\Release\netcoreapp3.1\Test.dll
 C:\code\misc\Caching\Test\bin\Release\netcoreapp3.1\Test.pdb
 C:\code\misc\Caching\Test\bin\Release\netcoreapp3.1\Caching.dll
 C:\code\misc\Caching\Test\bin\Release\netcoreapp3.1\Caching.pdb
-C:\code\misc\Caching\Test\obj\Release\netcoreapp3.1\Test.csprojAssemblyReference.cache
 C:\code\misc\Caching\Test\obj\Release\netcoreapp3.1\Test.AssemblyInfoInputs.cache
 C:\code\misc\Caching\Test\obj\Release\netcoreapp3.1\Test.AssemblyInfo.cs
 C:\code\misc\Caching\Test\obj\Release\netcoreapp3.1\Test.csproj.CoreCompileInputs.cache
@@ -18,3 +17,5 @@ C:\code\misc\Caching\Test\bin\Release\netcoreapp3.1\assets\icon.ico
 C:\code\misc\Caching\Test\bin\Release\netcoreapp3.1\assets\icon.png
 C:\code\misc\Caching\Test\bin\Release\netcoreapp3.1\Caching.xml
 C:\code\misc\Caching\Test\bin\Release\netcoreapp3.1\LICENSE.md
+C:\code\Misc\Caching\Test\obj\Release\netcoreapp3.1\Test.csproj.AssemblyReference.cache
+C:\code\Misc\Caching\Test\obj\Release\netcoreapp3.1\Test.GeneratedMSBuildEditorConfig.editorconfig

@@ -5,9 +5,10 @@ C:\code\misc\Caching\Caching\bin\Release\netstandard2.1\LICENSE.md
 C:\code\misc\Caching\Caching\bin\Release\netstandard2.1\Caching.deps.json
 C:\code\misc\Caching\Caching\bin\Release\netstandard2.1\Caching.dll
 C:\code\misc\Caching\Caching\bin\Release\netstandard2.1\Caching.pdb
-C:\code\misc\Caching\Caching\obj\Release\netstandard2.1\Caching.csprojAssemblyReference.cache
 C:\code\misc\Caching\Caching\obj\Release\netstandard2.1\Caching.AssemblyInfoInputs.cache
 C:\code\misc\Caching\Caching\obj\Release\netstandard2.1\Caching.AssemblyInfo.cs
 C:\code\misc\Caching\Caching\obj\Release\netstandard2.1\Caching.csproj.CoreCompileInputs.cache
 C:\code\misc\Caching\Caching\obj\Release\netstandard2.1\Caching.dll
 C:\code\misc\Caching\Caching\obj\Release\netstandard2.1\Caching.pdb
+C:\code\Misc\Caching\Caching\obj\Release\netstandard2.1\Caching.csproj.AssemblyReference.cache
+C:\code\Misc\Caching\Caching\obj\Release\netstandard2.1\Caching.GeneratedMSBuildEditorConfig.editorconfig
