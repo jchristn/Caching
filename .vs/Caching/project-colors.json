@@ -1,0 +1,16 @@
+{
+  "Version": 1,
+  "ProjectMap": {
+    "9b2cbda2-b294-4858-87d4-b0b342e17d72": {
+      "ProjectGuid": "9b2cbda2-b294-4858-87d4-b0b342e17d72",
+      "DisplayName": "Caching",
+      "ColorIndex": 0
+    },
+    "a39477cc-153f-4254-9eae-b98f2d2075a0": {
+      "ProjectGuid": "a39477cc-153f-4254-9eae-b98f2d2075a0",
+      "DisplayName": "Test",
+      "ColorIndex": 1
+    }
+  },
+  "NextColorIndex": 2
+}
