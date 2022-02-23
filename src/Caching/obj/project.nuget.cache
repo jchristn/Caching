@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "TAs9OhCVlo4srJN/t3oDKo+n4bGQ5x+k3/erOMOxzZR2H064cRLY5k8Av7xgy2wrDGaHO6F8z5snon/r8FVXYA==",
+  "success": true,
+  "projectFilePath": "C:\\Code\\Misc\\Caching\\src\\Caching\\Caching.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\joelc\\.nuget\\packages\\microsoft.csharp\\4.7.0\\microsoft.csharp.4.7.0.nupkg.sha512",
+    "C:\\Users\\joelc\\.nuget\\packages\\microsoft.netcore.platforms\\1.1.0\\microsoft.netcore.platforms.1.1.0.nupkg.sha512",
+    "C:\\Users\\joelc\\.nuget\\packages\\netstandard.library\\2.0.3\\netstandard.library.2.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

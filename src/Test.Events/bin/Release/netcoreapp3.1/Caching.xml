@@ -1,0 +1,386 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Caching</name>
+    </assembly>
+    <members>
+        <member name="T:Caching.CacheEvents`2">
+            <summary>
+            Cache events.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheEvents`2.Added">
+            <summary>
+            An item was added to the cache.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheEvents`2.Prepopulated">
+            <summary>
+            An item was prepopulated into the cache from persistence.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheEvents`2.Replaced">
+            <summary>
+            An item was replaced in the cache.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheEvents`2.Removed">
+            <summary>
+            An item was removed from the cache.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheEvents`2.Evicted">
+            <summary>
+            Items were evicted from the cache.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheEvents`2.Cleared">
+            <summary>
+            The cache was cleared.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheEvents`2.Disposed">
+            <summary>
+            The cache was disposed.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheEvents`2.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Caching.DataEventArgs`2">
+            <summary>
+            Data event arguments.
+            </summary>
+        </member>
+        <member name="P:Caching.DataEventArgs`2.Key">
+            <summary>
+            Key.
+            </summary>
+        </member>
+        <member name="P:Caching.DataEventArgs`2.Data">
+            <summary>
+            Data.
+            </summary>
+        </member>
+        <member name="M:Caching.DataEventArgs`2.#ctor(`0,Caching.DataNode{`1})">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="key">Key.</param>
+            <param name="data">Data.</param>
+        </member>
+        <member name="T:Caching.DataNode`1">
+            <summary>
+            Data node.
+            </summary>
+            <typeparam name="T">Type of data.</typeparam>
+        </member>
+        <member name="P:Caching.DataNode`1.Data">
+            <summary>
+            Data.
+            </summary>
+        </member>
+        <member name="P:Caching.DataNode`1.Added">
+            <summary>
+            Time when added.
+            </summary>
+        </member>
+        <member name="P:Caching.DataNode`1.LastUsed">
+            <summary>
+            Time of last use.
+            </summary>
+        </member>
+        <member name="M:Caching.DataNode`1.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Caching.DataNode`1.#ctor(`0)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="val">Value.</param>
+        </member>
+        <member name="T:Caching.FIFOCache`2">
+            <summary>
+            FIFO cache that internally uses tuples.
+            </summary>
+        </member>
+        <member name="P:Caching.FIFOCache`2.Events">
+            <summary>
+            Cache events.
+            </summary>
+        </member>
+        <member name="M:Caching.FIFOCache`2.#ctor(System.Int32,System.Int32,Caching.PersistenceDriver,System.Boolean)">
+            <summary>
+            Initialize the cache.
+            </summary>
+            <param name="capacity">Maximum number of entries.</param>
+            <param name="evictCount">Number to evict when capacity is reached.</param>
+            <param name="persistence">Persistence driver.</param>
+            <param name="prepopulate">If using persistence, prepopulate from existing items.</param>
+        </member>
+        <member name="M:Caching.FIFOCache`2.Dispose">
+            <summary>
+            Dispose of the object.  Do not use after disposal.
+            </summary>
+        </member>
+        <member name="M:Caching.FIFOCache`2.Count">
+            <summary>
+            Retrieve the current number of entries in the cache.
+            </summary>
+            <returns>An integer containing the number of entries.</returns>
+        </member>
+        <member name="M:Caching.FIFOCache`2.Oldest">
+            <summary>
+            Retrieve the key of the oldest entry in the cache.
+            </summary>
+            <returns>String containing the key.</returns>
+        </member>
+        <member name="M:Caching.FIFOCache`2.Newest">
+            <summary>
+            Retrieve the key of the newest entry in the cache.
+            </summary>
+            <returns>String containing the key.</returns>
+        </member>
+        <member name="M:Caching.FIFOCache`2.All">
+            <summary>
+            Retrieve all entries from the cache.
+            </summary>
+            <returns>Dictionary.</returns>
+        </member>
+        <member name="M:Caching.FIFOCache`2.Clear">
+            <summary>
+            Clear the cache.
+            </summary>
+        </member>
+        <member name="M:Caching.FIFOCache`2.Get(`0)">
+            <summary>
+            Retrieve a key's value from the cache.
+            </summary>
+            <param name="key">The key associated with the data you wish to retrieve.</param>
+            <returns>The object data associated with the key.</returns>
+        </member>
+        <member name="M:Caching.FIFOCache`2.TryGet(`0,`1@)">
+            <summary>
+            Retrieve a key's value from the cache.
+            </summary>
+            <param name="key">The key associated with the data you wish to retrieve.</param>
+            <param name="val">The value associated with the key.</param>
+            <returns>True if key is found.</returns>
+        </member>
+        <member name="M:Caching.FIFOCache`2.Contains(`0)">
+            <summary>
+            See if a key exists in the cache.
+            </summary>
+            <param name="key">The key of the cached items.</param>
+            <returns>True if cached.</returns>
+        </member>
+        <member name="M:Caching.FIFOCache`2.AddReplace(`0,`1)">
+            <summary>
+            Add or replace a key's value in the cache.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="val">The value associated with the key.</param> 
+        </member>
+        <member name="M:Caching.FIFOCache`2.TryAddReplace(`0,`1)">
+            <summary>
+            Attempt to add or replace a key's value in the cache.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="val">The value associated with the key.</param> 
+            <returns>True if successful.</returns>
+        </member>
+        <member name="M:Caching.FIFOCache`2.Remove(`0)">
+            <summary>
+            Remove a key from the cache.
+            </summary>
+            <param name="key">The key.</param> 
+        </member>
+        <member name="M:Caching.FIFOCache`2.GetKeys">
+            <summary>
+            Retrieve all keys in the cache.
+            </summary>
+            <returns>List of string.</returns>
+        </member>
+        <member name="M:Caching.FIFOCache`2.Dispose(System.Boolean)">
+            <summary>
+            Dispose of the object.  Do not use after disposal.
+            </summary>
+        </member>
+        <member name="T:Caching.LRUCache`2">
+            <summary>
+            LRU cache that internally uses tuples.  T1 is the type of the key, and T2 is the type of the value.
+            </summary>
+        </member>
+        <member name="P:Caching.LRUCache`2.Events">
+            <summary>
+            Cache events.
+            </summary>
+        </member>
+        <member name="M:Caching.LRUCache`2.#ctor(System.Int32,System.Int32,Caching.PersistenceDriver,System.Boolean)">
+            <summary>
+            Initialize the cache.
+            </summary>
+            <param name="capacity">Maximum number of entries.</param>
+            <param name="evictCount">Number to evict when capacity is reached.</param>
+            <param name="persistence">Persistence driver.</param>
+            <param name="prepopulate">If using persistence, prepopulate from existing items.</param>
+        </member>
+        <member name="M:Caching.LRUCache`2.Dispose">
+            <summary>
+            Dispose of the object.  Do not use after disposal.
+            </summary>
+        </member>
+        <member name="M:Caching.LRUCache`2.Count">
+            <summary>
+            Retrieve the current number of entries in the cache.
+            </summary>
+            <returns>An integer containing the number of entries.</returns>
+        </member>
+        <member name="M:Caching.LRUCache`2.Oldest">
+            <summary>
+            Retrieve the key of the oldest entry in the cache.
+            </summary>
+            <returns>String containing the key.</returns>
+        </member>
+        <member name="M:Caching.LRUCache`2.Newest">
+            <summary>
+            Retrieve the key of the newest entry in the cache.
+            </summary>
+            <returns>String containing the key.</returns>
+        </member>
+        <member name="M:Caching.LRUCache`2.All">
+            <summary>
+            Retrieve all entries from the cache.
+            </summary>
+            <returns>Dictionary.</returns>
+        </member>
+        <member name="M:Caching.LRUCache`2.LastUsed">
+            <summary>
+            Retrieve the key of the last used entry in the cache.
+            </summary>
+            <returns>String containing the key.</returns>
+        </member>
+        <member name="M:Caching.LRUCache`2.FirstUsed">
+            <summary>
+            Retrieve the key of the first used entry in the cache.
+            </summary>
+            <returns>String containing the key.</returns>
+        </member>
+        <member name="M:Caching.LRUCache`2.Clear">
+            <summary>
+            Clear the cache.
+            </summary>
+        </member>
+        <member name="M:Caching.LRUCache`2.Get(`0)">
+            <summary>
+            Retrieve a key's value from the cache.
+            </summary>
+            <param name="key">The key associated with the data you wish to retrieve.</param>
+            <returns>The object data associated with the key.</returns>
+        </member>
+        <member name="M:Caching.LRUCache`2.TryGet(`0,`1@)">
+            <summary>
+            Retrieve a key's value from the cache.
+            </summary>
+            <param name="key">The key associated with the data you wish to retrieve.</param>
+            <param name="val">The value associated with the key.</param>
+            <returns>True if key is found.</returns>
+        </member>
+        <member name="M:Caching.LRUCache`2.Contains(`0)">
+            <summary>
+            See if a key exists in the cache.
+            </summary>
+            <param name="key">The key of the cached items.</param>
+            <returns>True if cached.</returns>
+        </member>
+        <member name="M:Caching.LRUCache`2.AddReplace(`0,`1)">
+            <summary>
+            Add or replace a key's value in the cache.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="val">The value associated with the key.</param>
+            <returns>Boolean indicating success.</returns>
+        </member>
+        <member name="M:Caching.LRUCache`2.TryAddReplace(`0,`1)">
+            <summary>
+            Attempt to add or replace a key's value in the cache.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="val">The value associated with the key.</param> 
+            <returns>True if successful.</returns>
+        </member>
+        <member name="M:Caching.LRUCache`2.Remove(`0)">
+            <summary>
+            Remove a key from the cache.
+            </summary>
+            <param name="key">The key.</param> 
+        </member>
+        <member name="M:Caching.LRUCache`2.GetKeys">
+            <summary>
+            Retrieve all keys in the cache.
+            </summary>
+            <returns>List of string.</returns>
+        </member>
+        <member name="M:Caching.LRUCache`2.Dispose(System.Boolean)">
+            <summary>
+            Dispose of the object.  Do not use after disposal.
+            </summary>
+        </member>
+        <member name="T:Caching.PersistenceDriver">
+            <summary>
+            Persistence driver.
+            </summary>
+        </member>
+        <member name="M:Caching.PersistenceDriver.Delete(System.String)">
+            <summary>
+            Delete data by its key.
+            </summary>
+            <param name="key">Key.</param>
+        </member>
+        <member name="M:Caching.PersistenceDriver.Get(System.String)">
+            <summary>
+            Retrieve data by its key.
+            </summary>
+            <param name="key">Key.</param>
+            <returns>Byte data.</returns>
+        </member>
+        <member name="M:Caching.PersistenceDriver.Write(System.String,System.Byte[])">
+            <summary>
+            Write data associated with a key.
+            </summary>
+            <param name="key">Key.</param>
+            <param name="data">Data.</param>
+        </member>
+        <member name="M:Caching.PersistenceDriver.Exists(System.String)">
+            <summary>
+            Check if data exists for a given key.
+            </summary>
+            <param name="key">Key.</param>
+            <returns>True if exists.</returns>
+        </member>
+        <member name="M:Caching.PersistenceDriver.ToBytes(System.Object)">
+            <summary>
+            Method to format data into a byte array.
+            </summary>
+            <param name="data">Data.</param>
+            <returns>Byte array.</returns>
+        </member>
+        <member name="M:Caching.PersistenceDriver.FromBytes``1(System.Byte[])">
+            <summary>
+            Method to convert byte array data into an object.
+            </summary>
+            <param name="data">Bytes.</param>
+            <returns>Instance of type T.</returns>
+        </member>
+        <member name="M:Caching.PersistenceDriver.Enumerate">
+            <summary>
+            Enumerate keys.
+            </summary>
+            <returns>List of keys.</returns>
+        </member>
+    </members>
+</doc>

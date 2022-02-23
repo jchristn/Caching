@@ -10,7 +10,17 @@
       "ProjectGuid": "a39477cc-153f-4254-9eae-b98f2d2075a0",
       "DisplayName": "Test",
       "ColorIndex": 1
+    },
+    "b85f01d2-7874-46b0-98fa-c7f4ef59ab34": {
+      "ProjectGuid": "b85f01d2-7874-46b0-98fa-c7f4ef59ab34",
+      "DisplayName": "Test.Events",
+      "ColorIndex": 2
+    },
+    "38eb6184-683d-4634-ac41-3abfb9e4222b": {
+      "ProjectGuid": "38eb6184-683d-4634-ac41-3abfb9e4222b",
+      "DisplayName": "Test.Persistence",
+      "ColorIndex": 3
     }
   },
-  "NextColorIndex": 2
+  "NextColorIndex": 4
 }

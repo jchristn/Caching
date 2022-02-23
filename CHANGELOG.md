@@ -2,11 +2,16 @@
 
 ## Current Version
 
+v2.0.0.1
+
+- Added persistence, prepopulation, and events
+- TryAddReplace method
+
+## Previous Versions
+
 v1.4.0
 
 - ```All()``` API
-
-## Previous Versions
 
 v1.3.5
 
