@@ -1,6 +1,0 @@
-C:\Code\Misc\Caching\Test.Persistence\obj\Debug\net452\Test.Persistence.csproj.AssemblyReference.cache
-C:\Code\Misc\Caching\Test.Persistence\obj\Debug\net452\Test.Persistence.csproj.SuggestedBindingRedirects.cache
-C:\Code\Misc\Caching\Test.Persistence\obj\Debug\net452\Test.Persistence.GeneratedMSBuildEditorConfig.editorconfig
-C:\Code\Misc\Caching\Test.Persistence\obj\Debug\net452\Test.Persistence.AssemblyInfoInputs.cache
-C:\Code\Misc\Caching\Test.Persistence\obj\Debug\net452\Test.Persistence.AssemblyInfo.cs
-C:\Code\Misc\Caching\Test.Persistence\obj\Debug\net452\Test.Persistence.csproj.CoreCompileInputs.cache
