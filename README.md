@@ -1,10 +1,10 @@
-# Caching.dll
+# Caching
 
 Simple, fast, effective FIFO and LRU Cache with events and persistence.
 
- [![NuGet Version](https://img.shields.io/nuget/v/Caching.dll.svg?style=flat)](https://www.nuget.org/packages/Caching.dll/) [![NuGet](https://img.shields.io/nuget/dt/Caching.dll.svg)](https://www.nuget.org/packages/Caching.dll) 
+ [![NuGet Version](https://img.shields.io/nuget/v/Caching.svg?style=flat)](https://www.nuget.org/packages/Caching/) [![NuGet](https://img.shields.io/nuget/dt/Caching.svg)](https://www.nuget.org/packages/Caching) 
 
-The Caching library provides a simple implementation of a FIFO cache (first-in-first-out) and an LRU (least-recently-used) cache.  It is written in C# and is designed to be thread-safe.
+This Caching library provides a simple implementation of a FIFO cache (first-in-first-out) and an LRU (least-recently-used) cache.  It is written in C# and is designed to be thread-safe.
  
 ## Usage
 

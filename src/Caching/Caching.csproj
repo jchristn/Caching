@@ -3,18 +3,18 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net472;net5.0;net6.0</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageId>Caching.dll</PackageId>
-    <Version>2.0.0.1</Version>
+    <PackageId>Caching</PackageId>
+    <Version>2.0.0.2</Version>
     <Authors>Joel Christner</Authors>
     <Description>Simple C# caching library including a FIFO and LRU cache</Description>
-    <Copyright>(c)2021 Joel Christner</Copyright>
+    <Copyright>(c)2022 Joel Christner</Copyright>
     <PackageProjectUrl>https://github.com/jchristn/caching</PackageProjectUrl>
     <RepositoryUrl>https://github.com/jchristn/caching</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
     <PackageLicenseUrl></PackageLicenseUrl>
-    <PackageReleaseNotes>Breaking changes; update frameworks, add persistence and events</PackageReleaseNotes>
-    <AssemblyVersion>1.3.5</AssemblyVersion>
-    <FileVersion>1.3.5</FileVersion>
+    <PackageReleaseNotes>Rename to 'Caching'</PackageReleaseNotes>
+    <AssemblyVersion>2.0.0.2</AssemblyVersion>
+    <FileVersion>2.0.0.2</FileVersion>
     <PackageTags>fifo lru cache caching least recently used first in first out simple</PackageTags>
     <PackageIconUrl></PackageIconUrl>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
