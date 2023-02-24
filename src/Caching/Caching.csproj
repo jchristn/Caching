@@ -1,60 +1,60 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net472;net5.0;net6.0</TargetFrameworks>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageId>Caching</PackageId>
-    <Version>2.0.0.2</Version>
-    <Authors>Joel Christner</Authors>
-    <Description>Simple C# caching library including a FIFO and LRU cache</Description>
-    <Copyright>(c)2022 Joel Christner</Copyright>
-    <PackageProjectUrl>https://github.com/jchristn/caching</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/jchristn/caching</RepositoryUrl>
-    <RepositoryType>Github</RepositoryType>
-    <PackageLicenseUrl></PackageLicenseUrl>
-    <PackageReleaseNotes>Rename to 'Caching'</PackageReleaseNotes>
-    <AssemblyVersion>2.0.0.2</AssemblyVersion>
-    <FileVersion>2.0.0.2</FileVersion>
-    <PackageTags>fifo lru cache caching least recently used first in first out simple</PackageTags>
-    <PackageIconUrl></PackageIconUrl>
-    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-    <PackageIcon>icon.png</PackageIcon>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net472;net48;net5.0;net6.0;net7.0</TargetFrameworks>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageId>Caching</PackageId>
+		<Version>2.0.0.4</Version>
+		<AssemblyVersion>2.0.0.4</AssemblyVersion>
+		<FileVersion>2.0.0.4</FileVersion>
+		<Authors>Joel Christner</Authors>
+		<Description>Simple C# caching library including a FIFO and LRU cache</Description>
+		<Copyright>(c)2022 Joel Christner</Copyright>
+		<PackageProjectUrl>https://github.com/jchristn/caching</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/jchristn/caching</RepositoryUrl>
+		<RepositoryType>Github</RepositoryType>
+		<PackageLicenseUrl></PackageLicenseUrl>
+		<PackageReleaseNotes>Rename to 'Caching'</PackageReleaseNotes>
+		<PackageTags>fifo lru cache caching least recently used first in first out simple</PackageTags>
+		<PackageIconUrl></PackageIconUrl>
+		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+		<PackageIcon>icon.png</PackageIcon>
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
-    <DocumentationFile>Caching.xml</DocumentationFile>
-  </PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
+		<DocumentationFile>Caching.xml</DocumentationFile>
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
-    <DocumentationFile>Caching.xml</DocumentationFile>
-  </PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
+		<DocumentationFile>Caching.xml</DocumentationFile>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Include="assets\icon.png">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-    <None Include="LICENSE.md">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="assets\icon.png">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
+		<None Include="LICENSE.md">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Update="assets\icon.ico">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="assets\icon.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Caching.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+	<ItemGroup>
+		<None Update="assets\icon.ico">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="assets\icon.png">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="Caching.xml">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
 
 </Project>
