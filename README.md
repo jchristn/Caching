@@ -6,6 +6,13 @@ Simple, fast, effective FIFO and LRU Cache with events and persistence.
 
 This Caching library provides a simple implementation of a FIFO cache (first-in-first-out) and an LRU (least-recently-used) cache.  It is written in C# and is designed to be thread-safe.
  
+## New in v3.0.x
+
+- Breaking changes due to major code cleanup
+- Allowed persistence driver to support non-string keys
+- Prepopulation of persistence layer now a separate method ```.Prepopulate()```
+- Clearing the cache will now also clear the entire persistence layer
+
 ## Usage
 
 Add reference to the Caching DLL and include the Caching namespace:
@@ -36,10 +43,7 @@ Add an item to the cache:
 cache.AddReplace(key, data);
 // key (T1) is a unique identifier
 // data (T2) is whatever data you like
-```
 
-Alternatively:
-```csharp
 bool success = cache.TryAddReplace(key, data);
 if (!success) { ... }
 ```
@@ -53,7 +57,8 @@ if (!cache.TryGet(key, out data))
 { 
   // handle errors 
 }
-else { 
+else 
+{ 
   // use your data! 
 }
 ```
@@ -67,8 +72,6 @@ Other helpful methods:
 ```csharp
 T1 oldestKey = cache.Oldest();
 T1 newestKey = cache.Newest();
-T1 lastUsed = cache.LastUsed();  	// only on LRUCache
-T1 firstUsed = cache.FirstUsed();   // only on LRUCache
 int numEntries = cache.Count();
 List<T1> keys = cache.GetKeys();
 cache.Clear();
@@ -83,16 +86,17 @@ Dictionary<T1, T2> dump = cache.All();
 
 If you wish to include a persistence layer with the cache, i.e. to store and manage cached objects on another repository in addition to memory:
 
-1) Implement the ```PersistenceDriver``` class; refer to the ```Test.Persistence``` project for a sample implementation that uses a directory on the local hard drive
-2) Instantiate the cache (```FIFOCache``` or ```LRUCache```) and pass the instance of the ```PersistenceDriver``` into the constructor
-3) An optional Boolean constructor parameter indicates if the cache should be prepopulated with objects found in the ```PersistenceDriver```; this is helpful for cache recovery
-4) Persistence *only* works if the key is a ```string```
+1) Implement the ```IPersistenceDriver``` abstract class; refer to the ```Test.Persistence``` project for a sample implementation that uses a directory on the local hard drive
+2) Instantiate the cache (```FIFOCache``` or ```LRUCache```) and pass the instance of the ```IPersistenceDriver``` into the constructor
+3) If you wish to prepopulate the cache from the persistence driver, call ```.Prepopulate()``` before using the cache.
+4) If you clear the cache, the persistence layer will also be cleared.
 
 ```csharp
 // implementation of PersistenceDriver
-public class Persistence : PersistenceDriver
+public class MyPersistenceDriver : IPersistenceDriver
 {
   public override void Delete(string key) { ... }
+  public override void Clear() { ... }
   public override bool Exists(string key) { ... }
   public override byte[] Get(string key) { ... }
   public override void Write(string key, byte[] data) { ... }
@@ -102,11 +106,12 @@ public class Persistence : PersistenceDriver
 }
 
 // instantiate the cache
-Persistence persistence = new Persistence();
+MyPersistenceDriver persistence = new MyPersistenceDriver();
 LRUCache<string, byte[]> cache = new LRUCache<string, byte[]>(capacity, evictCount, persistence);
+cache.Prepopulate();
 ```
 
-As objects are written to the cache, they are added to persistent storage through the ```Write``` method.  When they are removed or evicted, they are eliminated via the ```Delete``` method.
+As objects are written to the cache, they are added to persistent storage through the ```Write``` method.  When they are removed or evicted, they are eliminated via the ```Delete``` method.  When the cache is cleared, the persistence layer is also cleared.
 
 ## Events
 
@@ -158,3 +163,7 @@ static void Added(object sender, DataEventArgs<string, byte[]> e)
     Console.WriteLine("*** Cache entry " + e.Key + " added");
 }
 ```
+
+## Version History
+
+Refer to ```CHANGELOG.md``` for version history.

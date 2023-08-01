@@ -11,36 +11,13 @@ namespace Caching
     /// <summary>
     /// FIFO cache that internally uses tuples.
     /// </summary>
-    public class FIFOCache<T1, T2> : IDisposable
+    public class FIFOCache<T1, T2> : ICache<T1, T2>, IDisposable
     {
         #region Public-Members
-
-        /// <summary>
-        /// Cache events.
-        /// </summary>
-        public CacheEvents<T1, T2> Events
-        {
-            get
-            {
-                return _Events;
-            }
-            set
-            {
-                if (value == null) _Events = new CacheEvents<T1, T2>();
-                else _Events = value;
-            }
-        }
 
         #endregion
 
         #region Private-Members
-
-        private int _Capacity = 0;
-        private int _EvictCount = 0;
-        private readonly object _CacheLock = new object();
-        private Dictionary<T1, DataNode<T2>> _Cache = new Dictionary<T1, DataNode<T2>>();
-        private PersistenceDriver _Persistence = null;
-        private CacheEvents<T1, T2> _Events = new CacheEvents<T1, T2>();
 
         #endregion
 
@@ -51,29 +28,36 @@ namespace Caching
         /// </summary>
         /// <param name="capacity">Maximum number of entries.</param>
         /// <param name="evictCount">Number to evict when capacity is reached.</param>
-        /// <param name="persistence">Persistence driver.</param>
-        /// <param name="prepopulate">If using persistence, prepopulate from existing items.</param>
-        public FIFOCache(int capacity, int evictCount, PersistenceDriver persistence = null, bool prepopulate = true)
+        public FIFOCache(int capacity, int evictCount)
         {
             if (capacity < 1) throw new ArgumentOutOfRangeException(nameof(capacity));
             if (evictCount < 1) throw new ArgumentOutOfRangeException(nameof(evictCount));
             if (evictCount > capacity) throw new ArgumentOutOfRangeException(nameof(evictCount));
 
-            if (persistence != null)
-            {
-                if (typeof(T1) != typeof(string)) 
-                    throw new InvalidOperationException("Persistence can only be used when the cache key is of type 'string'.");
-            }
+            Capacity = capacity;
+            EvictCount = evictCount;
 
-            _Capacity = capacity;
-            _EvictCount = evictCount;
+            _Cache = new Dictionary<T1, DataNode<T2>>();
+            _Persistence = null;
+        }
+
+        /// <summary>
+        /// Initialize the cache with persistence.
+        /// </summary>
+        /// <param name="capacity">Maximum number of entries.</param>
+        /// <param name="evictCount">Number to evict when capacity is reached.</param>
+        /// <param name="persistence">Persistence driver.</param>
+        public FIFOCache(int capacity, int evictCount, IPersistenceDriver<T1, T2> persistence)
+        {
+            if (capacity < 1) throw new ArgumentOutOfRangeException(nameof(capacity));
+            if (evictCount < 1) throw new ArgumentOutOfRangeException(nameof(evictCount));
+            if (evictCount > capacity) throw new ArgumentOutOfRangeException(nameof(evictCount));
+
+            Capacity = capacity;
+            EvictCount = evictCount;
+
             _Cache = new Dictionary<T1, DataNode<T2>>();
             _Persistence = persistence;
-
-            if (persistence != null && prepopulate)
-            {
-                Prepopulate();
-            }
         }
 
         #endregion
@@ -93,7 +77,7 @@ namespace Caching
         /// Retrieve the current number of entries in the cache.
         /// </summary>
         /// <returns>An integer containing the number of entries.</returns>
-        public int Count()
+        public override int Count()
         {
             lock (_CacheLock)
             { 
@@ -105,7 +89,7 @@ namespace Caching
         /// Retrieve the key of the oldest entry in the cache.
         /// </summary>
         /// <returns>String containing the key.</returns>
-        public T1 Oldest()
+        public override T1 Oldest()
         {
             if (_Cache == null || _Cache.Count < 1) throw new KeyNotFoundException();
 
@@ -120,7 +104,7 @@ namespace Caching
         /// Retrieve the key of the newest entry in the cache.
         /// </summary>
         /// <returns>String containing the key.</returns>
-        public T1 Newest()
+        public override T1 Newest()
         {
             if (_Cache == null || _Cache.Count < 1) throw new KeyNotFoundException();
 
@@ -135,7 +119,7 @@ namespace Caching
         /// Retrieve all entries from the cache.
         /// </summary>
         /// <returns>Dictionary.</returns>
-        public Dictionary<T1, T2> All()
+        public override Dictionary<T1, T2> All()
         {
             Dictionary<T1, T2> ret = new Dictionary<T1, T2>();
             Dictionary<T1, DataNode<T2>> dump = null;
@@ -156,18 +140,11 @@ namespace Caching
         /// <summary>
         /// Clear the cache.
         /// </summary>
-        public void Clear()
+        public override void Clear()
         {
             lock (_CacheLock)
-            {
-                if (_Persistence != null)
-                {
-                    foreach (KeyValuePair<T1, DataNode<T2>> kvp in _Cache)
-                    {
-                        _Persistence.Delete(kvp.Key.ToString());
-                    }
-                }
-
+            { 
+                _Persistence?.Clear();
                 _Cache = new Dictionary<T1, DataNode<T2>>();
                 _Events?.Cleared?.Invoke(this, EventArgs.Empty);
                 return;
@@ -179,7 +156,7 @@ namespace Caching
         /// </summary>
         /// <param name="key">The key associated with the data you wish to retrieve.</param>
         /// <returns>The object data associated with the key.</returns>
-        public T2 Get(T1 key)
+        public override T2 Get(T1 key)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
 
@@ -210,7 +187,7 @@ namespace Caching
         /// <param name="key">The key associated with the data you wish to retrieve.</param>
         /// <param name="val">The value associated with the key.</param>
         /// <returns>True if key is found.</returns>
-        public bool TryGet(T1 key, out T2 val)
+        public override bool TryGet(T1 key, out T2 val)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
 
@@ -231,7 +208,7 @@ namespace Caching
                 }
                 else
                 {
-                    val = default(T2);
+                    val = default;
                     return false;
                 }
             }
@@ -242,7 +219,7 @@ namespace Caching
         /// </summary>
         /// <param name="key">The key of the cached items.</param>
         /// <returns>True if cached.</returns>
-        public bool Contains(T1 key)
+        public override bool Contains(T1 key)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
 
@@ -262,7 +239,7 @@ namespace Caching
         /// </summary>
         /// <param name="key">The key.</param>
         /// <param name="val">The value associated with the key.</param> 
-        public void AddReplace(T1 key, T2 val)
+        public override void AddReplace(T1 key, T2 val)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
 
@@ -273,9 +250,9 @@ namespace Caching
 
                 if (_Cache.ContainsKey(key))
                 {
-                    if (_Persistence != null && _Persistence.Exists(key.ToString()))
+                    if (_Persistence != null && _Persistence.Exists(key))
                     {
-                        _Persistence.Delete(key.ToString());
+                        _Persistence.Delete(key);
                     }
 
                     previous = _Cache[key];
@@ -284,16 +261,16 @@ namespace Caching
                     replaced = true;
                 }
 
-                if (_Cache.Count >= _Capacity)
+                if (_Cache.Count >= Capacity)
                 {
-                    Dictionary<T1, DataNode<T2>> updated = _Cache.OrderBy(x => x.Value.Added).Skip(_EvictCount).ToDictionary(x => x.Key, x => x.Value);
+                    Dictionary<T1, DataNode<T2>> updated = _Cache.OrderBy(x => x.Value.Added).Skip(EvictCount).ToDictionary(x => x.Key, x => x.Value);
                     Dictionary<T1, DataNode<T2>> removed = _Cache.Except(updated).ToDictionary(x => x.Key, x => x.Value);
 
                     if (_Persistence != null && removed != null && removed.Count > 0)
                     {
                         foreach (KeyValuePair<T1, DataNode<T2>> kvp in removed)
                         {
-                            _Persistence.Delete(kvp.Key.ToString());
+                            _Persistence.Delete(kvp.Key);
                         }
                     }
 
@@ -309,10 +286,7 @@ namespace Caching
                 DataNode<T2> curr = new DataNode<T2>(val);
                 _Cache.Add(key, curr);
 
-                if (_Persistence != null)
-                {
-                    _Persistence.Write(key.ToString(), _Persistence.ToBytes(val));
-                }
+                _Persistence?.Write(key, val);
 
                 if (replaced) _Events?.Replaced?.Invoke(this, new DataEventArgs<T1, T2>(key, previous));
                 _Events?.Added?.Invoke(this, new DataEventArgs<T1, T2>(key, curr));
@@ -327,7 +301,7 @@ namespace Caching
         /// <param name="key">The key.</param>
         /// <param name="val">The value associated with the key.</param> 
         /// <returns>True if successful.</returns>
-        public bool TryAddReplace(T1 key, T2 val)
+        public override bool TryAddReplace(T1 key, T2 val)
         {
             try
             {
@@ -344,7 +318,7 @@ namespace Caching
         /// Remove a key from the cache.
         /// </summary>
         /// <param name="key">The key.</param> 
-        public void Remove(T1 key)
+        public override void Remove(T1 key)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
 
@@ -358,10 +332,7 @@ namespace Caching
                     _Cache.Remove(key);
                 }
 
-                if (_Persistence != null)
-                {
-                    _Persistence.Delete(key.ToString());
-                }
+                _Persistence?.Delete(key);
 
                 _Events?.Removed?.Invoke(this, new DataEventArgs<T1, T2>(key, val));
                 return;
@@ -372,12 +343,35 @@ namespace Caching
         /// Retrieve all keys in the cache.
         /// </summary>
         /// <returns>List of string.</returns>
-        public List<T1> GetKeys()
+        public override List<T1> GetKeys()
         {
             lock (_CacheLock)
             {
                 List<T1> keys = new List<T1>(_Cache.Keys);
                 return keys;
+            }
+        }
+
+        /// <summary>
+        /// Prepopulate the cache with entries from the persistence layer.
+        /// </summary>
+        public override void Prepopulate()
+        {
+            if (_Persistence == null) throw new InvalidOperationException("No persistence driver has been defined for the cache.");
+
+            List<T1> objects = _Persistence.Enumerate();
+
+            if (objects != null && objects.Count > 0)
+            {
+                foreach (T1 obj in objects)
+                {
+                    T2 data = _Persistence.Get(obj);
+
+                    DataNode<T2> node = new DataNode<T2>(data);
+
+                    _Cache.Add(obj, node);
+                    _Events?.Prepopulated?.Invoke(this, new DataEventArgs<T1, T2>(obj, node));
+                }
             }
         }
 
@@ -397,31 +391,12 @@ namespace Caching
                     _Cache = null;
                 }
                  
-                _Capacity = 0;
-                _EvictCount = 0;
+                Capacity = 0;
+                EvictCount = 0;
 
                 _Events?.Disposed?.Invoke(this, EventArgs.Empty);
                 _Events = null;
                 _Persistence = null;
-            }
-        }
-
-        private void Prepopulate()
-        {
-            List<string> files = _Persistence.Enumerate();
-            
-            if (files != null && files.Count > 0)
-            {
-                foreach (string file in files)
-                {
-                    byte[] data = _Persistence.Get(file);
-
-                    T1 key = (T1)Convert.ChangeType(file, typeof(T1));
-                    DataNode<T2> node = new DataNode<T2>(_Persistence.FromBytes<T2>(data));
-
-                    _Cache.Add(key, node);
-                    _Events?.Prepopulated?.Invoke(this, new DataEventArgs<T1, T2>(key, node));
-                }
             }
         }
 

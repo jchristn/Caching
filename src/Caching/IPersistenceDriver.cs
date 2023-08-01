@@ -7,7 +7,7 @@ namespace Caching
     /// <summary>
     /// Persistence driver.
     /// </summary>
-    public abstract class PersistenceDriver
+    public abstract class IPersistenceDriver<T1, T2>
     {
         #region Public-Members
 
@@ -23,48 +23,39 @@ namespace Caching
         /// Delete data by its key.
         /// </summary>
         /// <param name="key">Key.</param>
-        public abstract void Delete(string key);
+        public abstract void Delete(T1 key);
+
+        /// <summary>
+        /// Delete all persisted contents.
+        /// </summary>
+        public abstract void Clear();
 
         /// <summary>
         /// Retrieve data by its key.
         /// </summary>
         /// <param name="key">Key.</param>
-        /// <returns>Byte data.</returns>
-        public abstract byte[] Get(string key);
+        /// <returns>Data.</returns>
+        public abstract T2 Get(T1 key);
 
         /// <summary>
         /// Write data associated with a key.
         /// </summary>
         /// <param name="key">Key.</param>
         /// <param name="data">Data.</param>
-        public abstract void Write(string key, byte[] data);
+        public abstract void Write(T1 key, T2 data);
 
         /// <summary>
         /// Check if data exists for a given key.
         /// </summary>
         /// <param name="key">Key.</param>
         /// <returns>True if exists.</returns>
-        public abstract bool Exists(string key);
-
-        /// <summary>
-        /// Method to format data into a byte array.
-        /// </summary>
-        /// <param name="data">Data.</param>
-        /// <returns>Byte array.</returns>
-        public abstract byte[] ToBytes(object data);
-
-        /// <summary>
-        /// Method to convert byte array data into an object.
-        /// </summary>
-        /// <param name="data">Bytes.</param>
-        /// <returns>Instance of type T.</returns>
-        public abstract T FromBytes<T>(byte[] data);
+        public abstract bool Exists(T1 key);
 
         /// <summary>
         /// Enumerate keys.
         /// </summary>
         /// <returns>List of keys.</returns>
-        public abstract List<string> Enumerate();
+        public abstract List<T1> Enumerate();
 
         #endregion
 

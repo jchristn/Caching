@@ -2,12 +2,19 @@
 
 ## Current Version
 
-v2.0.0.1
+v3.0.x
+
+- Breaking changes due to major code cleanup
+- Allowed persistence driver to support non-string keys
+- Prepopulation of persistence layer now a separate method ```.Prepopulate()```
+- Clearing the cache will now also clear the entire persistence layer
+
+## Previous Versions
+
+v2.0.x
 
 - Added persistence, prepopulation, and events
 - TryAddReplace method
-
-## Previous Versions
 
 v1.4.0
 

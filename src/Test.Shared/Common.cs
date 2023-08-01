@@ -1,14 +1,55 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Caching;
 
-namespace Test
+namespace Test.Shared
 {
-    partial class Program
+    public static class Common
     {
+        private static readonly List<string> _Values = new()
+        {
+            "Alpha",
+            "Bravo",
+            "Charlie",
+            "Delta",
+            "Echo",
+            "Foxtrot",
+            "Golf",
+            "Hotel",
+            "India",
+            "Juliett",
+            "Kilo",
+            "Lima",
+            "Mike",
+            "November",
+            "Oscar",
+            "Papa",
+            "Quebec",
+            "Romeo",
+            "Sierra",
+            "Tango",
+            "Uniform",
+            "Victor",
+            "Whiskey",
+            "X-ray",
+            "Yankee",
+            "Zulu"
+        };
+
+        public static (int, string) GetCodeWord(string key)
+        {
+            if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
+
+            int sum = 0;
+            foreach (char c in key) sum += (int)c;
+
+            (int, string) ret = new()
+            {
+                Item1 = sum % 26
+            };
+            ret.Item2 = _Values[ret.Item1];
+            return ret;
+        }
+
         public static byte[] InitByteArray(int count, byte val)
         {
             byte[] ret = new byte[count];
@@ -19,7 +60,7 @@ namespace Test
             return ret;
         }
 
-        private static string TotalTimeFrom(DateTime startTime)
+        public static string TotalTimeFrom(DateTime startTime)
         {
             DateTime endTime = DateTime.Now;
             TimeSpan totalTime = (endTime - startTime);
@@ -50,7 +91,7 @@ namespace Test
             }
         }
 
-        private static double TotalMsFrom(DateTime startTime)
+        public static double TotalMsFrom(DateTime startTime)
         {
             try
             {
@@ -64,7 +105,7 @@ namespace Test
             }
         }
 
-        private static string DecimalToString(object obj)
+        public static string DecimalToString(object obj)
         {
             if (obj == null) return null;
             if (obj is string) if (String.IsNullOrEmpty(obj.ToString())) return null;
@@ -73,7 +114,7 @@ namespace Test
             return ret;
         }
 
-        static void PrintException(Exception e)
+        public static void PrintException(Exception e)
         {
             Console.WriteLine("================================================================================");
             Console.WriteLine("Exception Type: " + e.GetType().ToString());

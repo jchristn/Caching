@@ -1,16 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-	<TargetFrameworks>netcoreapp3.1;net472;net48;net5.0;net6.0;net7.0</TargetFrameworks>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.Text.Json" Version="6.0.2" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Inputty" Version="1.0.5" />
+		<PackageReference Include="System.Text.Json" Version="6.0.2" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Caching\Caching.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Caching\Caching.csproj" />
+		<ProjectReference Include="..\Test.Shared\Test.Shared.csproj" />
+	</ItemGroup>
 
 </Project>
