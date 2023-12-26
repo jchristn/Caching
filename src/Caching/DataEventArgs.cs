@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Caching
+﻿namespace Caching
 {
+    using System;
+
     /// <summary>
     /// Data event arguments.
     /// </summary>

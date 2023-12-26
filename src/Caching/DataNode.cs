@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Caching
+﻿namespace Caching
 {
+    using System;
+
     /// <summary>
     /// Data node.
     /// </summary>
@@ -29,6 +25,11 @@ namespace Caching
         /// </summary>
         public DateTime LastUsed { get; set; }
 
+        /// <summary>
+        /// Timestamp indicating when the entry should be expired.
+        /// </summary>
+        public DateTime? Expiration { get; set; } = null;
+
         #endregion
 
         #region Private-Members
@@ -51,12 +52,14 @@ namespace Caching
         /// Instantiate.
         /// </summary>
         /// <param name="val">Value.</param>
-        public DataNode(T val)
+        /// <param name="expiration">Timestamp at which the entry should expire.</param>
+        public DataNode(T val, DateTime? expiration = null)
         {
             DateTime ts = DateTime.Now;
             Added = ts;
             LastUsed = ts;
             Data = val;
+            Expiration = expiration;
         }
 
         #endregion

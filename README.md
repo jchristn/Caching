@@ -6,12 +6,10 @@ Simple, fast, effective FIFO and LRU Cache with events and persistence.
 
 This Caching library provides a simple implementation of a FIFO cache (first-in-first-out) and an LRU (least-recently-used) cache.  It is written in C# and is designed to be thread-safe.
  
-## New in v3.0.x
+## New in v3.1.x
 
-- Breaking changes due to major code cleanup
-- Allowed persistence driver to support non-string keys
-- Prepopulation of persistence layer now a separate method ```.Prepopulate()```
-- Clearing the cache will now also clear the entire persistence layer
+- Expiration attribute for cached entries
+- Minor refactor and bugfixes
 
 ## Usage
 
@@ -46,6 +44,12 @@ cache.AddReplace(key, data);
 
 bool success = cache.TryAddReplace(key, data);
 if (!success) { ... }
+```
+
+Add an item to the cache with expiration:
+```csharp
+cache.AddReplace(key, data, DateTime.UtcNow.AddSeconds(10));
+bool success = cache.TryAddReplace(key, data, DateTime.UtcNow.AddSeconds(10));
 ```
 
 Get an item from the cache:
@@ -123,6 +127,7 @@ cache.Events.Added += Added;
 cache.Events.Cleared += Cleared;
 cache.Events.Disposed += Disposed;
 cache.Events.Evicted += Evicted;
+cache.Events.Expired += Expired;
 cache.Events.Prepopulated += Prepopulated;
 cache.Events.Removed += Removed;
 cache.Events.Replaced += Replaced;
@@ -146,6 +151,11 @@ static void Evicted(object sender, List<string> e)
 {
     Console.WriteLine("*** Eviction event involving " + e.Count + " entries");
     foreach (string curr in e) Console.WriteLine("    | " + curr);
+}
+
+static void Expired(object sender, string key)
+{
+    Console.WriteLine("*** Key " + key + " expired and removed from the cache");
 }
 
 static void Disposed(object sender, EventArgs e)

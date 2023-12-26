@@ -37,6 +37,7 @@ namespace Test.Events
             }
 
             _Cache.Events.Evicted += Evicted;
+            _Cache.Events.Expired += Expired;
             _Cache.Events.Prepopulated += Prepopulated;
             _Cache.Events.Replaced += Replaced;
             _Cache.Events.Removed += Removed;
@@ -80,7 +81,12 @@ namespace Test.Events
                             Dictionary<string, string> dump = _Cache.All();
                             if (dump != null && dump.Count > 0)
                             {
-                                foreach (KeyValuePair<string, string> entry in dump) Console.WriteLine(entry.Key + ": " + entry.Value);
+                                foreach (KeyValuePair<string, string> entry in dump)
+                                {
+                                    Console.WriteLine(entry.Key + ": " + entry.Value);
+                                }
+
+                                Console.WriteLine("");
                                 Console.WriteLine("Count: " + dump.Count + " entries");
                             }
                             else
@@ -98,7 +104,7 @@ namespace Test.Events
                                 codeWord = Common.GetCodeWord(loadKey);
 
                                 Console.WriteLine("Adding entry " + i + " of " + _LoadCount + ": " + loadKey + " (" + codeWord.Item1 + ") " + codeWord.Item2 + "                      \r");
-                                _Cache.AddReplace(loadKey, codeWord.Item2);
+                                _Cache.AddReplace(loadKey, codeWord.Item2, DateTime.UtcNow.AddSeconds(10));
                             }
 
                             Console.WriteLine(
@@ -188,6 +194,11 @@ namespace Test.Events
         {
             Console.WriteLine("*** Eviction event involving " + e.Count + " entries");
             foreach (string curr in e) Console.WriteLine("    | " + curr);
+        }
+
+        private static void Expired(object sender, string key)
+        {
+            Console.WriteLine("*** Expiration event, key " + key + " expired");
         }
 
         private static void Disposed(object sender, EventArgs e)

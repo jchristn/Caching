@@ -1,16 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace Caching
+﻿namespace Caching
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Cache base class.
     /// </summary>
     public abstract class ICache<T1, T2>
     {
         #region Public-Members
+
+        /// <summary>
+        /// Cancellation token.
+        /// </summary>
+        public CancellationToken Token
+        {
+            get
+            {
+                return _Token;
+            }
+            set
+            {
+                _Token = value;
+            }
+        }
 
         /// <summary>
         /// Cache events.
@@ -53,14 +68,35 @@ namespace Caching
         /// </summary>
         public int EvictCount { get; internal set; } = 0;
 
+        /// <summary>
+        /// Frequency with which the cache is evaluated for expired entries.  Default is 1000ms.
+        /// </summary>
+        public int ExpirationIntervalMs
+        {
+            get
+            {
+                return _ExpirationIntervalMs;
+            }
+            set
+            {
+                if (value < 1) throw new ArgumentException("ExpirationIntervalMs must be at least 1ms.");
+                _ExpirationIntervalMs = value;
+            }
+        }
+
         #endregion
 
         #region Internal-Members
 
+        internal CancellationTokenSource _TokenSource = new CancellationTokenSource();
+        internal CancellationToken _Token;
+
+        internal int _ExpirationIntervalMs = 1000;
         internal readonly object _CacheLock = new object();
         internal Dictionary<T1, DataNode<T2>> _Cache = new Dictionary<T1, DataNode<T2>>();
         internal IPersistenceDriver<T1, T2> _Persistence = null;
         internal CacheEvents<T1, T2> _Events = new CacheEvents<T1, T2>();
+        internal abstract Task ExpirationTask(CancellationToken token = default);
 
         #endregion
 
@@ -126,15 +162,17 @@ namespace Caching
         /// </summary>
         /// <param name="key">The key.</param>
         /// <param name="val">The value associated with the key.</param> 
-        public abstract void AddReplace(T1 key, T2 val);
+        /// <param name="expiration">Timestamp at which the entry should expire.</param>
+        public abstract void AddReplace(T1 key, T2 val, DateTime? expiration = null);
 
         /// <summary>
         /// Attempt to add or replace a key's value in the cache.
         /// </summary>
         /// <param name="key">The key.</param>
         /// <param name="val">The value associated with the key.</param> 
+        /// <param name="expiration">Timestamp at which the entry should expire.</param>
         /// <returns>True if successful.</returns>
-        public abstract bool TryAddReplace(T1 key, T2 val);
+        public abstract bool TryAddReplace(T1 key, T2 val, DateTime? expiration = null);
 
         /// <summary>
         /// Remove a key from the cache.
@@ -152,6 +190,10 @@ namespace Caching
         /// Prepopulate the cache with entries from the persistence layer.
         /// </summary>
         public abstract void Prepopulate();
+
+        #endregion
+
+        #region Internal-Methods
 
         #endregion
 

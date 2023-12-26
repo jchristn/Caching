@@ -1,6 +1,11 @@
 # Change Log
 
 ## Current Version
+ 
+- Expiration attribute for cached entries
+- Minor refactor and bugfixes
+
+## Previous Versions
 
 v3.0.x
 
@@ -8,8 +13,6 @@ v3.0.x
 - Allowed persistence driver to support non-string keys
 - Prepopulation of persistence layer now a separate method ```.Prepopulate()```
 - Clearing the cache will now also clear the entire persistence layer
-
-## Previous Versions
 
 v2.0.x
 

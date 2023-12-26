@@ -1,19 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Caching
+﻿namespace Caching
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+
     /// <summary>
     /// LRU cache that internally uses tuples.  T1 is the type of the key, and T2 is the type of the value.
     /// </summary>
     public class LRUCache<T1, T2> : ICache<T1, T2>, IDisposable
     {
         #region Public-Members
+
+        #endregion
+
+        #region Internal-Members
 
         #endregion
 
@@ -38,6 +40,9 @@ namespace Caching
             EvictCount = evictCount;
             _Cache = new Dictionary<T1, DataNode<T2>>();
             _Persistence = null;
+            _Token = _TokenSource.Token;
+
+            Task.Run(() => ExpirationTask(_Token));
         }
 
         /// <summary>
@@ -57,6 +62,9 @@ namespace Caching
 
             _Cache = new Dictionary<T1, DataNode<T2>>();
             _Persistence = persistence;
+            _Token = _TokenSource.Token;
+
+            Task.Run(() => ExpirationTask(_Token));
         }
 
         #endregion
@@ -238,10 +246,18 @@ namespace Caching
         /// </summary>
         /// <param name="key">The key.</param>
         /// <param name="val">The value associated with the key.</param>
+        /// <param name="expiration">Timestamp at which the entry should expire.</param>
         /// <returns>Boolean indicating success.</returns>
-        public override void AddReplace(T1 key, T2 val)
+        public override void AddReplace(T1 key, T2 val, DateTime? expiration = null)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
+
+            if (expiration != null)
+            {
+                expiration = expiration.Value.ToUniversalTime();
+                if (DateTime.UtcNow > expiration.Value)
+                    throw new ArgumentException("The specified expiration timestamp is in the past.");
+            }
 
             lock (_CacheLock)
             {
@@ -283,7 +299,7 @@ namespace Caching
                     }
                 }
 
-                DataNode<T2> curr = new DataNode<T2>(val);
+                DataNode<T2> curr = new DataNode<T2>(val, expiration);
                 _Cache.Add(key, curr);
 
                 _Persistence?.Write(key, val);
@@ -300,12 +316,13 @@ namespace Caching
         /// </summary>
         /// <param name="key">The key.</param>
         /// <param name="val">The value associated with the key.</param> 
+        /// <param name="expiration">Timestamp at which the entry should expire.</param>
         /// <returns>True if successful.</returns>
-        public override bool TryAddReplace(T1 key, T2 val)
+        public override bool TryAddReplace(T1 key, T2 val, DateTime? expiration = null)
         {
             try
             {
-                AddReplace(key, val);
+                AddReplace(key, val, expiration);
                 return true;
             }
             catch (Exception)
@@ -377,6 +394,39 @@ namespace Caching
 
         #endregion
 
+        #region Internal-Methods
+
+        /// <summary>
+        /// Expiration task.
+        /// </summary>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Task.</returns>
+        internal override async Task ExpirationTask(CancellationToken token = default)
+        {
+            while (!token.IsCancellationRequested)
+            {
+                await Task.Delay(_ExpirationIntervalMs);
+
+                lock (_CacheLock)
+                {
+                    Dictionary<T1, DataNode<T2>> expired = _Cache.Where(
+                        c => c.Value.Expiration != null && c.Value.Expiration.Value < DateTime.UtcNow)
+                        .ToDictionary(c => c.Key, c => c.Value);
+
+                    if (expired != null && expired.Count > 0)
+                    {
+                        foreach (KeyValuePair<T1, DataNode<T2>> entry in expired)
+                        {
+                            _Cache.Remove(entry.Key);
+                            _Events.Expired(this, entry.Key);
+                        }
+                    }
+                }
+            }
+        }
+
+        #endregion
+
         #region Private-Methods
 
         /// <summary>
@@ -386,6 +436,9 @@ namespace Caching
         {
             if (disposing)
             {
+                CancellationTokenSource ctsLinked = CancellationTokenSource.CreateLinkedTokenSource(_Token);
+                ctsLinked.Cancel();
+
                 lock (_CacheLock)
                 {
                     _Cache = null;

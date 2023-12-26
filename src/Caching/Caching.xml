@@ -34,6 +34,11 @@
             Items were evicted from the cache.
             </summary>
         </member>
+        <member name="F:Caching.CacheEvents`2.Expired">
+            <summary>
+            Items were expired from the cache.
+            </summary>
+        </member>
         <member name="F:Caching.CacheEvents`2.Cleared">
             <summary>
             The cache was cleared.
@@ -92,35 +97,42 @@
             Time of last use.
             </summary>
         </member>
+        <member name="P:Caching.DataNode`1.Expiration">
+            <summary>
+            Timestamp indicating when the entry should be expired.
+            </summary>
+        </member>
         <member name="M:Caching.DataNode`1.#ctor">
             <summary>
             Instantiate.
             </summary>
         </member>
-        <member name="M:Caching.DataNode`1.#ctor(`0)">
+        <member name="M:Caching.DataNode`1.#ctor(`0,System.Nullable{System.DateTime})">
             <summary>
             Instantiate.
             </summary>
             <param name="val">Value.</param>
+            <param name="expiration">Timestamp at which the entry should expire.</param>
         </member>
         <member name="T:Caching.FIFOCache`2">
             <summary>
             FIFO cache that internally uses tuples.
             </summary>
         </member>
-        <member name="P:Caching.FIFOCache`2.Events">
-            <summary>
-            Cache events.
-            </summary>
-        </member>
-        <member name="M:Caching.FIFOCache`2.#ctor(System.Int32,System.Int32,Caching.PersistenceDriver,System.Boolean)">
+        <member name="M:Caching.FIFOCache`2.#ctor(System.Int32,System.Int32)">
             <summary>
             Initialize the cache.
             </summary>
             <param name="capacity">Maximum number of entries.</param>
             <param name="evictCount">Number to evict when capacity is reached.</param>
+        </member>
+        <member name="M:Caching.FIFOCache`2.#ctor(System.Int32,System.Int32,Caching.IPersistenceDriver{`0,`1})">
+            <summary>
+            Initialize the cache with persistence.
+            </summary>
+            <param name="capacity">Maximum number of entries.</param>
+            <param name="evictCount">Number to evict when capacity is reached.</param>
             <param name="persistence">Persistence driver.</param>
-            <param name="prepopulate">If using persistence, prepopulate from existing items.</param>
         </member>
         <member name="M:Caching.FIFOCache`2.Dispose">
             <summary>
@@ -178,19 +190,21 @@
             <param name="key">The key of the cached items.</param>
             <returns>True if cached.</returns>
         </member>
-        <member name="M:Caching.FIFOCache`2.AddReplace(`0,`1)">
+        <member name="M:Caching.FIFOCache`2.AddReplace(`0,`1,System.Nullable{System.DateTime})">
             <summary>
             Add or replace a key's value in the cache.
             </summary>
             <param name="key">The key.</param>
             <param name="val">The value associated with the key.</param> 
+            <param name="expiration">Timestamp at which the entry should expire.</param>
         </member>
-        <member name="M:Caching.FIFOCache`2.TryAddReplace(`0,`1)">
+        <member name="M:Caching.FIFOCache`2.TryAddReplace(`0,`1,System.Nullable{System.DateTime})">
             <summary>
             Attempt to add or replace a key's value in the cache.
             </summary>
             <param name="key">The key.</param>
             <param name="val">The value associated with the key.</param> 
+            <param name="expiration">Timestamp at which the entry should expire.</param>
             <returns>True if successful.</returns>
         </member>
         <member name="M:Caching.FIFOCache`2.Remove(`0)">
@@ -205,29 +219,205 @@
             </summary>
             <returns>List of string.</returns>
         </member>
+        <member name="M:Caching.FIFOCache`2.Prepopulate">
+            <summary>
+            Prepopulate the cache with entries from the persistence layer.
+            </summary>
+        </member>
+        <member name="M:Caching.FIFOCache`2.ExpirationTask(System.Threading.CancellationToken)">
+            <summary>
+            Expiration task.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
         <member name="M:Caching.FIFOCache`2.Dispose(System.Boolean)">
             <summary>
             Dispose of the object.  Do not use after disposal.
             </summary>
+        </member>
+        <member name="T:Caching.ICache`2">
+            <summary>
+            Cache base class.
+            </summary>
+        </member>
+        <member name="P:Caching.ICache`2.Token">
+            <summary>
+            Cancellation token.
+            </summary>
+        </member>
+        <member name="P:Caching.ICache`2.Events">
+            <summary>
+            Cache events.
+            </summary>
+        </member>
+        <member name="P:Caching.ICache`2.Persistence">
+            <summary>
+            Persistence driver.
+            </summary>
+        </member>
+        <member name="P:Caching.ICache`2.Capacity">
+            <summary>
+            Cache capacity.
+            </summary>
+        </member>
+        <member name="P:Caching.ICache`2.EvictCount">
+            <summary>
+            Number of entries to evict when cache reaches capacity.
+            </summary>
+        </member>
+        <member name="P:Caching.ICache`2.ExpirationIntervalMs">
+            <summary>
+            Frequency with which the cache is evaluated for expired entries.  Default is 1000ms.
+            </summary>
+        </member>
+        <member name="M:Caching.ICache`2.Count">
+            <summary>
+            Retrieve the current number of entries in the cache.
+            </summary>
+            <returns>An integer containing the number of entries.</returns>
+        </member>
+        <member name="M:Caching.ICache`2.Oldest">
+            <summary>
+            Retrieve the key of the oldest entry in the cache.
+            </summary>
+            <returns>String containing the key.</returns>
+        </member>
+        <member name="M:Caching.ICache`2.Newest">
+            <summary>
+            Retrieve the key of the newest entry in the cache.
+            </summary>
+            <returns>String containing the key.</returns>
+        </member>
+        <member name="M:Caching.ICache`2.All">
+            <summary>
+            Retrieve all entries from the cache.
+            </summary>
+            <returns>Dictionary.</returns>
+        </member>
+        <member name="M:Caching.ICache`2.Clear">
+            <summary>
+            Clear the cache.
+            </summary>
+        </member>
+        <member name="M:Caching.ICache`2.Get(`0)">
+            <summary>
+            Retrieve a key's value from the cache.
+            </summary>
+            <param name="key">The key associated with the data you wish to retrieve.</param>
+            <returns>The object data associated with the key.</returns>
+        </member>
+        <member name="M:Caching.ICache`2.TryGet(`0,`1@)">
+            <summary>
+            Retrieve a key's value from the cache.
+            </summary>
+            <param name="key">The key associated with the data you wish to retrieve.</param>
+            <param name="val">The value associated with the key.</param>
+            <returns>True if key is found.</returns>
+        </member>
+        <member name="M:Caching.ICache`2.Contains(`0)">
+            <summary>
+            See if a key exists in the cache.
+            </summary>
+            <param name="key">The key of the cached items.</param>
+            <returns>True if cached.</returns>
+        </member>
+        <member name="M:Caching.ICache`2.AddReplace(`0,`1,System.Nullable{System.DateTime})">
+            <summary>
+            Add or replace a key's value in the cache.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="val">The value associated with the key.</param> 
+            <param name="expiration">Timestamp at which the entry should expire.</param>
+        </member>
+        <member name="M:Caching.ICache`2.TryAddReplace(`0,`1,System.Nullable{System.DateTime})">
+            <summary>
+            Attempt to add or replace a key's value in the cache.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="val">The value associated with the key.</param> 
+            <param name="expiration">Timestamp at which the entry should expire.</param>
+            <returns>True if successful.</returns>
+        </member>
+        <member name="M:Caching.ICache`2.Remove(`0)">
+            <summary>
+            Remove a key from the cache.
+            </summary>
+            <param name="key">The key.</param> 
+        </member>
+        <member name="M:Caching.ICache`2.GetKeys">
+            <summary>
+            Retrieve all keys in the cache.
+            </summary>
+            <returns>List of string.</returns>
+        </member>
+        <member name="M:Caching.ICache`2.Prepopulate">
+            <summary>
+            Prepopulate the cache with entries from the persistence layer.
+            </summary>
+        </member>
+        <member name="T:Caching.IPersistenceDriver`2">
+            <summary>
+            Persistence driver.
+            </summary>
+        </member>
+        <member name="M:Caching.IPersistenceDriver`2.Delete(`0)">
+            <summary>
+            Delete data by its key.
+            </summary>
+            <param name="key">Key.</param>
+        </member>
+        <member name="M:Caching.IPersistenceDriver`2.Clear">
+            <summary>
+            Delete all persisted contents.
+            </summary>
+        </member>
+        <member name="M:Caching.IPersistenceDriver`2.Get(`0)">
+            <summary>
+            Retrieve data by its key.
+            </summary>
+            <param name="key">Key.</param>
+            <returns>Data.</returns>
+        </member>
+        <member name="M:Caching.IPersistenceDriver`2.Write(`0,`1)">
+            <summary>
+            Write data associated with a key.
+            </summary>
+            <param name="key">Key.</param>
+            <param name="data">Data.</param>
+        </member>
+        <member name="M:Caching.IPersistenceDriver`2.Exists(`0)">
+            <summary>
+            Check if data exists for a given key.
+            </summary>
+            <param name="key">Key.</param>
+            <returns>True if exists.</returns>
+        </member>
+        <member name="M:Caching.IPersistenceDriver`2.Enumerate">
+            <summary>
+            Enumerate keys.
+            </summary>
+            <returns>List of keys.</returns>
         </member>
         <member name="T:Caching.LRUCache`2">
             <summary>
             LRU cache that internally uses tuples.  T1 is the type of the key, and T2 is the type of the value.
             </summary>
         </member>
-        <member name="P:Caching.LRUCache`2.Events">
+        <member name="M:Caching.LRUCache`2.#ctor(System.Int32,System.Int32)">
             <summary>
-            Cache events.
+            Initialize the cache.
             </summary>
+            <param name="capacity">Maximum number of entries.</param>
+            <param name="evictCount">Number to evict when capacity is reached.</param>
         </member>
-        <member name="M:Caching.LRUCache`2.#ctor(System.Int32,System.Int32,Caching.PersistenceDriver,System.Boolean)">
+        <member name="M:Caching.LRUCache`2.#ctor(System.Int32,System.Int32,Caching.IPersistenceDriver{`0,`1})">
             <summary>
             Initialize the cache.
             </summary>
             <param name="capacity">Maximum number of entries.</param>
             <param name="evictCount">Number to evict when capacity is reached.</param>
             <param name="persistence">Persistence driver.</param>
-            <param name="prepopulate">If using persistence, prepopulate from existing items.</param>
         </member>
         <member name="M:Caching.LRUCache`2.Dispose">
             <summary>
@@ -258,18 +448,6 @@
             </summary>
             <returns>Dictionary.</returns>
         </member>
-        <member name="M:Caching.LRUCache`2.LastUsed">
-            <summary>
-            Retrieve the key of the last used entry in the cache.
-            </summary>
-            <returns>String containing the key.</returns>
-        </member>
-        <member name="M:Caching.LRUCache`2.FirstUsed">
-            <summary>
-            Retrieve the key of the first used entry in the cache.
-            </summary>
-            <returns>String containing the key.</returns>
-        </member>
         <member name="M:Caching.LRUCache`2.Clear">
             <summary>
             Clear the cache.
@@ -297,20 +475,22 @@
             <param name="key">The key of the cached items.</param>
             <returns>True if cached.</returns>
         </member>
-        <member name="M:Caching.LRUCache`2.AddReplace(`0,`1)">
+        <member name="M:Caching.LRUCache`2.AddReplace(`0,`1,System.Nullable{System.DateTime})">
             <summary>
             Add or replace a key's value in the cache.
             </summary>
             <param name="key">The key.</param>
             <param name="val">The value associated with the key.</param>
+            <param name="expiration">Timestamp at which the entry should expire.</param>
             <returns>Boolean indicating success.</returns>
         </member>
-        <member name="M:Caching.LRUCache`2.TryAddReplace(`0,`1)">
+        <member name="M:Caching.LRUCache`2.TryAddReplace(`0,`1,System.Nullable{System.DateTime})">
             <summary>
             Attempt to add or replace a key's value in the cache.
             </summary>
             <param name="key">The key.</param>
             <param name="val">The value associated with the key.</param> 
+            <param name="expiration">Timestamp at which the entry should expire.</param>
             <returns>True if successful.</returns>
         </member>
         <member name="M:Caching.LRUCache`2.Remove(`0)">
@@ -325,62 +505,22 @@
             </summary>
             <returns>List of string.</returns>
         </member>
+        <member name="M:Caching.LRUCache`2.Prepopulate">
+            <summary>
+            Prepopulate the cache with entries from the persistence layer.
+            </summary>
+        </member>
+        <member name="M:Caching.LRUCache`2.ExpirationTask(System.Threading.CancellationToken)">
+            <summary>
+            Expiration task.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
         <member name="M:Caching.LRUCache`2.Dispose(System.Boolean)">
             <summary>
             Dispose of the object.  Do not use after disposal.
             </summary>
-        </member>
-        <member name="T:Caching.PersistenceDriver">
-            <summary>
-            Persistence driver.
-            </summary>
-        </member>
-        <member name="M:Caching.PersistenceDriver.Delete(System.String)">
-            <summary>
-            Delete data by its key.
-            </summary>
-            <param name="key">Key.</param>
-        </member>
-        <member name="M:Caching.PersistenceDriver.Get(System.String)">
-            <summary>
-            Retrieve data by its key.
-            </summary>
-            <param name="key">Key.</param>
-            <returns>Byte data.</returns>
-        </member>
-        <member name="M:Caching.PersistenceDriver.Write(System.String,System.Byte[])">
-            <summary>
-            Write data associated with a key.
-            </summary>
-            <param name="key">Key.</param>
-            <param name="data">Data.</param>
-        </member>
-        <member name="M:Caching.PersistenceDriver.Exists(System.String)">
-            <summary>
-            Check if data exists for a given key.
-            </summary>
-            <param name="key">Key.</param>
-            <returns>True if exists.</returns>
-        </member>
-        <member name="M:Caching.PersistenceDriver.ToBytes(System.Object)">
-            <summary>
-            Method to format data into a byte array.
-            </summary>
-            <param name="data">Data.</param>
-            <returns>Byte array.</returns>
-        </member>
-        <member name="M:Caching.PersistenceDriver.FromBytes``1(System.Byte[])">
-            <summary>
-            Method to convert byte array data into an object.
-            </summary>
-            <param name="data">Bytes.</param>
-            <returns>Instance of type T.</returns>
-        </member>
-        <member name="M:Caching.PersistenceDriver.Enumerate">
-            <summary>
-            Enumerate keys.
-            </summary>
-            <returns>List of keys.</returns>
         </member>
     </members>
 </doc>

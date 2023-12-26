@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Caching
+﻿namespace Caching
 {
+    using System;
+    using System.Collections.Generic;
+
     /// <summary>
     /// Cache events.
     /// </summary>
@@ -35,6 +34,11 @@ namespace Caching
         /// Items were evicted from the cache.
         /// </summary>
         public EventHandler<List<T1>> Evicted;
+
+        /// <summary>
+        /// Items were expired from the cache.
+        /// </summary>
+        public EventHandler<T1> Expired;
 
         /// <summary>
         /// The cache was cleared.
