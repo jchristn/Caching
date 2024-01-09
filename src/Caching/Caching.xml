@@ -213,6 +213,13 @@
             </summary>
             <param name="key">The key.</param> 
         </member>
+        <member name="M:Caching.FIFOCache`2.TryRemove(`0)">
+            <summary>
+            Attempt to remove a key and value value from the cache.
+            </summary>
+            <param name="key">The key.</param>
+            <returns>True if successful.</returns>
+        </member>
         <member name="M:Caching.FIFOCache`2.GetKeys">
             <summary>
             Retrieve all keys in the cache.
@@ -344,6 +351,13 @@
             Remove a key from the cache.
             </summary>
             <param name="key">The key.</param> 
+        </member>
+        <member name="M:Caching.ICache`2.TryRemove(`0)">
+            <summary>
+            Attempt to remove a key and value value from the cache.
+            </summary>
+            <param name="key">The key.</param>
+            <returns>True if successful.</returns>
         </member>
         <member name="M:Caching.ICache`2.GetKeys">
             <summary>
@@ -498,6 +512,13 @@
             Remove a key from the cache.
             </summary>
             <param name="key">The key.</param> 
+        </member>
+        <member name="M:Caching.LRUCache`2.TryRemove(`0)">
+            <summary>
+            Attempt to remove a key and value value from the cache.
+            </summary>
+            <param name="key">The key.</param>
+            <returns>True if successful.</returns>
         </member>
         <member name="M:Caching.LRUCache`2.GetKeys">
             <summary>

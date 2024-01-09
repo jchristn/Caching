@@ -353,6 +353,24 @@
         }
 
         /// <summary>
+        /// Attempt to remove a key and value value from the cache.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <returns>True if successful.</returns>
+        public override bool TryRemove(T1 key)
+        {
+            try
+            {
+                Remove(key);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Retrieve all keys in the cache.
         /// </summary>
         /// <returns>List of string.</returns>

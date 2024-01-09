@@ -181,6 +181,13 @@
         public abstract void Remove(T1 key);
 
         /// <summary>
+        /// Attempt to remove a key and value value from the cache.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <returns>True if successful.</returns>
+        public abstract bool TryRemove(T1 key);
+
+        /// <summary>
         /// Retrieve all keys in the cache.
         /// </summary>
         /// <returns>List of string.</returns>
