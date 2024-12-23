@@ -1,8 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Test.Shared
+﻿namespace Test.Shared
 {
+    using System;
+    using System.Collections.Generic;
+
     public static class Common
     {
         private static readonly List<string> _Values = new()

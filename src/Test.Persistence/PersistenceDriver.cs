@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using Caching;
-
-namespace Test.Persistence
+﻿namespace Test.Persistence
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using Caching;
 
     public class PersistenceDriver : IPersistenceDriver<string, string>
     {

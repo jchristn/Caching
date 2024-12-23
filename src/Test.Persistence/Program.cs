@@ -1,18 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
-using System.Text;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
-using Caching;
-using GetSomeInput;
-using Test.Shared;
-
-namespace Test.Persistence
+﻿namespace Test.Persistence
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Runtime.InteropServices.ComTypes;
+    using System.Text;
+    using System.Text.Json;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Caching;
+    using GetSomeInput;
+    using Test.Shared;
+
     partial class Program
     {
         static bool _RunForever = true;
