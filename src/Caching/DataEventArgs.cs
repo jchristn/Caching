@@ -34,8 +34,11 @@
         /// <param name="data">Data.</param>
         public DataEventArgs(T1 key, DataNode<T2> data)
         {
-            Key = key ?? throw new ArgumentNullException(nameof(key));
-            Data = data ?? throw new ArgumentNullException(nameof(data));
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            if (data == null) throw new ArgumentNullException(nameof(data));
+
+            Key = key;
+            Data = data;
         }
 
         #endregion
