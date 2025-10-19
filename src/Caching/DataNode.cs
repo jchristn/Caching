@@ -43,7 +43,7 @@
         /// </summary>
         public DataNode()
         {
-            DateTime ts = DateTime.Now;
+            DateTime ts = DateTime.UtcNow;
             Added = ts;
             LastUsed = ts;
         }
@@ -55,7 +55,7 @@
         /// <param name="expiration">Timestamp at which the entry should expire.</param>
         public DataNode(T val, DateTime? expiration = null)
         {
-            DateTime ts = DateTime.Now;
+            DateTime ts = DateTime.UtcNow;
             Added = ts;
             LastUsed = ts;
             Data = val;

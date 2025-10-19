@@ -18,14 +18,14 @@
             _BaseDirectory = baseDir;
         }
 
-        public override void Delete(string key)
+        public void Delete(string key)
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
             key = GenerateKey(key);
             File.Delete(key);
         }
 
-        public override void Clear()
+        public void Clear()
         {
             string[] files = Directory.GetFiles(_BaseDirectory, "*.*", SearchOption.TopDirectoryOnly);
             if (files != null && files.Length > 0)
@@ -37,21 +37,21 @@
             }
         }
 
-        public override bool Exists(string key)
+        public bool Exists(string key)
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
             key = GenerateKey(key);
             return File.Exists(key);
         }
 
-        public override string Get(string key)
+        public string Get(string key)
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
             key = GenerateKey(key);
             return File.ReadAllText(key);
         }
 
-        public override void Write(string key, string data)
+        public void Write(string key, string data)
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
             data ??= string.Empty;
@@ -59,7 +59,7 @@
             File.WriteAllText(key, data);
         }
 
-        public override List<string> Enumerate()
+        public List<string> Enumerate()
         {
             IEnumerable<string> files = Directory.EnumerateFiles(_BaseDirectory, "*.*", SearchOption.TopDirectoryOnly);
 

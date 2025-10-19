@@ -17,7 +17,7 @@
         static readonly int _EvictCount = 512;
         static readonly int _LoadCount = 256;
         static readonly int _DataLength = 4096;
-        static ICache<string, string> _Cache;
+        static CacheBase<string, string> _Cache;
 
         static void Main()
         {
@@ -118,6 +118,19 @@
                             Console.WriteLine("Cache count: " + _Cache.Count());
                             break;
 
+                        case "stats":
+                            var stats = _Cache.GetStatistics();
+                            Console.WriteLine("\nCache Statistics:");
+                            Console.WriteLine("  Current Count: " + stats.CurrentCount);
+                            Console.WriteLine("  Capacity: " + stats.Capacity);
+                            Console.WriteLine("  Hit Count: " + stats.HitCount);
+                            Console.WriteLine("  Miss Count: " + stats.MissCount);
+                            Console.WriteLine("  Hit Rate: " + (stats.HitRate * 100).ToString("F2") + "%");
+                            Console.WriteLine("  Eviction Count: " + stats.EvictionCount);
+                            Console.WriteLine("  Memory Usage: " + stats.CurrentMemoryBytes + " bytes");
+                            Console.WriteLine();
+                            break;
+
                         case "clear":
                             _Cache.Clear();
                             Console.WriteLine("Cache cleared");
@@ -158,6 +171,7 @@
             Console.WriteLine("  oldest           Get the oldest entry");
             Console.WriteLine("  newest           Get the newest entry");
             Console.WriteLine("  count            Get the count of cached entries");
+            Console.WriteLine("  stats            Show cache statistics");
             Console.WriteLine("  clear            Clear the cache");
             Console.WriteLine("  quit             Exit the application");
             Console.WriteLine("");

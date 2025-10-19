@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build \"C:\\Code\\Misc\\Caching-3.1\\src\\Caching\\Caching.csproj\" --configuration Release)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

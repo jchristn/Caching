@@ -4,52 +4,435 @@
         <name>Caching</name>
     </assembly>
     <members>
+        <member name="T:Caching.CacheBase`2">
+            <summary>
+            Cache base class.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheBase`2.Token">
+            <summary>
+            Cancellation token.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheBase`2.Events">
+            <summary>
+            Cache events.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheBase`2.Persistence">
+            <summary>
+            Persistence driver.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheBase`2.PersistenceAsync">
+            <summary>
+            Async persistence driver (optional).
+            </summary>
+        </member>
+        <member name="P:Caching.CacheBase`2.Capacity">
+            <summary>
+            Cache capacity.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheBase`2.EvictCount">
+            <summary>
+            Number of entries to evict when cache reaches capacity.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheBase`2.ExpirationIntervalMs">
+            <summary>
+            Frequency with which the cache is evaluated for expired entries.  Default is 1000ms.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheBase`2.SlidingExpiration">
+            <summary>
+            If true, accessing an item refreshes its expiration time.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheBase`2.MaxMemoryBytes">
+            <summary>
+            Maximum memory limit in bytes (0 = no limit).
+            </summary>
+        </member>
+        <member name="P:Caching.CacheBase`2.CurrentMemoryBytes">
+            <summary>
+            Current estimated memory usage in bytes.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheBase`2.SizeEstimator">
+            <summary>
+            Function to estimate size of values.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheBase`2.HitCount">
+            <summary>
+            Total number of cache hits.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheBase`2.MissCount">
+            <summary>
+            Total number of cache misses.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheBase`2.EvictionCount">
+            <summary>
+            Total number of evicted entries.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheBase`2.ExpirationCount">
+            <summary>
+            Total number of expired entries.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheBase`2.HitRate">
+            <summary>
+            Cache hit rate (0.0 to 1.0).
+            </summary>
+        </member>
+        <member name="M:Caching.CacheBase`2.Count">
+            <summary>
+            Retrieve the current number of entries in the cache.
+            </summary>
+            <returns>An integer containing the number of entries.</returns>
+        </member>
+        <member name="M:Caching.CacheBase`2.Oldest">
+            <summary>
+            Retrieve the key of the oldest entry in the cache.
+            </summary>
+            <returns>String containing the key.</returns>
+        </member>
+        <member name="M:Caching.CacheBase`2.Newest">
+            <summary>
+            Retrieve the key of the newest entry in the cache.
+            </summary>
+            <returns>String containing the key.</returns>
+        </member>
+        <member name="M:Caching.CacheBase`2.All">
+            <summary>
+            Retrieve all entries from the cache.
+            </summary>
+            <returns>Dictionary.</returns>
+        </member>
+        <member name="M:Caching.CacheBase`2.Clear">
+            <summary>
+            Clear the cache.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheBase`2.Get(`0)">
+            <summary>
+            Retrieve a key's value from the cache.
+            </summary>
+            <param name="key">The key associated with the data you wish to retrieve.</param>
+            <returns>The object data associated with the key.</returns>
+        </member>
+        <member name="M:Caching.CacheBase`2.TryGet(`0,`1@)">
+            <summary>
+            Retrieve a key's value from the cache.
+            </summary>
+            <param name="key">The key associated with the data you wish to retrieve.</param>
+            <param name="val">The value associated with the key.</param>
+            <returns>True if key is found.</returns>
+        </member>
+        <member name="M:Caching.CacheBase`2.Contains(`0)">
+            <summary>
+            See if a key exists in the cache.
+            </summary>
+            <param name="key">The key of the cached items.</param>
+            <returns>True if cached.</returns>
+        </member>
+        <member name="M:Caching.CacheBase`2.AddReplace(`0,`1,System.Nullable{System.DateTime})">
+            <summary>
+            Add or replace a key's value in the cache.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="val">The value associated with the key.</param>
+            <param name="expiration">Timestamp at which the entry should expire.</param>
+        </member>
+        <member name="M:Caching.CacheBase`2.AddReplace(`0,`1,System.TimeSpan)">
+            <summary>
+            Add or replace a key's value in the cache with relative expiration time.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="val">The value associated with the key.</param>
+            <param name="expiresIn">Time span until expiration.</param>
+        </member>
+        <member name="M:Caching.CacheBase`2.TryAddReplace(`0,`1,System.Nullable{System.DateTime})">
+            <summary>
+            Attempt to add or replace a key's value in the cache.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="val">The value associated with the key.</param>
+            <param name="expiration">Timestamp at which the entry should expire.</param>
+            <returns>True if successful.</returns>
+        </member>
+        <member name="M:Caching.CacheBase`2.GetOrAdd(`0,System.Func{`0,`1},System.Nullable{System.DateTime})">
+            <summary>
+            Get a value from cache, or add it if not present.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="valueFactory">Function to create value if not present.</param>
+            <param name="expiration">Timestamp at which the entry should expire.</param>
+            <returns>The value.</returns>
+        </member>
+        <member name="M:Caching.CacheBase`2.GetOrAdd(`0,System.Func{`0,`1},System.Nullable{System.TimeSpan})">
+            <summary>
+            Get a value from cache, or add it if not present (with relative expiration).
+            </summary>
+            <param name="key">The key.</param>
+            <param name="valueFactory">Function to create value if not present.</param>
+            <param name="expiresIn">Time span until expiration.</param>
+            <returns>The value.</returns>
+        </member>
+        <member name="M:Caching.CacheBase`2.TryGetOrAdd(`0,System.Func{`0,`1},`1@,System.Nullable{System.DateTime})">
+            <summary>
+            Try to get a value from cache, or add it if not present.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="valueFactory">Function to create value if not present.</param>
+            <param name="value">The retrieved or created value.</param>
+            <param name="expiration">Timestamp at which the entry should expire.</param>
+            <returns>True if successful.</returns>
+        </member>
+        <member name="M:Caching.CacheBase`2.AddOrUpdate(`0,`1,System.Func{`0,`1,`1},System.Nullable{System.DateTime})">
+            <summary>
+            Add a new value or update existing value.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="addValue">Value to add if key doesn't exist.</param>
+            <param name="updateValueFactory">Function to update value if key exists.</param>
+            <param name="expiration">Timestamp at which the entry should expire.</param>
+            <returns>The resulting value.</returns>
+        </member>
+        <member name="M:Caching.CacheBase`2.Remove(`0)">
+            <summary>
+            Remove a key from the cache.
+            </summary>
+            <param name="key">The key.</param>
+        </member>
+        <member name="M:Caching.CacheBase`2.TryRemove(`0)">
+            <summary>
+            Attempt to remove a key and value value from the cache.
+            </summary>
+            <param name="key">The key.</param>
+            <returns>True if successful.</returns>
+        </member>
+        <member name="M:Caching.CacheBase`2.GetKeys">
+            <summary>
+            Retrieve all keys in the cache.
+            </summary>
+            <returns>List of string.</returns>
+        </member>
+        <member name="M:Caching.CacheBase`2.Prepopulate">
+            <summary>
+            Prepopulate the cache with entries from the persistence layer.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheBase`2.GetStatistics">
+            <summary>
+            Get current cache statistics.
+            </summary>
+            <returns>Cache statistics.</returns>
+        </member>
+        <member name="M:Caching.CacheBase`2.ResetStatistics">
+            <summary>
+            Reset all statistics counters.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheBase`2.ThrowIfDisposed">
+            <summary>
+            Throw if disposed.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheBase`2.EstimateSize(`1)">
+            <summary>
+            Estimate size of a value.
+            </summary>
+            <param name="value">Value to estimate.</param>
+            <returns>Estimated size in bytes.</returns>
+        </member>
+        <member name="T:Caching.ICache`2">
+            <summary>
+            Cache base class (deprecated name for backward compatibility).
+            Use CacheBase instead.
+            </summary>
+        </member>
         <member name="T:Caching.CacheEvents`2">
             <summary>
             Cache events.
             </summary>
         </member>
-        <member name="F:Caching.CacheEvents`2.Added">
+        <member name="E:Caching.CacheEvents`2.Added">
             <summary>
             An item was added to the cache.
             </summary>
         </member>
-        <member name="F:Caching.CacheEvents`2.Prepopulated">
+        <member name="E:Caching.CacheEvents`2.Prepopulated">
             <summary>
             An item was prepopulated into the cache from persistence.
             </summary>
         </member>
-        <member name="F:Caching.CacheEvents`2.Replaced">
+        <member name="E:Caching.CacheEvents`2.Replaced">
             <summary>
             An item was replaced in the cache.
             </summary>
         </member>
-        <member name="F:Caching.CacheEvents`2.Removed">
+        <member name="E:Caching.CacheEvents`2.Removed">
             <summary>
             An item was removed from the cache.
             </summary>
         </member>
-        <member name="F:Caching.CacheEvents`2.Evicted">
+        <member name="E:Caching.CacheEvents`2.Evicted">
             <summary>
             Items were evicted from the cache.
             </summary>
         </member>
-        <member name="F:Caching.CacheEvents`2.Expired">
+        <member name="E:Caching.CacheEvents`2.Expired">
             <summary>
             Items were expired from the cache.
             </summary>
         </member>
-        <member name="F:Caching.CacheEvents`2.Cleared">
+        <member name="E:Caching.CacheEvents`2.Cleared">
             <summary>
             The cache was cleared.
             </summary>
         </member>
-        <member name="F:Caching.CacheEvents`2.Disposed">
+        <member name="E:Caching.CacheEvents`2.Disposed">
             <summary>
             The cache was disposed.
             </summary>
         </member>
         <member name="M:Caching.CacheEvents`2.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheEvents`2.OnAdded(System.Object,Caching.DataEventArgs{`0,`1})">
+            <summary>
+            Invoke Added event.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheEvents`2.OnPrepopulated(System.Object,Caching.DataEventArgs{`0,`1})">
+            <summary>
+            Invoke Prepopulated event.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheEvents`2.OnReplaced(System.Object,Caching.DataEventArgs{`0,`1})">
+            <summary>
+            Invoke Replaced event.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheEvents`2.OnRemoved(System.Object,Caching.DataEventArgs{`0,`1})">
+            <summary>
+            Invoke Removed event.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheEvents`2.OnEvicted(System.Object,System.Collections.Generic.List{`0})">
+            <summary>
+            Invoke Evicted event.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheEvents`2.OnExpired(System.Object,`0)">
+            <summary>
+            Invoke Expired event.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheEvents`2.OnCleared(System.Object,System.EventArgs)">
+            <summary>
+            Invoke Cleared event.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheEvents`2.OnDisposed(System.Object,System.EventArgs)">
+            <summary>
+            Invoke Disposed event.
+            </summary>
+        </member>
+        <member name="T:Caching.CacheOptions`1">
+            <summary>
+            Cache configuration options.
+            </summary>
+            <typeparam name="T2">Type of cached values.</typeparam>
+        </member>
+        <member name="P:Caching.CacheOptions`1.Capacity">
+            <summary>
+            Maximum number of entries.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheOptions`1.EvictCount">
+            <summary>
+            Number of entries to evict when capacity is reached.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheOptions`1.MaxMemoryBytes">
+            <summary>
+            Maximum memory size in bytes (0 = no limit).
+            </summary>
+        </member>
+        <member name="P:Caching.CacheOptions`1.SizeEstimator">
+            <summary>
+            Function to estimate size of cached values.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheOptions`1.SlidingExpiration">
+            <summary>
+            Enable sliding expiration (refresh TTL on access).
+            </summary>
+        </member>
+        <member name="P:Caching.CacheOptions`1.ExpirationIntervalMs">
+            <summary>
+            Expiration check interval in milliseconds.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheOptions`1.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Caching.CacheStatistics">
+            <summary>
+            Cache statistics snapshot.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheStatistics.HitCount">
+            <summary>
+            Total number of cache hits.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheStatistics.MissCount">
+            <summary>
+            Total number of cache misses.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheStatistics.EvictionCount">
+            <summary>
+            Total number of evicted entries.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheStatistics.ExpirationCount">
+            <summary>
+            Total number of expired entries.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheStatistics.HitRate">
+            <summary>
+            Cache hit rate (0.0 to 1.0).
+            </summary>
+        </member>
+        <member name="P:Caching.CacheStatistics.CurrentCount">
+            <summary>
+            Current number of entries in the cache.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheStatistics.Capacity">
+            <summary>
+            Cache capacity.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheStatistics.CurrentMemoryBytes">
+            <summary>
+            Current estimated memory usage in bytes (if memory tracking is enabled).
+            </summary>
+        </member>
+        <member name="M:Caching.CacheStatistics.#ctor">
             <summary>
             Instantiate.
             </summary>
@@ -195,7 +578,7 @@
             Add or replace a key's value in the cache.
             </summary>
             <param name="key">The key.</param>
-            <param name="val">The value associated with the key.</param> 
+            <param name="val">The value associated with the key.</param>
             <param name="expiration">Timestamp at which the entry should expire.</param>
         </member>
         <member name="M:Caching.FIFOCache`2.TryAddReplace(`0,`1,System.Nullable{System.DateTime})">
@@ -203,15 +586,44 @@
             Attempt to add or replace a key's value in the cache.
             </summary>
             <param name="key">The key.</param>
-            <param name="val">The value associated with the key.</param> 
+            <param name="val">The value associated with the key.</param>
             <param name="expiration">Timestamp at which the entry should expire.</param>
             <returns>True if successful.</returns>
+        </member>
+        <member name="M:Caching.FIFOCache`2.GetOrAdd(`0,System.Func{`0,`1},System.Nullable{System.DateTime})">
+            <summary>
+            Get a value from cache, or add it if not present.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="valueFactory">Function to create value if not present.</param>
+            <param name="expiration">Timestamp at which the entry should expire.</param>
+            <returns>The value.</returns>
+        </member>
+        <member name="M:Caching.FIFOCache`2.TryGetOrAdd(`0,System.Func{`0,`1},`1@,System.Nullable{System.DateTime})">
+            <summary>
+            Try to get a value from cache, or add it if not present.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="valueFactory">Function to create value if not present.</param>
+            <param name="value">The retrieved or created value.</param>
+            <param name="expiration">Timestamp at which the entry should expire.</param>
+            <returns>True if successful.</returns>
+        </member>
+        <member name="M:Caching.FIFOCache`2.AddOrUpdate(`0,`1,System.Func{`0,`1,`1},System.Nullable{System.DateTime})">
+            <summary>
+            Add a new value or update existing value.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="addValue">Value to add if key doesn't exist.</param>
+            <param name="updateValueFactory">Function to update value if key exists.</param>
+            <param name="expiration">Timestamp at which the entry should expire.</param>
+            <returns>The resulting value.</returns>
         </member>
         <member name="M:Caching.FIFOCache`2.Remove(`0)">
             <summary>
             Remove a key from the cache.
             </summary>
-            <param name="key">The key.</param> 
+            <param name="key">The key.</param>
         </member>
         <member name="M:Caching.FIFOCache`2.TryRemove(`0)">
             <summary>
@@ -243,137 +655,12 @@
             Dispose of the object.  Do not use after disposal.
             </summary>
         </member>
-        <member name="T:Caching.ICache`2">
-            <summary>
-            Cache base class.
-            </summary>
-        </member>
-        <member name="P:Caching.ICache`2.Token">
-            <summary>
-            Cancellation token.
-            </summary>
-        </member>
-        <member name="P:Caching.ICache`2.Events">
-            <summary>
-            Cache events.
-            </summary>
-        </member>
-        <member name="P:Caching.ICache`2.Persistence">
-            <summary>
-            Persistence driver.
-            </summary>
-        </member>
-        <member name="P:Caching.ICache`2.Capacity">
-            <summary>
-            Cache capacity.
-            </summary>
-        </member>
-        <member name="P:Caching.ICache`2.EvictCount">
-            <summary>
-            Number of entries to evict when cache reaches capacity.
-            </summary>
-        </member>
-        <member name="P:Caching.ICache`2.ExpirationIntervalMs">
-            <summary>
-            Frequency with which the cache is evaluated for expired entries.  Default is 1000ms.
-            </summary>
-        </member>
-        <member name="M:Caching.ICache`2.Count">
-            <summary>
-            Retrieve the current number of entries in the cache.
-            </summary>
-            <returns>An integer containing the number of entries.</returns>
-        </member>
-        <member name="M:Caching.ICache`2.Oldest">
-            <summary>
-            Retrieve the key of the oldest entry in the cache.
-            </summary>
-            <returns>String containing the key.</returns>
-        </member>
-        <member name="M:Caching.ICache`2.Newest">
-            <summary>
-            Retrieve the key of the newest entry in the cache.
-            </summary>
-            <returns>String containing the key.</returns>
-        </member>
-        <member name="M:Caching.ICache`2.All">
-            <summary>
-            Retrieve all entries from the cache.
-            </summary>
-            <returns>Dictionary.</returns>
-        </member>
-        <member name="M:Caching.ICache`2.Clear">
-            <summary>
-            Clear the cache.
-            </summary>
-        </member>
-        <member name="M:Caching.ICache`2.Get(`0)">
-            <summary>
-            Retrieve a key's value from the cache.
-            </summary>
-            <param name="key">The key associated with the data you wish to retrieve.</param>
-            <returns>The object data associated with the key.</returns>
-        </member>
-        <member name="M:Caching.ICache`2.TryGet(`0,`1@)">
-            <summary>
-            Retrieve a key's value from the cache.
-            </summary>
-            <param name="key">The key associated with the data you wish to retrieve.</param>
-            <param name="val">The value associated with the key.</param>
-            <returns>True if key is found.</returns>
-        </member>
-        <member name="M:Caching.ICache`2.Contains(`0)">
-            <summary>
-            See if a key exists in the cache.
-            </summary>
-            <param name="key">The key of the cached items.</param>
-            <returns>True if cached.</returns>
-        </member>
-        <member name="M:Caching.ICache`2.AddReplace(`0,`1,System.Nullable{System.DateTime})">
-            <summary>
-            Add or replace a key's value in the cache.
-            </summary>
-            <param name="key">The key.</param>
-            <param name="val">The value associated with the key.</param> 
-            <param name="expiration">Timestamp at which the entry should expire.</param>
-        </member>
-        <member name="M:Caching.ICache`2.TryAddReplace(`0,`1,System.Nullable{System.DateTime})">
-            <summary>
-            Attempt to add or replace a key's value in the cache.
-            </summary>
-            <param name="key">The key.</param>
-            <param name="val">The value associated with the key.</param> 
-            <param name="expiration">Timestamp at which the entry should expire.</param>
-            <returns>True if successful.</returns>
-        </member>
-        <member name="M:Caching.ICache`2.Remove(`0)">
-            <summary>
-            Remove a key from the cache.
-            </summary>
-            <param name="key">The key.</param> 
-        </member>
-        <member name="M:Caching.ICache`2.TryRemove(`0)">
-            <summary>
-            Attempt to remove a key and value value from the cache.
-            </summary>
-            <param name="key">The key.</param>
-            <returns>True if successful.</returns>
-        </member>
-        <member name="M:Caching.ICache`2.GetKeys">
-            <summary>
-            Retrieve all keys in the cache.
-            </summary>
-            <returns>List of string.</returns>
-        </member>
-        <member name="M:Caching.ICache`2.Prepopulate">
-            <summary>
-            Prepopulate the cache with entries from the persistence layer.
-            </summary>
-        </member>
         <member name="T:Caching.IPersistenceDriver`2">
             <summary>
-            Persistence driver.
+            Persistence driver interface. Implement this interface for custom persistence.
             </summary>
+            <typeparam name="T1">Type of key.</typeparam>
+            <typeparam name="T2">Type of value.</typeparam>
         </member>
         <member name="M:Caching.IPersistenceDriver`2.Delete(`0)">
             <summary>
@@ -413,6 +700,106 @@
             </summary>
             <returns>List of keys.</returns>
         </member>
+        <member name="T:Caching.PersistenceDriverBase`2">
+            <summary>
+            Persistence driver base class for backward compatibility.
+            New code should implement IPersistenceDriver interface directly.
+            </summary>
+            <typeparam name="T1">Type of key.</typeparam>
+            <typeparam name="T2">Type of value.</typeparam>
+        </member>
+        <member name="M:Caching.PersistenceDriverBase`2.Delete(`0)">
+            <summary>
+            Delete data by its key.
+            </summary>
+            <param name="key">Key.</param>
+        </member>
+        <member name="M:Caching.PersistenceDriverBase`2.Clear">
+            <summary>
+            Delete all persisted contents.
+            </summary>
+        </member>
+        <member name="M:Caching.PersistenceDriverBase`2.Get(`0)">
+            <summary>
+            Retrieve data by its key.
+            </summary>
+            <param name="key">Key.</param>
+            <returns>Data.</returns>
+        </member>
+        <member name="M:Caching.PersistenceDriverBase`2.Write(`0,`1)">
+            <summary>
+            Write data associated with a key.
+            </summary>
+            <param name="key">Key.</param>
+            <param name="data">Data.</param>
+        </member>
+        <member name="M:Caching.PersistenceDriverBase`2.Exists(`0)">
+            <summary>
+            Check if data exists for a given key.
+            </summary>
+            <param name="key">Key.</param>
+            <returns>True if exists.</returns>
+        </member>
+        <member name="M:Caching.PersistenceDriverBase`2.Enumerate">
+            <summary>
+            Enumerate keys.
+            </summary>
+            <returns>List of keys.</returns>
+        </member>
+        <member name="T:Caching.IPersistenceDriverAsync`2">
+            <summary>
+            Async persistence driver interface.
+            </summary>
+            <typeparam name="T1">Type of key.</typeparam>
+            <typeparam name="T2">Type of value.</typeparam>
+        </member>
+        <member name="M:Caching.IPersistenceDriverAsync`2.DeleteAsync(`0,System.Threading.CancellationToken)">
+            <summary>
+            Delete data by its key asynchronously.
+            </summary>
+            <param name="key">Key.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Caching.IPersistenceDriverAsync`2.ClearAsync(System.Threading.CancellationToken)">
+            <summary>
+            Delete all persisted contents asynchronously.
+            </summary>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Caching.IPersistenceDriverAsync`2.GetAsync(`0,System.Threading.CancellationToken)">
+            <summary>
+            Retrieve data by its key asynchronously.
+            </summary>
+            <param name="key">Key.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Data.</returns>
+        </member>
+        <member name="M:Caching.IPersistenceDriverAsync`2.WriteAsync(`0,`1,System.Threading.CancellationToken)">
+            <summary>
+            Write data associated with a key asynchronously.
+            </summary>
+            <param name="key">Key.</param>
+            <param name="data">Data.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Caching.IPersistenceDriverAsync`2.ExistsAsync(`0,System.Threading.CancellationToken)">
+            <summary>
+            Check if data exists for a given key asynchronously.
+            </summary>
+            <param name="key">Key.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>True if exists.</returns>
+        </member>
+        <member name="M:Caching.IPersistenceDriverAsync`2.EnumerateAsync(System.Threading.CancellationToken)">
+            <summary>
+            Enumerate keys asynchronously.
+            </summary>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>List of keys.</returns>
+        </member>
         <member name="T:Caching.LRUCache`2">
             <summary>
             LRU cache that internally uses tuples.  T1 is the type of the key, and T2 is the type of the value.
@@ -446,13 +833,13 @@
         </member>
         <member name="M:Caching.LRUCache`2.Oldest">
             <summary>
-            Retrieve the key of the oldest entry in the cache.
+            Retrieve the key of the oldest entry in the cache (by Added time).
             </summary>
             <returns>String containing the key.</returns>
         </member>
         <member name="M:Caching.LRUCache`2.Newest">
             <summary>
-            Retrieve the key of the newest entry in the cache.
+            Retrieve the key of the newest entry in the cache (by Added time).
             </summary>
             <returns>String containing the key.</returns>
         </member>
@@ -503,15 +890,44 @@
             Attempt to add or replace a key's value in the cache.
             </summary>
             <param name="key">The key.</param>
-            <param name="val">The value associated with the key.</param> 
+            <param name="val">The value associated with the key.</param>
             <param name="expiration">Timestamp at which the entry should expire.</param>
             <returns>True if successful.</returns>
+        </member>
+        <member name="M:Caching.LRUCache`2.GetOrAdd(`0,System.Func{`0,`1},System.Nullable{System.DateTime})">
+            <summary>
+            Get a value from cache, or add it if not present.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="valueFactory">Function to create value if not present.</param>
+            <param name="expiration">Timestamp at which the entry should expire.</param>
+            <returns>The value.</returns>
+        </member>
+        <member name="M:Caching.LRUCache`2.TryGetOrAdd(`0,System.Func{`0,`1},`1@,System.Nullable{System.DateTime})">
+            <summary>
+            Try to get a value from cache, or add it if not present.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="valueFactory">Function to create value if not present.</param>
+            <param name="value">The retrieved or created value.</param>
+            <param name="expiration">Timestamp at which the entry should expire.</param>
+            <returns>True if successful.</returns>
+        </member>
+        <member name="M:Caching.LRUCache`2.AddOrUpdate(`0,`1,System.Func{`0,`1,`1},System.Nullable{System.DateTime})">
+            <summary>
+            Add a new value or update existing value.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="addValue">Value to add if key doesn't exist.</param>
+            <param name="updateValueFactory">Function to update value if key exists.</param>
+            <param name="expiration">Timestamp at which the entry should expire.</param>
+            <returns>The resulting value.</returns>
         </member>
         <member name="M:Caching.LRUCache`2.Remove(`0)">
             <summary>
             Remove a key from the cache.
             </summary>
-            <param name="key">The key.</param> 
+            <param name="key">The key.</param>
         </member>
         <member name="M:Caching.LRUCache`2.TryRemove(`0)">
             <summary>

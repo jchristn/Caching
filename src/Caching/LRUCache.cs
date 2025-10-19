@@ -1,4 +1,4 @@
-﻿namespace Caching
+namespace Caching
 {
     using System;
     using System.Collections.Generic;
@@ -9,7 +9,7 @@
     /// <summary>
     /// LRU cache that internally uses tuples.  T1 is the type of the key, and T2 is the type of the value.
     /// </summary>
-    public class LRUCache<T1, T2> : ICache<T1, T2>, IDisposable
+    public class LRUCache<T1, T2> : CacheBase<T1, T2>, IDisposable
     {
         #region Public-Members
 
@@ -42,7 +42,7 @@
             _Persistence = null;
             _Token = _TokenSource.Token;
 
-            Task.Run(() => ExpirationTask(_Token));
+            _ExpirationTaskInstance = Task.Run(() => ExpirationTask(_Token));
         }
 
         /// <summary>
@@ -64,7 +64,7 @@
             _Persistence = persistence;
             _Token = _TokenSource.Token;
 
-            Task.Run(() => ExpirationTask(_Token));
+            _ExpirationTaskInstance = Task.Run(() => ExpirationTask(_Token));
         }
 
         #endregion
@@ -93,32 +93,56 @@
         }
 
         /// <summary>
-        /// Retrieve the key of the oldest entry in the cache.
+        /// Retrieve the key of the oldest entry in the cache (by Added time).
         /// </summary>
         /// <returns>String containing the key.</returns>
         public override T1 Oldest()
         {
-            if (_Cache == null || _Cache.Count < 1) throw new KeyNotFoundException();
-
             lock (_CacheLock)
             {
-                KeyValuePair<T1, DataNode<T2>> oldest = _Cache.OrderBy(x => x.Value.Added).First();
-                return oldest.Key;
+                if (_Cache == null || _Cache.Count < 1) throw new KeyNotFoundException();
+
+                // O(n) scan for minimum
+                T1 oldestKey = default;
+                DateTime oldestTime = DateTime.MaxValue;
+
+                foreach (var kvp in _Cache)
+                {
+                    if (kvp.Value.Added < oldestTime)
+                    {
+                        oldestTime = kvp.Value.Added;
+                        oldestKey = kvp.Key;
+                    }
+                }
+
+                return oldestKey;
             }
         }
 
         /// <summary>
-        /// Retrieve the key of the newest entry in the cache.
+        /// Retrieve the key of the newest entry in the cache (by Added time).
         /// </summary>
         /// <returns>String containing the key.</returns>
         public override T1 Newest()
         {
-            if (_Cache == null || _Cache.Count < 1) throw new KeyNotFoundException();
-
             lock (_CacheLock)
             {
-                KeyValuePair<T1, DataNode<T2>> newest = _Cache.OrderBy(x => x.Value.Added).Last();
-                return newest.Key;
+                if (_Cache == null || _Cache.Count < 1) throw new KeyNotFoundException();
+
+                // O(n) scan for maximum
+                T1 newestKey = default;
+                DateTime newestTime = DateTime.MinValue;
+
+                foreach (var kvp in _Cache)
+                {
+                    if (kvp.Value.Added > newestTime)
+                    {
+                        newestTime = kvp.Value.Added;
+                        newestKey = kvp.Key;
+                    }
+                }
+
+                return newestKey;
             }
         }
 
@@ -149,13 +173,16 @@
         /// </summary>
         public override void Clear()
         {
+            ThrowIfDisposed();
+
             lock (_CacheLock)
             {
                 _Persistence?.Clear();
                 _Cache = new Dictionary<T1, DataNode<T2>>();
-                _Events?.Cleared?.Invoke(this, EventArgs.Empty);
-                return;
+                CurrentMemoryBytes = 0;
             }
+
+            _Events?.OnCleared(this, EventArgs.Empty);
         }
 
         /// <summary>
@@ -165,24 +192,29 @@
         /// <returns>The object data associated with the key.</returns>
         public override T2 Get(T1 key)
         {
+            ThrowIfDisposed();
             if (key == null) throw new ArgumentNullException(nameof(key));
 
             lock (_CacheLock)
             {
-                if (_Cache.ContainsKey(key))
+                if (_Cache.TryGetValue(key, out DataNode<T2> node))
                 {
-                    KeyValuePair<T1, DataNode<T2>> curr = _Cache.Where(x => x.Key.Equals(key)).First();
+                    Interlocked.Increment(ref _hitCount);
 
-                    // update LastUsed
-                    _Cache.Remove(key);
-                    curr.Value.LastUsed = DateTime.Now;
-                    _Cache.Add(key, curr.Value);
+                    node.LastUsed = DateTime.UtcNow;
 
-                    // return data
-                    return curr.Value.Data;
+                    // Sliding expiration
+                    if (SlidingExpiration && node.Expiration.HasValue)
+                    {
+                        TimeSpan timeToLive = node.Expiration.Value - node.Added;
+                        node.Expiration = DateTime.UtcNow.Add(timeToLive);
+                    }
+
+                    return node.Data;
                 }
                 else
                 {
+                    Interlocked.Increment(ref _missCount);
                     throw new KeyNotFoundException();
                 }
             }
@@ -196,25 +228,30 @@
         /// <returns>True if key is found.</returns>
         public override bool TryGet(T1 key, out T2 val)
         {
+            ThrowIfDisposed();
             if (key == null) throw new ArgumentNullException(nameof(key));
 
             lock (_CacheLock)
             {
-                if (_Cache.ContainsKey(key))
+                if (_Cache.TryGetValue(key, out DataNode<T2> node))
                 {
-                    KeyValuePair<T1, DataNode<T2>> curr = _Cache.Where(x => x.Key.Equals(key)).First();
+                    Interlocked.Increment(ref _hitCount);
 
-                    // update LastUsed
-                    _Cache.Remove(key);
-                    curr.Value.LastUsed = DateTime.Now;
-                    _Cache.Add(key, curr.Value);
+                    node.LastUsed = DateTime.UtcNow;
 
-                    // return data
-                    val = curr.Value.Data;
+                    // Sliding expiration
+                    if (SlidingExpiration && node.Expiration.HasValue)
+                    {
+                        TimeSpan timeToLive = node.Expiration.Value - node.Added;
+                        node.Expiration = DateTime.UtcNow.Add(timeToLive);
+                    }
+
+                    val = node.Data;
                     return true;
                 }
                 else
                 {
+                    Interlocked.Increment(ref _missCount);
                     val = default;
                     return false;
                 }
@@ -228,17 +265,13 @@
         /// <returns>True if cached.</returns>
         public override bool Contains(T1 key)
         {
+            ThrowIfDisposed();
             if (key == null) throw new ArgumentNullException(nameof(key));
 
             lock (_CacheLock)
             {
-                if (_Cache.ContainsKey(key))
-                {
-                    return true;
-                }
+                return _Cache.ContainsKey(key);
             }
-
-            return false;
         }
 
         /// <summary>
@@ -250,6 +283,7 @@
         /// <returns>Boolean indicating success.</returns>
         public override void AddReplace(T1 key, T2 val, DateTime? expiration = null)
         {
+            ThrowIfDisposed();
             if (key == null) throw new ArgumentNullException(nameof(key));
 
             if (expiration != null)
@@ -259,6 +293,14 @@
                     throw new ArgumentException("The specified expiration timestamp is in the past.");
             }
 
+            // Capture data for outside-lock operations
+            bool shouldWrite = false;
+            T2 valueToWrite = default;
+            DataNode<T2> previousNode = null;
+            bool wasReplaced = false;
+            DataNode<T2> addedNode = null;
+            List<T1> evictedKeys = null;
+
             lock (_CacheLock)
             {
                 bool replaced = false;
@@ -266,56 +308,106 @@
 
                 if (_Cache.ContainsKey(key))
                 {
-                    if (_Persistence != null && _Persistence.Exists(key))
-                    {
-                        _Persistence.Delete(key);
-                    }
-
                     previous = _Cache[key];
                     _Cache.Remove(key);
+
+                    // Update memory tracking
+                    if (MaxMemoryBytes > 0)
+                    {
+                        CurrentMemoryBytes -= EstimateSize(previous.Data);
+                    }
 
                     replaced = true;
                 }
 
+                // Check capacity and evict if needed (LRU evicts by LastUsed)
                 if (_Cache.Count >= Capacity)
                 {
-                    Dictionary<T1, DataNode<T2>> updated = _Cache.OrderBy(x => x.Value.LastUsed).Skip(EvictCount).ToDictionary(x => x.Key, x => x.Value);
-                    Dictionary<T1, DataNode<T2>> removed = _Cache.Except(updated).ToDictionary(x => x.Key, x => x.Value);
+                    var toEvict = _Cache.OrderBy(x => x.Value.LastUsed)
+                                        .Take(EvictCount)
+                                        .Select(x => x.Key)
+                                        .ToList();
 
-                    if (_Persistence != null && removed != null && removed.Count > 0)
+                    foreach (T1 evictKey in toEvict)
                     {
-                        foreach (KeyValuePair<T1, DataNode<T2>> kvp in removed)
+                        if (_Cache.TryGetValue(evictKey, out DataNode<T2> evictNode))
                         {
-                            _Persistence.Delete(kvp.Key);
+                            _Cache.Remove(evictKey);
+
+                            // Update memory tracking
+                            if (MaxMemoryBytes > 0)
+                            {
+                                CurrentMemoryBytes -= EstimateSize(evictNode.Data);
+                            }
                         }
                     }
 
-                    _Cache = updated;
-
-                    if (removed != null && removed.Count > 0)
+                    if (toEvict.Count > 0)
                     {
-                        List<T1> evictedKeys = new List<T1>(removed.Keys);
-                        _Events?.Evicted?.Invoke(this, evictedKeys);
+                        evictedKeys = toEvict;
+                        Interlocked.Add(ref _evictionCount, toEvict.Count);
                     }
+                }
+
+                // Check memory limit and evict if needed
+                if (MaxMemoryBytes > 0)
+                {
+                    long valueSize = EstimateSize(val);
+
+                    while (CurrentMemoryBytes + valueSize > MaxMemoryBytes && _Cache.Count > 0)
+                    {
+                        var toEvict = _Cache.OrderBy(x => x.Value.LastUsed).First();
+                        _Cache.Remove(toEvict.Key);
+
+                        CurrentMemoryBytes -= EstimateSize(toEvict.Value.Data);
+
+                        if (evictedKeys == null) evictedKeys = new List<T1>();
+                        evictedKeys.Add(toEvict.Key);
+                        Interlocked.Increment(ref _evictionCount);
+                    }
+
+                    CurrentMemoryBytes += valueSize;
                 }
 
                 DataNode<T2> curr = new DataNode<T2>(val, expiration);
                 _Cache.Add(key, curr);
 
-                _Persistence?.Write(key, val);
-
-                if (replaced) _Events?.Replaced?.Invoke(this, new DataEventArgs<T1, T2>(key, previous));
-                _Events?.Added?.Invoke(this, new DataEventArgs<T1, T2>(key, curr));
-
-                return;
+                // Capture for outside lock
+                shouldWrite = true;
+                valueToWrite = val;
+                previousNode = previous;
+                wasReplaced = replaced;
+                addedNode = curr;
             }
+
+            // Execute I/O and events outside the lock
+            if (shouldWrite)
+            {
+                _Persistence?.Write(key, valueToWrite);
+            }
+
+            if (evictedKeys != null && evictedKeys.Count > 0)
+            {
+                foreach (T1 evictKey in evictedKeys)
+                {
+                    _Persistence?.Delete(evictKey);
+                }
+                _Events?.OnEvicted(this, evictedKeys);
+            }
+
+            if (wasReplaced)
+            {
+                _Events?.OnReplaced(this, new DataEventArgs<T1, T2>(key, previousNode));
+            }
+
+            _Events?.OnAdded(this, new DataEventArgs<T1, T2>(key, addedNode));
         }
 
         /// <summary>
         /// Attempt to add or replace a key's value in the cache.
         /// </summary>
         /// <param name="key">The key.</param>
-        /// <param name="val">The value associated with the key.</param> 
+        /// <param name="val">The value associated with the key.</param>
         /// <param name="expiration">Timestamp at which the entry should expire.</param>
         /// <returns>True if successful.</returns>
         public override bool TryAddReplace(T1 key, T2 val, DateTime? expiration = null)
@@ -332,27 +424,130 @@
         }
 
         /// <summary>
-        /// Remove a key from the cache.
+        /// Get a value from cache, or add it if not present.
         /// </summary>
-        /// <param name="key">The key.</param> 
-        public override void Remove(T1 key)
+        /// <param name="key">The key.</param>
+        /// <param name="valueFactory">Function to create value if not present.</param>
+        /// <param name="expiration">Timestamp at which the entry should expire.</param>
+        /// <returns>The value.</returns>
+        public override T2 GetOrAdd(T1 key, Func<T1, T2> valueFactory, DateTime? expiration = null)
         {
+            ThrowIfDisposed();
             if (key == null) throw new ArgumentNullException(nameof(key));
+            if (valueFactory == null) throw new ArgumentNullException(nameof(valueFactory));
 
             lock (_CacheLock)
             {
-                DataNode<T2> val = null;
+                // Try to get existing
+                if (_Cache.TryGetValue(key, out DataNode<T2> node))
+                {
+                    Interlocked.Increment(ref _hitCount);
+                    node.LastUsed = DateTime.UtcNow;
+                    return node.Data;
+                }
 
+                Interlocked.Increment(ref _missCount);
+
+                // Not found - create new value
+                T2 newValue = valueFactory(key);
+
+                // Add to cache using existing AddReplace logic
+                AddReplace(key, newValue, expiration);
+
+                return newValue;
+            }
+        }
+
+        /// <summary>
+        /// Try to get a value from cache, or add it if not present.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <param name="valueFactory">Function to create value if not present.</param>
+        /// <param name="value">The retrieved or created value.</param>
+        /// <param name="expiration">Timestamp at which the entry should expire.</param>
+        /// <returns>True if successful.</returns>
+        public override bool TryGetOrAdd(T1 key, Func<T1, T2> valueFactory, out T2 value, DateTime? expiration = null)
+        {
+            try
+            {
+                value = GetOrAdd(key, valueFactory, expiration);
+                return true;
+            }
+            catch (Exception)
+            {
+                value = default;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Add a new value or update existing value.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <param name="addValue">Value to add if key doesn't exist.</param>
+        /// <param name="updateValueFactory">Function to update value if key exists.</param>
+        /// <param name="expiration">Timestamp at which the entry should expire.</param>
+        /// <returns>The resulting value.</returns>
+        public override T2 AddOrUpdate(T1 key, T2 addValue, Func<T1, T2, T2> updateValueFactory, DateTime? expiration = null)
+        {
+            ThrowIfDisposed();
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            if (updateValueFactory == null) throw new ArgumentNullException(nameof(updateValueFactory));
+
+            lock (_CacheLock)
+            {
+                T2 resultValue;
+
+                if (_Cache.TryGetValue(key, out DataNode<T2> existing))
+                {
+                    // Update existing
+                    resultValue = updateValueFactory(key, existing.Data);
+                }
+                else
+                {
+                    // Add new
+                    resultValue = addValue;
+                }
+
+                AddReplace(key, resultValue, expiration);
+                return resultValue;
+            }
+        }
+
+        /// <summary>
+        /// Remove a key from the cache.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        public override void Remove(T1 key)
+        {
+            ThrowIfDisposed();
+            if (key == null) throw new ArgumentNullException(nameof(key));
+
+            DataNode<T2> val = null;
+            bool existed = false;
+
+            lock (_CacheLock)
+            {
                 if (_Cache.ContainsKey(key))
                 {
                     val = _Cache[key];
                     _Cache.Remove(key);
+
+                    // Update memory tracking
+                    if (MaxMemoryBytes > 0)
+                    {
+                        CurrentMemoryBytes -= EstimateSize(val.Data);
+                    }
+
+                    existed = true;
                 }
+            }
 
+            // Execute I/O outside lock
+            if (existed)
+            {
                 _Persistence?.Delete(key);
-
-                _Events?.Removed?.Invoke(this, new DataEventArgs<T1, T2>(key, val));
-                return;
+                _Events?.OnRemoved(this, new DataEventArgs<T1, T2>(key, val));
             }
         }
 
@@ -363,15 +558,35 @@
         /// <returns>True if successful.</returns>
         public override bool TryRemove(T1 key)
         {
-            try
+            if (key == null) return false;
+
+            bool existed = false;
+            DataNode<T2> val = null;
+
+            lock (_CacheLock)
             {
-                Remove(key);
-                return true;
+                if (_Cache.ContainsKey(key))
+                {
+                    val = _Cache[key];
+                    _Cache.Remove(key);
+
+                    // Update memory tracking
+                    if (MaxMemoryBytes > 0)
+                    {
+                        CurrentMemoryBytes -= EstimateSize(val.Data);
+                    }
+
+                    existed = true;
+                }
             }
-            catch (Exception)
+
+            if (existed)
             {
-                return false;
+                _Persistence?.Delete(key);
+                _Events?.OnRemoved(this, new DataEventArgs<T1, T2>(key, val));
             }
+
+            return existed;
         }
 
         /// <summary>
@@ -392,20 +607,36 @@
         /// </summary>
         public override void Prepopulate()
         {
-            if (_Persistence == null) throw new InvalidOperationException("No persistence driver has been defined for the cache.");
+            ThrowIfDisposed();
+            if (_Persistence == null)
+                throw new InvalidOperationException("No persistence driver has been defined for the cache.");
 
-            List<T1> objects = _Persistence.Enumerate();
+            List<T1> keys = _Persistence.Enumerate();
 
-            if (objects != null && objects.Count > 0)
+            if (keys != null && keys.Count > 0)
             {
-                foreach (T1 obj in objects)
-                {
-                    T2 data = _Persistence.Get(obj);
+                // Limit to capacity
+                int loadCount = Math.Min(keys.Count, Capacity);
 
+                for (int i = 0; i < loadCount; i++)
+                {
+                    T1 key = keys[i];
+                    T2 data = _Persistence.Get(key);  // I/O outside lock
                     DataNode<T2> node = new DataNode<T2>(data);
 
-                    _Cache.Add(obj, node);
-                    _Events?.Prepopulated?.Invoke(this, new DataEventArgs<T1, T2>(obj, node));
+                    lock (_CacheLock)
+                    {
+                        if (_Cache.Count < Capacity)
+                        {
+                            _Cache.Add(key, node);
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+
+                    _Events?.OnPrepopulated(this, new DataEventArgs<T1, T2>(key, node));
                 }
             }
         }
@@ -423,22 +654,54 @@
         {
             while (!token.IsCancellationRequested)
             {
-                await Task.Delay(_ExpirationIntervalMs);
-
-                lock (_CacheLock)
+                try
                 {
-                    Dictionary<T1, DataNode<T2>> expired = _Cache.Where(
-                        c => c.Value.Expiration != null && c.Value.Expiration.Value < DateTime.UtcNow)
-                        .ToDictionary(c => c.Key, c => c.Value);
+                    await Task.Delay(_ExpirationIntervalMs, token).ConfigureAwait(false);
 
+                    List<KeyValuePair<T1, DataNode<T2>>> expired = null;
+
+                    lock (_CacheLock)
+                    {
+                        expired = _Cache.Where(
+                            c => c.Value.Expiration != null && c.Value.Expiration.Value < DateTime.UtcNow)
+                            .ToList();
+
+                        if (expired != null && expired.Count > 0)
+                        {
+                            foreach (KeyValuePair<T1, DataNode<T2>> entry in expired)
+                            {
+                                _Cache.Remove(entry.Key);
+
+                                // Update memory tracking
+                                if (MaxMemoryBytes > 0)
+                                {
+                                    CurrentMemoryBytes -= EstimateSize(entry.Value.Data);
+                                }
+                            }
+
+                            Interlocked.Add(ref _expirationCount, expired.Count);
+                        }
+                    }
+
+                    // Execute I/O and events outside lock
                     if (expired != null && expired.Count > 0)
                     {
                         foreach (KeyValuePair<T1, DataNode<T2>> entry in expired)
                         {
-                            _Cache.Remove(entry.Key);
-                            _Events.Expired(this, entry.Key);
+                            _Persistence?.Delete(entry.Key);
+                            _Events?.OnExpired(this, entry.Key);
                         }
                     }
+                }
+                catch (TaskCanceledException)
+                {
+                    // Expected when cancelling
+                    break;
+                }
+                catch (OperationCanceledException)
+                {
+                    // Expected when cancelling
+                    break;
                 }
             }
         }
@@ -452,22 +715,36 @@
         /// </summary>
         protected virtual void Dispose(bool disposing)
         {
+            if (_disposed) return;
+
             if (disposing)
             {
-                CancellationTokenSource ctsLinked = CancellationTokenSource.CreateLinkedTokenSource(_Token);
-                ctsLinked.Cancel();
+                // Cancel the background task
+                _TokenSource.Cancel();
+
+                // Wait for task to complete
+                try
+                {
+                    _ExpirationTaskInstance?.Wait(TimeSpan.FromSeconds(2));
+                }
+                catch (TaskCanceledException) { }
+                catch (AggregateException) { }
 
                 lock (_CacheLock)
                 {
+                    _Cache?.Clear();
                     _Cache = null;
                 }
 
                 Capacity = 0;
                 EvictCount = 0;
 
-                _Events?.Disposed?.Invoke(this, EventArgs.Empty);
+                _Events?.OnDisposed(this, EventArgs.Empty);
                 _Events = null;
                 _Persistence = null;
+
+                _TokenSource?.Dispose();
+                _disposed = true;
             }
         }
 

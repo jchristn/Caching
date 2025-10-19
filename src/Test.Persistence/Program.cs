@@ -20,7 +20,7 @@
         static readonly int _EvictCount = 16;
         static readonly int _LoadCount = 8;
         static readonly int _DataLength = 4096;
-        static ICache<string, string> _Cache = null;
+        static CacheBase<string, string> _Cache = null;
 
         static void Main()
         {
@@ -70,10 +70,27 @@
                                 Console.WriteLine("Cache hit: " + keyData);
                                 codeWord = Common.GetCodeWord(getKey);
                                 Console.WriteLine("Expected (" + codeWord.Item1 + "): " + codeWord.Item2);
+
+                                // Validate persisted value matches cache
+                                if (persistence.Exists(getKey))
+                                {
+                                    string persistedValue = persistence.Get(getKey);
+                                    bool matches = persistedValue == keyData;
+                                    Console.WriteLine("Persistence validation: " + (matches ? "PASS" : "FAIL - mismatch!"));
+                                    if (!matches) Console.WriteLine("  Cache: " + keyData + " | Disk: " + persistedValue);
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Persistence validation: FAIL - not on disk!");
+                                }
                             }
                             else
                             {
                                 Console.WriteLine("Cache miss");
+                                if (persistence.Exists(getKey))
+                                {
+                                    Console.WriteLine("WARNING: Key exists in persistence but not in cache!");
+                                }
                             }
                             break;
 
@@ -123,11 +140,67 @@
 
                         case "count":
                             Console.WriteLine("Cache count: " + _Cache.Count());
+                            int diskCount = persistence.Enumerate().Count;
+                            Console.WriteLine("Disk count: " + diskCount);
+                            bool countsMatch = _Cache.Count() == diskCount;
+                            Console.WriteLine("Counts match: " + (countsMatch ? "PASS" : "FAIL"));
+                            break;
+
+                        case "stats":
+                            var stats = _Cache.GetStatistics();
+                            Console.WriteLine("\nCache Statistics:");
+                            Console.WriteLine("  Current Count: " + stats.CurrentCount);
+                            Console.WriteLine("  Capacity: " + stats.Capacity);
+                            Console.WriteLine("  Hit Count: " + stats.HitCount);
+                            Console.WriteLine("  Miss Count: " + stats.MissCount);
+                            Console.WriteLine("  Hit Rate: " + (stats.HitRate * 100).ToString("F2") + "%");
+                            Console.WriteLine("  Eviction Count: " + stats.EvictionCount);
+                            Console.WriteLine("  Memory Usage: " + stats.CurrentMemoryBytes + " bytes");
+                            Console.WriteLine();
+                            break;
+
+                        case "validate":
+                            Console.WriteLine("Validating cache vs persistence...");
+                            int validated = 0;
+                            int mismatches = 0;
+
+                            foreach (var key in _Cache.GetKeys())
+                            {
+                                if (persistence.Exists(key))
+                                {
+                                    string cacheVal = _Cache.Get(key);
+                                    string diskVal = persistence.Get(key);
+                                    if (cacheVal == diskVal)
+                                    {
+                                        validated++;
+                                    }
+                                    else
+                                    {
+                                        mismatches++;
+                                        Console.WriteLine("  MISMATCH: " + key);
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine("  MISSING FROM DISK: " + key);
+                                    mismatches++;
+                                }
+                            }
+
+                            Console.WriteLine("\nValidation Results:");
+                            Console.WriteLine("  Validated: " + validated);
+                            Console.WriteLine("  Mismatches: " + mismatches);
+                            Console.WriteLine("  Result: " + (mismatches == 0 ? "PASS" : "FAIL"));
                             break;
 
                         case "clear":
                             _Cache.Clear();
                             Console.WriteLine("Cache cleared");
+
+                            // Verify persistence is also cleared
+                            int remainingFiles = persistence.Enumerate().Count;
+                            Console.WriteLine("Files remaining on disk: " + remainingFiles);
+                            Console.WriteLine("Persistence clear: " + (remainingFiles == 0 ? "PASS" : "FAIL"));
                             break;
 
                         case "q":
@@ -159,13 +232,15 @@
         {
             Console.WriteLine("Available commands:");
             Console.WriteLine("  ?                Help, this menu");
-            Console.WriteLine("  get              Get entry by key");
+            Console.WriteLine("  get              Get entry by key (with persistence validation)");
             Console.WriteLine("  all              Get all entries");
             Console.WriteLine("  load             Load " + _LoadCount + " new records");
             Console.WriteLine("  oldest           Get the oldest entry");
             Console.WriteLine("  newest           Get the newest entry");
-            Console.WriteLine("  count            Get the count of cached entries");
-            Console.WriteLine("  clear            Clear the cache");
+            Console.WriteLine("  count            Get the count of cached entries (validates vs disk)");
+            Console.WriteLine("  stats            Show cache statistics");
+            Console.WriteLine("  validate         Validate all cache entries against disk");
+            Console.WriteLine("  clear            Clear the cache (validates persistence cleared)");
             Console.WriteLine("  quit             Exit the application");
             Console.WriteLine("");
         }

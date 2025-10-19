@@ -1,179 +1,380 @@
 # Caching
 
-Simple, fast, effective FIFO and LRU Cache with events and persistence.
+<img src="https://github.com/jchristn/Caching/raw/master/assets/icon.png" height="128" width="128">
 
- [![NuGet Version](https://img.shields.io/nuget/v/Caching.svg?style=flat)](https://www.nuget.org/packages/Caching/) [![NuGet](https://img.shields.io/nuget/dt/Caching.svg)](https://www.nuget.org/packages/Caching) 
+[![NuGet Version](https://img.shields.io/nuget/v/Caching.svg?style=flat)](https://www.nuget.org/packages/Caching/) [![NuGet](https://img.shields.io/nuget/dt/Caching.svg)](https://www.nuget.org/packages/Caching)
 
-This Caching library provides a simple implementation of a FIFO cache (first-in-first-out) and an LRU (least-recently-used) cache.  It is written in C# and is designed to be thread-safe.
- 
-## New in v3.1.x
+High-performance, thread-safe caching library for .NET with FIFO and LRU eviction policies, automatic expiration, persistence support, and comprehensive event notifications.
 
-- Expiration attribute for cached entries
-- Minor refactor and bugfixes
+## What Is This Library?
 
-## Usage
+Caching is a lightweight, production-ready caching library that provides:
 
-Add reference to the Caching DLL and include the Caching namespace:
+- **FIFO (First-In-First-Out) Cache**: Evicts the oldest entries when capacity is reached
+- **LRU (Least Recently Used) Cache**: Evicts the least recently accessed entries
+- **Thread-Safe**: All operations are fully thread-safe for concurrent access
+- **Automatic Expiration**: Time-based expiration with sliding or absolute TTL
+- **Event Notifications**: Comprehensive events for cache operations
+- **Persistence Layer**: Optional persistence to disk or custom storage
+- **Statistics Tracking**: Built-in hit/miss rates, eviction counts, and performance metrics
+- **Memory Limits**: Optional memory-based eviction in addition to count-based
+- **Modern API**: GetOrAdd, AddOrUpdate, and async-ready patterns
+
+## Installation
+
+```bash
+dotnet add package Caching
+```
+
+Or via Package Manager:
+
+```powershell
+Install-Package Caching
+```
+
+## Quick Start
+
+### Basic FIFO Cache
+
 ```csharp
 using Caching;
-```
 
-Initialize the desired cache:
-```csharp
-class Person
+// Create a FIFO cache with capacity of 1000, evicting 100 items when full
+var cache = new FIFOCache<string, Person>(capacity: 1000, evictCount: 100);
+
+// Add items
+cache.AddReplace("user:123", new Person { Name = "Alice", Age = 30 });
+
+// Get items
+Person person = cache.Get("user:123");
+
+// Try pattern (no exceptions)
+if (cache.TryGet("user:123", out Person p))
 {
-  public string FirstName;
-  public string LastName;
+    Console.WriteLine($"Found: {p.Name}");
 }
 
-FIFOCache<string, Person> cache = new FIFOCache<string, Person>(capacity, evictCount);
-LRUCache<string, Person> cache = new LRUCache<string, Person>(capacity, evictCount) 
+// Remove items
+cache.Remove("user:123");
 
-// T1 is the type of the key
-// T2 is the type of the value
-// capacity (int) is the maximum number of entries
-// evictCount (int) is the number to remove when the cache reaches capacity
-// debug (boolean) enables console logging (use sparingly)
+// Dispose when done
+cache.Dispose();
 ```
 
-Add an item to the cache:
-```csharp
-cache.AddReplace(key, data);
-// key (T1) is a unique identifier
-// data (T2) is whatever data you like
+### Basic LRU Cache
 
-bool success = cache.TryAddReplace(key, data);
-if (!success) { ... }
+```csharp
+// LRU evicts least recently accessed items
+var cache = new LRUCache<string, byte[]>(capacity: 500, evictCount: 50);
+
+cache.AddReplace("image:1", imageBytes);
+cache.Get("image:1"); // Updates last-used timestamp
+
+cache.Dispose();
 ```
 
-Add an item to the cache with expiration:
+## Key Features
+
+### 1. Expiration
+
+#### Absolute Expiration
+
 ```csharp
-cache.AddReplace(key, data, DateTime.UtcNow.AddSeconds(10));
-bool success = cache.TryAddReplace(key, data, DateTime.UtcNow.AddSeconds(10));
+// Expires at specific time
+cache.AddReplace("session:xyz", sessionData, DateTime.UtcNow.AddMinutes(30));
+
+// Or use TimeSpan for relative expiration
+cache.AddReplace("temp:data", tempData, TimeSpan.FromSeconds(60));
 ```
 
-Get an item from the cache:
-```csharp
-Person data = cache.Get(key);
-// throws KeyNotFoundException if not present
+#### Sliding Expiration
 
-if (!cache.TryGet(key, out data)) 
-{ 
-  // handle errors 
-}
-else 
-{ 
-  // use your data! 
-}
+```csharp
+// Enable sliding expiration (TTL refreshes on access)
+cache.SlidingExpiration = true;
+
+cache.AddReplace("sliding:key", value, TimeSpan.FromMinutes(5));
+// Each time you access the item, expiration resets to 5 minutes from now
+cache.Get("sliding:key"); // Refreshes expiration
 ```
 
-Remove an item from the cache:
-```csharp
-cache.Remove(key);
-```
-
-Other helpful methods:
-```csharp
-T1 oldestKey = cache.Oldest();
-T1 newestKey = cache.Newest();
-int numEntries = cache.Count();
-List<T1> keys = cache.GetKeys();
-cache.Clear();
-```
-
-Retrieve all cached contents (while preserving the cache):
-```csharp
-Dictionary<T1, T2> dump = cache.All();
-```
-
-## Persistence
-
-If you wish to include a persistence layer with the cache, i.e. to store and manage cached objects on another repository in addition to memory:
-
-1) Implement the ```IPersistenceDriver``` abstract class; refer to the ```Test.Persistence``` project for a sample implementation that uses a directory on the local hard drive
-2) Instantiate the cache (```FIFOCache``` or ```LRUCache```) and pass the instance of the ```IPersistenceDriver``` into the constructor
-3) If you wish to prepopulate the cache from the persistence driver, call ```.Prepopulate()``` before using the cache.
-4) If you clear the cache, the persistence layer will also be cleared.
+### 2. GetOrAdd Pattern
 
 ```csharp
-// implementation of PersistenceDriver
-public class MyPersistenceDriver : IPersistenceDriver
+// Atomically get existing or create new value
+var person = cache.GetOrAdd("user:456", key =>
 {
-  public override void Delete(string key) { ... }
-  public override void Clear() { ... }
-  public override bool Exists(string key) { ... }
-  public override byte[] Get(string key) { ... }
-  public override void Write(string key, byte[] data) { ... }
-  public override byte[] ToBytes(object data) { ... }
-  public override T FromBytes<T>(byte[] data) { ... }
-  public override List<string> Enumerate() { ... }
+    // This factory only runs if key doesn't exist
+    return database.GetPerson(456);
+});
+
+// With expiration
+var data = cache.GetOrAdd("data:789",
+    key => LoadExpensiveData(key),
+    TimeSpan.FromHours(1));
+```
+
+### 3. AddOrUpdate Pattern
+
+```csharp
+// Add if new, update if exists
+var result = cache.AddOrUpdate(
+    "counter:visits",
+    addValue: 1,
+    updateValueFactory: (key, oldValue) => oldValue + 1);
+
+Console.WriteLine($"Visit count: {result}");
+```
+
+### 4. Events
+
+```csharp
+cache.Events.Added += (sender, e) => Console.WriteLine($"Added: {e.Key}");
+
+cache.Events.Replaced += (sender, e) => Console.WriteLine($"Replaced: {e.Key}");
+
+cache.Events.Removed += (sender, e) => Console.WriteLine($"Removed: {e.Key}");
+
+cache.Events.Evicted += (sender, keys) => Console.WriteLine($"Evicted {keys.Count} items");
+
+cache.Events.Expired += (sender, key) => Console.WriteLine($"Expired: {key}");
+
+cache.Events.Cleared += (sender, e) => Console.WriteLine("Cache cleared");
+
+cache.Events.Disposed += (sender, e) => Console.WriteLine("Cache disposed");
+```
+
+### 5. Persistence
+
+Implement the `IPersistenceDriver<TKey, TValue>` interface:
+
+```csharp
+public class FilePersistence : IPersistenceDriver<string, string>
+{
+    private readonly string _directory;
+
+    public FilePersistence(string directory)
+    {
+        _directory = directory;
+        Directory.CreateDirectory(directory);
+    }
+
+    public void Write(string key, string data)
+    {
+        File.WriteAllText(Path.Combine(_directory, key), data);
+    }
+
+    public string Get(string key)
+    {
+        return File.ReadAllText(Path.Combine(_directory, key));
+    }
+
+    public void Delete(string key)
+    {
+        File.Delete(Path.Combine(_directory, key));
+    }
+
+    public void Clear()
+    {
+        foreach (var file in Directory.GetFiles(_directory))
+            File.Delete(file);
+    }
+
+    public bool Exists(string key)
+    {
+        return File.Exists(Path.Combine(_directory, key));
+    }
+
+    public List<string> Enumerate()
+    {
+        return Directory.GetFiles(_directory)
+            .Select(Path.GetFileName)
+            .ToList();
+    }
 }
 
-// instantiate the cache
-MyPersistenceDriver persistence = new MyPersistenceDriver();
-LRUCache<string, byte[]> cache = new LRUCache<string, byte[]>(capacity, evictCount, persistence);
+// Use with cache
+var persistence = new FilePersistence("./cache_data");
+var cache = new LRUCache<string, string>(1000, 100, persistence);
+
+// Restore from persistence on startup
 cache.Prepopulate();
+
+// All add/remove operations automatically persist
+cache.AddReplace("key", "value"); // Written to disk
+cache.Remove("key");              // Deleted from disk
 ```
 
-As objects are written to the cache, they are added to persistent storage through the ```Write``` method.  When they are removed or evicted, they are eliminated via the ```Delete``` method.  When the cache is cleared, the persistence layer is also cleared.
-
-## Events
-
-If you wish to invoke events when certain cache actions are taken, attach event handlers to the entries found in ```FIFOCache.Events``` or ```LRUCache.Events```.  These events are invoked synchronously after the associated cache operation.
+### 6. Statistics
 
 ```csharp
-FIFOCache<string, byte[]> cache = new FIFOCache<string, byte[]>(_Capacity, _EvictCount);
-cache.Events.Added += Added;
-cache.Events.Cleared += Cleared;
-cache.Events.Disposed += Disposed;
-cache.Events.Evicted += Evicted;
-cache.Events.Expired += Expired;
-cache.Events.Prepopulated += Prepopulated;
-cache.Events.Removed += Removed;
-cache.Events.Replaced += Replaced;
+var cache = new FIFOCache<string, object>(1000, 100);
 
-static void Replaced(object sender, DataEventArgs<string, byte[]> e)
+// Perform operations
+cache.AddReplace("key1", "value1");
+cache.Get("key1");        // Hit
+cache.TryGet("missing", out _); // Miss
+
+// Get statistics
+var stats = cache.GetStatistics();
+
+Console.WriteLine($"Hit Rate: {stats.HitRate:P}");
+Console.WriteLine($"Hits: {stats.HitCount}");
+Console.WriteLine($"Misses: {stats.MissCount}");
+Console.WriteLine($"Evictions: {stats.EvictionCount}");
+Console.WriteLine($"Expirations: {stats.ExpirationCount}");
+Console.WriteLine($"Current Count: {stats.CurrentCount}");
+Console.WriteLine($"Capacity: {stats.Capacity}");
+
+// Reset counters
+cache.ResetStatistics();
+```
+
+### 7. Memory Limits
+
+```csharp
+var cache = new FIFOCache<string, byte[]>(10000, 100);
+
+// Limit cache to 100MB
+cache.MaxMemoryBytes = 100 * 1024 * 1024;
+
+// Provide size estimator for your value type
+cache.SizeEstimator = bytes => bytes.Length;
+
+// Cache will evict entries if memory limit is exceeded
+cache.AddReplace("large", new byte[10 * 1024 * 1024]); // 10MB
+
+Console.WriteLine($"Memory used: {cache.CurrentMemoryBytes} bytes");
+```
+
+### 8. Configuration Options
+
+```csharp
+var cache = new LRUCache<int, string>(1000, 100);
+
+// Sliding expiration
+cache.SlidingExpiration = true;
+
+// Expiration check interval (default: 1000ms)
+cache.ExpirationIntervalMs = 500;
+
+// Memory limits
+cache.MaxMemoryBytes = 50 * 1024 * 1024; // 50MB
+cache.SizeEstimator = str => str.Length * 2; // Unicode estimation
+```
+
+## API Reference
+
+### Core Methods
+
+| Method | Description |
+|--------|-------------|
+| `AddReplace(key, value, expiration?)` | Add or replace a cache entry |
+| `Get(key)` | Get value (throws if not found) |
+| `TryGet(key, out value)` | Try to get value (returns false if not found) |
+| `GetOrAdd(key, factory, expiration?)` | Get existing or add new value atomically |
+| `AddOrUpdate(key, addValue, updateFactory, expiration?)` | Add new or update existing value |
+| `Remove(key)` | Remove entry (throws if not found) |
+| `TryRemove(key)` | Try to remove entry (returns false if not found) |
+| `Contains(key)` | Check if key exists |
+| `Clear()` | Remove all entries |
+| `Count()` | Get current number of entries |
+| `GetKeys()` | Get all keys |
+| `All()` | Get all key-value pairs |
+| `Oldest()` | Get key of oldest entry |
+| `Newest()` | Get key of newest entry |
+| `Prepopulate()` | Load from persistence layer |
+| `GetStatistics()` | Get cache statistics |
+| `ResetStatistics()` | Reset counters |
+
+### Properties
+
+| Property | Description |
+|----------|-------------|
+| `Capacity` | Maximum number of entries |
+| `EvictCount` | Number of entries to evict when full |
+| `ExpirationIntervalMs` | How often to check for expired entries (ms) |
+| `SlidingExpiration` | Enable sliding expiration |
+| `MaxMemoryBytes` | Maximum memory limit (0 = unlimited) |
+| `SizeEstimator` | Function to estimate value size |
+| `CurrentMemoryBytes` | Current estimated memory usage |
+| `HitCount` | Total cache hits |
+| `MissCount` | Total cache misses |
+| `EvictionCount` | Total evictions |
+| `ExpirationCount` | Total expirations |
+| `HitRate` | Cache hit rate (0.0 to 1.0) |
+| `Events` | Event handlers |
+| `Persistence` | Persistence driver |
+
+## Thread Safety
+
+All cache operations are thread-safe and can be called concurrently from multiple threads:
+
+```csharp
+var cache = new LRUCache<int, string>(10000, 100);
+
+// Safe to call from multiple threads
+Parallel.For(0, 1000, i =>
 {
-    Console.WriteLine("*** Cache entry " + e.Key + " replaced");
+    cache.AddReplace(i, $"value{i}");
+    cache.TryGet(i, out _);
+    if (i % 10 == 0) cache.Remove(i);
+});
+```
+
+## Performance Tips
+
+1. **Choose the Right Cache Type**:
+   - Use **FIFO** when access patterns don't matter (e.g., time-series data)
+   - Use **LRU** when recent items are more likely to be accessed again
+
+2. **Set Appropriate Capacity**:
+   - Monitor `HitRate` to tune capacity
+   - Higher capacity = better hit rate but more memory
+
+3. **Tune EvictCount**:
+   - Larger `EvictCount` = fewer eviction operations but more items removed at once
+   - Smaller `EvictCount` = more frequent evictions but finer-grained
+
+4. **Use TryGet for Optional Lookups**:
+   - `TryGet` is faster than catching exceptions from `Get`
+
+5. **Minimize Event Handler Work**:
+   - Events fire synchronously; keep handlers fast
+   - Offload heavy work to background tasks
+
+6. **Memory Limits**:
+   - Only use `MaxMemoryBytes` if needed; it adds overhead
+   - Provide accurate `SizeEstimator` for best results
+
+## Migrating from v3.x
+
+Most code will work unchanged. Key changes:
+
+```csharp
+// v3.x
+cache.Events.Added = handler; // Overwrites all handlers! ❌
+
+// v4.0
+cache.Events.Added += handler; // Adds handler ✅
+
+// v3.x (abstract class)
+public class MyDriver : IPersistenceDriver<string, string>
+{
+    public override void Write(string key, string data) { }
 }
 
-static void Removed(object sender, DataEventArgs<string, byte[]> e)
+// v4.0 (interface)
+public class MyDriver : IPersistenceDriver<string, string>
 {
-    Console.WriteLine("*** Cache entry " + e.Key + " removed");
-}
-
-static void Prepopulated(object sender, DataEventArgs<string, byte[]> e)
-{
-    Console.WriteLine("*** Cache entry " + e.Key + " prepopulated from persistent storage");
-}
-
-static void Evicted(object sender, List<string> e)
-{
-    Console.WriteLine("*** Eviction event involving " + e.Count + " entries");
-    foreach (string curr in e) Console.WriteLine("    | " + curr);
-}
-
-static void Expired(object sender, string key)
-{
-    Console.WriteLine("*** Key " + key + " expired and removed from the cache");
-}
-
-static void Disposed(object sender, EventArgs e)
-{
-    Console.WriteLine("*** Disposed");
-}
-
-static void Cleared(object sender, EventArgs e)
-{
-    Console.WriteLine("*** Cache cleared");
-}
-
-static void Added(object sender, DataEventArgs<string, byte[]> e)
-{
-    Console.WriteLine("*** Cache entry " + e.Key + " added");
+    public void Write(string key, string data) { } // No 'override'
 }
 ```
 
-## Version History
+## Contributing
 
-Refer to ```CHANGELOG.md``` for version history.
+Contributions are welcome! Please open an issue or PR on GitHub.
+
+## License
+
+See [LICENSE.md](LICENSE.md)
