@@ -1,12 +1,7 @@
-﻿namespace Test.Persistence
+namespace Test.Persistence
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Runtime.InteropServices.ComTypes;
-    using System.Text;
-    using System.Text.Json;
     using System.Threading;
     using System.Threading.Tasks;
     using Caching;
@@ -21,29 +16,30 @@
         static readonly int _LoadCount = 8;
         static readonly int _DataLength = 4096;
         static CacheBase<string, string> _Cache = null;
+        static PersistenceDriver _Persistence = null;
 
-        static void Main()
+        static async Task Main()
         {
-            PersistenceDriver persistence = new("./cache/");
+            _Persistence = new PersistenceDriver("./cache/");
 
             while (true)
             {
                 string cacheType = Inputty.GetString("Cache type [lru|fifo]:", "lru", false);
                 if (cacheType.Equals("lru"))
                 {
-                    _Cache = new LRUCache<string, string>(_Capacity, _EvictCount, persistence);
+                    _Cache = new LRUCache<string, string>(_Capacity, _EvictCount, _Persistence);
                     break;
                 }
                 else if (cacheType.Equals("fifo"))
                 {
-                    _Cache = new FIFOCache<string, string>(_Capacity, _EvictCount, persistence);
+                    _Cache = new FIFOCache<string, string>(_Capacity, _EvictCount, _Persistence);
                     break;
                 }
             }
 
             _Cache.Events.Evicted += EntriesEvicted;
             _Cache.Events.Prepopulated += EntryPrepopulated;
-            _Cache.Prepopulate();
+            await _Cache.PrepopulateAsync();
 
             try
             {
@@ -72,9 +68,9 @@
                                 Console.WriteLine("Expected (" + codeWord.Item1 + "): " + codeWord.Item2);
 
                                 // Validate persisted value matches cache
-                                if (persistence.Exists(getKey))
+                                if (await _Persistence.ExistsAsync(getKey))
                                 {
-                                    string persistedValue = persistence.Get(getKey);
+                                    string persistedValue = await _Persistence.GetAsync(getKey);
                                     bool matches = persistedValue == keyData;
                                     Console.WriteLine("Persistence validation: " + (matches ? "PASS" : "FAIL - mismatch!"));
                                     if (!matches) Console.WriteLine("  Cache: " + keyData + " | Disk: " + persistedValue);
@@ -87,7 +83,7 @@
                             else
                             {
                                 Console.WriteLine("Cache miss");
-                                if (persistence.Exists(getKey))
+                                if (await _Persistence.ExistsAsync(getKey))
                                 {
                                     Console.WriteLine("WARNING: Key exists in persistence but not in cache!");
                                 }
@@ -114,19 +110,19 @@
                             {
                                 string loadKey = Guid.NewGuid().ToString();
                                 codeWord = Common.GetCodeWord(loadKey);
-                                
+
                                 Console.WriteLine("Adding entry " + i + " of " + _LoadCount + ": " + loadKey + " (" + codeWord.Item1 + ") " + codeWord.Item2 + "                      \r");
-                                _Cache.AddReplace(loadKey, codeWord.Item2);
+                                await _Cache.AddReplaceAsync(loadKey, codeWord.Item2);
                             }
 
                             Console.WriteLine(
-                                Environment.NewLine 
-                                + "Loaded " 
-                                + _LoadCount 
-                                + " records in " 
-                                + Common.TotalTimeFrom(startTime) 
-                                + ": " 
-                                + Common.DecimalToString(Common.TotalMsFrom(startTime) / _LoadCount) 
+                                Environment.NewLine
+                                + "Loaded "
+                                + _LoadCount
+                                + " records in "
+                                + Common.TotalTimeFrom(startTime)
+                                + ": "
+                                + Common.DecimalToString(Common.TotalMsFrom(startTime) / _LoadCount)
                                 + "ms per entry");
                             break;
 
@@ -140,7 +136,8 @@
 
                         case "count":
                             Console.WriteLine("Cache count: " + _Cache.Count());
-                            int diskCount = persistence.Enumerate().Count;
+                            var keys = await _Persistence.EnumerateAsync();
+                            int diskCount = keys.Count;
                             Console.WriteLine("Disk count: " + diskCount);
                             bool countsMatch = _Cache.Count() == diskCount;
                             Console.WriteLine("Counts match: " + (countsMatch ? "PASS" : "FAIL"));
@@ -166,10 +163,10 @@
 
                             foreach (var key in _Cache.GetKeys())
                             {
-                                if (persistence.Exists(key))
+                                if (await _Persistence.ExistsAsync(key))
                                 {
                                     string cacheVal = _Cache.Get(key);
-                                    string diskVal = persistence.Get(key);
+                                    string diskVal = await _Persistence.GetAsync(key);
                                     if (cacheVal == diskVal)
                                     {
                                         validated++;
@@ -194,11 +191,12 @@
                             break;
 
                         case "clear":
-                            _Cache.Clear();
+                            await _Cache.ClearAsync();
                             Console.WriteLine("Cache cleared");
 
                             // Verify persistence is also cleared
-                            int remainingFiles = persistence.Enumerate().Count;
+                            var remainingKeys = await _Persistence.EnumerateAsync();
+                            int remainingFiles = remainingKeys.Count;
                             Console.WriteLine("Files remaining on disk: " + remainingFiles);
                             Console.WriteLine("Persistence clear: " + (remainingFiles == 0 ? "PASS" : "FAIL"));
                             break;

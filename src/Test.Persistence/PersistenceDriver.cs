@@ -1,8 +1,10 @@
-﻿namespace Test.Persistence
+namespace Test.Persistence
 {
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Caching;
 
     public class PersistenceDriver : IPersistenceDriver<string, string>
@@ -18,64 +20,69 @@
             _BaseDirectory = baseDir;
         }
 
-        public void Delete(string key)
+        public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
             key = GenerateKey(key);
-            File.Delete(key);
+            await Task.Run(() => File.Delete(key), cancellationToken).ConfigureAwait(false);
         }
 
-        public void Clear()
+        public async Task ClearAsync(CancellationToken cancellationToken = default)
         {
             string[] files = Directory.GetFiles(_BaseDirectory, "*.*", SearchOption.TopDirectoryOnly);
             if (files != null && files.Length > 0)
             {
-                for (int i = 0; i < files.Length; i++)
+                foreach (string file in files)
                 {
-                    File.Delete(files[i]);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    await Task.Run(() => File.Delete(file), cancellationToken).ConfigureAwait(false);
                 }
             }
         }
 
-        public bool Exists(string key)
+        public async Task<bool> ExistsAsync(string key, CancellationToken cancellationToken = default)
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
             key = GenerateKey(key);
-            return File.Exists(key);
+            return await Task.Run(() => File.Exists(key), cancellationToken).ConfigureAwait(false);
         }
 
-        public string Get(string key)
+        public async Task<string> GetAsync(string key, CancellationToken cancellationToken = default)
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
             key = GenerateKey(key);
-            return File.ReadAllText(key);
+            return await File.ReadAllTextAsync(key, cancellationToken).ConfigureAwait(false);
         }
 
-        public void Write(string key, string data)
+        public async Task WriteAsync(string key, string data, CancellationToken cancellationToken = default)
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
             data ??= string.Empty;
             key = GenerateKey(key);
-            File.WriteAllText(key, data);
+            await File.WriteAllTextAsync(key, data, cancellationToken).ConfigureAwait(false);
         }
 
-        public List<string> Enumerate()
+        public async Task<List<string>> EnumerateAsync(CancellationToken cancellationToken = default)
         {
-            IEnumerable<string> files = Directory.EnumerateFiles(_BaseDirectory, "*.*", SearchOption.TopDirectoryOnly);
-
-            if (files != null)
+            return await Task.Run(() =>
             {
-                List<string> updated = new();
+                IEnumerable<string> files = Directory.EnumerateFiles(_BaseDirectory, "*.*", SearchOption.TopDirectoryOnly);
 
-                foreach (string file in new List<string>(files))
+                if (files != null)
                 {
-                    updated.Add(file.Replace(_BaseDirectory, ""));
+                    List<string> updated = new();
+
+                    foreach (string file in new List<string>(files))
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        updated.Add(file.Replace(_BaseDirectory, ""));
+                    }
+
+                    files = updated;
                 }
 
-                files = updated;
-            }
-
-            return new List<string>(files);
+                return new List<string>(files);
+            }, cancellationToken).ConfigureAwait(false);
         }
 
         private string GenerateKey(string key)

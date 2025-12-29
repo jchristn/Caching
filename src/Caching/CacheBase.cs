@@ -8,7 +8,7 @@ namespace Caching
     /// <summary>
     /// Cache base class.
     /// </summary>
-    public abstract class CacheBase<T1, T2>
+    public abstract class CacheBase<T1, T2> : IDisposable
     {
         #region Public-Members
 
@@ -59,11 +59,6 @@ namespace Caching
         }
 
         /// <summary>
-        /// Async persistence driver (optional).
-        /// </summary>
-        public IPersistenceDriverAsync<T1, T2> PersistenceAsync { get; set; }
-
-        /// <summary>
         /// Cache capacity.
         /// </summary>
         public int Capacity { get; internal set; } = 0;
@@ -74,7 +69,7 @@ namespace Caching
         public int EvictCount { get; internal set; } = 0;
 
         /// <summary>
-        /// Frequency with which the cache is evaluated for expired entries.  Default is 1000ms.
+        /// Frequency with which the cache is evaluated for expired entries. Default is 1000ms.
         /// </summary>
         public int ExpirationIntervalMs
         {
@@ -141,6 +136,11 @@ namespace Caching
             }
         }
 
+        /// <summary>
+        /// Equality comparer used for keys.
+        /// </summary>
+        public IEqualityComparer<T1> KeyComparer => _KeyComparer;
+
         #endregion
 
         #region Internal-Members
@@ -150,11 +150,12 @@ namespace Caching
 
         internal int _ExpirationIntervalMs = 1000;
         internal readonly object _CacheLock = new object();
-        internal Dictionary<T1, DataNode<T2>> _Cache = new Dictionary<T1, DataNode<T2>>();
+        internal Dictionary<T1, DataNode<T2>> _Cache;
         internal IPersistenceDriver<T1, T2> _Persistence = null;
         internal CacheEvents<T1, T2> _Events = new CacheEvents<T1, T2>();
         internal Task _ExpirationTaskInstance = null;
         internal bool _disposed = false;
+        internal IEqualityComparer<T1> _KeyComparer;
 
         internal long _hitCount = 0;
         internal long _missCount = 0;
@@ -172,6 +173,11 @@ namespace Caching
         #region Public-Methods
 
         /// <summary>
+        /// Dispose of the object. Do not use after disposal.
+        /// </summary>
+        public abstract void Dispose();
+
+        /// <summary>
         /// Retrieve the current number of entries in the cache.
         /// </summary>
         /// <returns>An integer containing the number of entries.</returns>
@@ -180,19 +186,19 @@ namespace Caching
         /// <summary>
         /// Retrieve the key of the oldest entry in the cache.
         /// </summary>
-        /// <returns>String containing the key.</returns>
+        /// <returns>Key of the oldest entry.</returns>
         public abstract T1 Oldest();
 
         /// <summary>
         /// Retrieve the key of the newest entry in the cache.
         /// </summary>
-        /// <returns>String containing the key.</returns>
+        /// <returns>Key of the newest entry.</returns>
         public abstract T1 Newest();
 
         /// <summary>
         /// Retrieve all entries from the cache.
         /// </summary>
-        /// <returns>Dictionary.</returns>
+        /// <returns>Dictionary of all entries.</returns>
         public abstract Dictionary<T1, T2> All();
 
         /// <summary>
@@ -201,11 +207,26 @@ namespace Caching
         public abstract void Clear();
 
         /// <summary>
+        /// Clear the cache asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Task.</returns>
+        public abstract Task ClearAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Retrieve a key's value from the cache.
         /// </summary>
         /// <param name="key">The key associated with the data you wish to retrieve.</param>
         /// <returns>The object data associated with the key.</returns>
         public abstract T2 Get(T1 key);
+
+        /// <summary>
+        /// Retrieve a key's value from the cache, or return a default value if not found.
+        /// </summary>
+        /// <param name="key">The key associated with the data you wish to retrieve.</param>
+        /// <param name="defaultValue">Value to return if key is not found.</param>
+        /// <returns>The object data associated with the key, or defaultValue if not found.</returns>
+        public abstract T2 GetOrDefault(T1 key, T2 defaultValue = default);
 
         /// <summary>
         /// Retrieve a key's value from the cache.
@@ -242,6 +263,29 @@ namespace Caching
         }
 
         /// <summary>
+        /// Add or replace a key's value in the cache asynchronously.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <param name="val">The value associated with the key.</param>
+        /// <param name="expiration">Timestamp at which the entry should expire.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Task.</returns>
+        public abstract Task AddReplaceAsync(T1 key, T2 val, DateTime? expiration = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Add or replace a key's value in the cache asynchronously with relative expiration time.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <param name="val">The value associated with the key.</param>
+        /// <param name="expiresIn">Time span until expiration.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Task.</returns>
+        public Task AddReplaceAsync(T1 key, T2 val, TimeSpan expiresIn, CancellationToken cancellationToken = default)
+        {
+            return AddReplaceAsync(key, val, DateTime.UtcNow.Add(expiresIn), cancellationToken);
+        }
+
+        /// <summary>
         /// Attempt to add or replace a key's value in the cache.
         /// </summary>
         /// <param name="key">The key.</param>
@@ -275,6 +319,32 @@ namespace Caching
         }
 
         /// <summary>
+        /// Get a value from cache, or add it if not present asynchronously.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <param name="valueFactory">Async function to create value if not present.</param>
+        /// <param name="expiration">Timestamp at which the entry should expire.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The value.</returns>
+        public abstract Task<T2> GetOrAddAsync(T1 key, Func<T1, Task<T2>> valueFactory, DateTime? expiration = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Get a value from cache, or add it if not present asynchronously (with relative expiration).
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <param name="valueFactory">Async function to create value if not present.</param>
+        /// <param name="expiresIn">Time span until expiration.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The value.</returns>
+        public Task<T2> GetOrAddAsync(T1 key, Func<T1, Task<T2>> valueFactory, TimeSpan? expiresIn, CancellationToken cancellationToken = default)
+        {
+            DateTime? expiration = expiresIn.HasValue
+                ? DateTime.UtcNow.Add(expiresIn.Value)
+                : (DateTime?)null;
+            return GetOrAddAsync(key, valueFactory, expiration, cancellationToken);
+        }
+
+        /// <summary>
         /// Try to get a value from cache, or add it if not present.
         /// </summary>
         /// <param name="key">The key.</param>
@@ -295,28 +365,55 @@ namespace Caching
         public abstract T2 AddOrUpdate(T1 key, T2 addValue, Func<T1, T2, T2> updateValueFactory, DateTime? expiration = null);
 
         /// <summary>
+        /// Add a new value or update existing value asynchronously.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <param name="addValue">Value to add if key doesn't exist.</param>
+        /// <param name="updateValueFactory">Async function to update value if key exists.</param>
+        /// <param name="expiration">Timestamp at which the entry should expire.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The resulting value.</returns>
+        public abstract Task<T2> AddOrUpdateAsync(T1 key, T2 addValue, Func<T1, T2, Task<T2>> updateValueFactory, DateTime? expiration = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Remove a key from the cache.
         /// </summary>
         /// <param name="key">The key.</param>
         public abstract void Remove(T1 key);
 
         /// <summary>
-        /// Attempt to remove a key and value value from the cache.
+        /// Remove a key from the cache asynchronously.
         /// </summary>
         /// <param name="key">The key.</param>
-        /// <returns>True if successful.</returns>
-        public abstract bool TryRemove(T1 key);
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Task.</returns>
+        public abstract Task RemoveAsync(T1 key, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Attempt to remove a key and its value from the cache.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <param name="val">The removed value, if found.</param>
+        /// <returns>True if the key was found and removed.</returns>
+        public abstract bool TryRemove(T1 key, out T2 val);
 
         /// <summary>
         /// Retrieve all keys in the cache.
         /// </summary>
-        /// <returns>List of string.</returns>
+        /// <returns>List of keys.</returns>
         public abstract List<T1> GetKeys();
 
         /// <summary>
         /// Prepopulate the cache with entries from the persistence layer.
         /// </summary>
         public abstract void Prepopulate();
+
+        /// <summary>
+        /// Prepopulate the cache with entries from the persistence layer asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Task.</returns>
+        public abstract Task PrepopulateAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get current cache statistics.
@@ -390,14 +487,5 @@ namespace Caching
         #region Private-Methods
 
         #endregion
-    }
-
-    /// <summary>
-    /// Cache base class (deprecated name for backward compatibility).
-    /// Use CacheBase instead.
-    /// </summary>
-    [Obsolete("Use CacheBase<T1, T2> instead. ICache will be removed in v5.0.")]
-    public abstract class ICache<T1, T2> : CacheBase<T1, T2>
-    {
     }
 }

@@ -1,18 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>netstandard2.0;netstandard2.1;net6.0;net8.0</TargetFrameworks>
+		<TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net10.0</TargetFrameworks>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>Caching</PackageId>
-		<Version>4.0.0</Version>
+		<Version>5.0.0</Version>
 		<Authors>Joel Christner</Authors>
-		<Description>Simple C# caching library including a FIFO and LRU cache</Description>
+		<Description>Caching library including a FIFO and LRU cache, async operations, events, expiration, and data persistence</Description>
 		<Copyright>(c)2025 Joel Christner</Copyright>
 		<PackageProjectUrl>https://github.com/jchristn/caching</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/jchristn/caching</RepositoryUrl>
 		<RepositoryType>Github</RepositoryType>
 		<PackageLicenseUrl></PackageLicenseUrl>
-		<PackageReleaseNotes>More flexibility in persistence driver implementation, code cleanup</PackageReleaseNotes>
+		<PackageReleaseNotes>Breaking change: async APIs, async-only persistence driver, IEqualityComparer support, GetOrDefault, TryRemove with out parameter, thread-safe disposal, race condition fixes in Prepopulate</PackageReleaseNotes>
 		<PackageTags>fifo lru cache caching least recently used first in first out simple</PackageTags>
 		<PackageIconUrl></PackageIconUrl>
 		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>

@@ -146,7 +146,7 @@ cache.Events.Disposed += (sender, e) => Console.WriteLine("Cache disposed");
 
 ### 5. Persistence
 
-Implement the `IPersistenceDriver<TKey, TValue>` interface:
+Implement the `IPersistenceDriver<TKey, TValue>` interface (all methods are async):
 
 ```csharp
 public class FilePersistence : IPersistenceDriver<string, string>
@@ -159,37 +159,37 @@ public class FilePersistence : IPersistenceDriver<string, string>
         Directory.CreateDirectory(directory);
     }
 
-    public void Write(string key, string data)
+    public async Task WriteAsync(string key, string data, CancellationToken ct = default)
     {
-        File.WriteAllText(Path.Combine(_directory, key), data);
+        await File.WriteAllTextAsync(Path.Combine(_directory, key), data, ct);
     }
 
-    public string Get(string key)
+    public async Task<string> GetAsync(string key, CancellationToken ct = default)
     {
-        return File.ReadAllText(Path.Combine(_directory, key));
+        return await File.ReadAllTextAsync(Path.Combine(_directory, key), ct);
     }
 
-    public void Delete(string key)
+    public async Task DeleteAsync(string key, CancellationToken ct = default)
     {
-        File.Delete(Path.Combine(_directory, key));
+        await Task.Run(() => File.Delete(Path.Combine(_directory, key)), ct);
     }
 
-    public void Clear()
+    public async Task ClearAsync(CancellationToken ct = default)
     {
         foreach (var file in Directory.GetFiles(_directory))
-            File.Delete(file);
+            await Task.Run(() => File.Delete(file), ct);
     }
 
-    public bool Exists(string key)
+    public async Task<bool> ExistsAsync(string key, CancellationToken ct = default)
     {
-        return File.Exists(Path.Combine(_directory, key));
+        return await Task.Run(() => File.Exists(Path.Combine(_directory, key)), ct);
     }
 
-    public List<string> Enumerate()
+    public async Task<List<string>> EnumerateAsync(CancellationToken ct = default)
     {
-        return Directory.GetFiles(_directory)
+        return await Task.Run(() => Directory.GetFiles(_directory)
             .Select(Path.GetFileName)
-            .ToList();
+            .ToList(), ct);
     }
 }
 
@@ -198,11 +198,15 @@ var persistence = new FilePersistence("./cache_data");
 var cache = new LRUCache<string, string>(1000, 100, persistence);
 
 // Restore from persistence on startup
-cache.Prepopulate();
+await cache.PrepopulateAsync();
 
 // All add/remove operations automatically persist
-cache.AddReplace("key", "value"); // Written to disk
-cache.Remove("key");              // Deleted from disk
+await cache.AddReplaceAsync("key", "value"); // Written to disk
+await cache.RemoveAsync("key");              // Deleted from disk
+
+// Sync methods also available (block on async internally)
+cache.AddReplace("key2", "value2");
+cache.Remove("key2");
 ```
 
 ### 6. Statistics
@@ -270,22 +274,46 @@ cache.SizeEstimator = str => str.Length * 2; // Unicode estimation
 | Method | Description |
 |--------|-------------|
 | `AddReplace(key, value, expiration?)` | Add or replace a cache entry |
+| `AddReplaceAsync(key, value, expiration?, ct?)` | Async version of AddReplace |
 | `Get(key)` | Get value (throws if not found) |
+| `GetOrDefault(key, defaultValue?)` | Get value or return default if not found |
 | `TryGet(key, out value)` | Try to get value (returns false if not found) |
 | `GetOrAdd(key, factory, expiration?)` | Get existing or add new value atomically |
+| `GetOrAddAsync(key, asyncFactory, expiration?, ct?)` | Async version of GetOrAdd |
 | `AddOrUpdate(key, addValue, updateFactory, expiration?)` | Add new or update existing value |
-| `Remove(key)` | Remove entry (throws if not found) |
-| `TryRemove(key)` | Try to remove entry (returns false if not found) |
+| `AddOrUpdateAsync(key, addValue, asyncUpdateFactory, expiration?, ct?)` | Async version of AddOrUpdate |
+| `Remove(key)` | Remove entry |
+| `RemoveAsync(key, ct?)` | Async version of Remove |
+| `TryRemove(key, out value)` | Try to remove entry, returns removed value |
 | `Contains(key)` | Check if key exists |
 | `Clear()` | Remove all entries |
+| `ClearAsync(ct?)` | Async version of Clear |
 | `Count()` | Get current number of entries |
 | `GetKeys()` | Get all keys |
 | `All()` | Get all key-value pairs |
 | `Oldest()` | Get key of oldest entry |
 | `Newest()` | Get key of newest entry |
 | `Prepopulate()` | Load from persistence layer |
+| `PrepopulateAsync(ct?)` | Async version of Prepopulate |
 | `GetStatistics()` | Get cache statistics |
 | `ResetStatistics()` | Reset counters |
+
+### Constructors
+
+```csharp
+// Basic cache
+new FIFOCache<TKey, TValue>(capacity, evictCount);
+new LRUCache<TKey, TValue>(capacity, evictCount);
+
+// With custom key comparer
+new FIFOCache<TKey, TValue>(capacity, evictCount, comparer: StringComparer.OrdinalIgnoreCase);
+
+// With persistence
+new FIFOCache<TKey, TValue>(capacity, evictCount, persistenceDriver);
+
+// With persistence and custom comparer
+new LRUCache<TKey, TValue>(capacity, evictCount, persistenceDriver, comparer);
+```
 
 ### Properties
 
@@ -303,6 +331,7 @@ cache.SizeEstimator = str => str.Length * 2; // Unicode estimation
 | `EvictionCount` | Total evictions |
 | `ExpirationCount` | Total expirations |
 | `HitRate` | Cache hit rate (0.0 to 1.0) |
+| `KeyComparer` | The equality comparer used for keys |
 | `Events` | Event handlers |
 | `Persistence` | Persistence driver |
 
@@ -318,7 +347,7 @@ Parallel.For(0, 1000, i =>
 {
     cache.AddReplace(i, $"value{i}");
     cache.TryGet(i, out _);
-    if (i % 10 == 0) cache.Remove(i);
+    if (i % 10 == 0) cache.TryRemove(i, out _);
 });
 ```
 
@@ -347,28 +376,72 @@ Parallel.For(0, 1000, i =>
    - Only use `MaxMemoryBytes` if needed; it adds overhead
    - Provide accurate `SizeEstimator` for best results
 
-## Migrating from v3.x
+## Migrating from v4.x to v5.0
 
-Most code will work unchanged. Key changes:
+v5.0 is a breaking change. Key updates required:
+
+### 1. Persistence Driver (Async-Only)
+
+```csharp
+// v4.x (sync methods)
+public class MyDriver : IPersistenceDriver<string, string>
+{
+    public void Write(string key, string data) { }
+    public string Get(string key) { }
+    public void Delete(string key) { }
+    public void Clear() { }
+    public bool Exists(string key) { }
+    public List<string> Enumerate() { }
+}
+
+// v5.0 (async methods)
+public class MyDriver : IPersistenceDriver<string, string>
+{
+    public Task WriteAsync(string key, string data, CancellationToken ct = default) { }
+    public Task<string> GetAsync(string key, CancellationToken ct = default) { }
+    public Task DeleteAsync(string key, CancellationToken ct = default) { }
+    public Task ClearAsync(CancellationToken ct = default) { }
+    public Task<bool> ExistsAsync(string key, CancellationToken ct = default) { }
+    public Task<List<string>> EnumerateAsync(CancellationToken ct = default) { }
+}
+```
+
+### 2. TryRemove Returns Value
+
+```csharp
+// v4.x
+bool removed = cache.TryRemove("key");
+
+// v5.0
+bool removed = cache.TryRemove("key", out string value);
+// or if you don't need the value:
+bool removed = cache.TryRemove("key", out _);
+```
+
+### 3. New Features
+
+```csharp
+// Custom key comparer
+var cache = new FIFOCache<string, int>(100, 10,
+    comparer: StringComparer.OrdinalIgnoreCase);
+
+// GetOrDefault (doesn't throw)
+string value = cache.GetOrDefault("missing", "fallback");
+
+// Async methods
+await cache.AddReplaceAsync("key", "value");
+var result = await cache.GetOrAddAsync("key", async k => await FetchAsync(k));
+await cache.PrepopulateAsync();
+```
+
+## Migrating from v3.x to v4.0
 
 ```csharp
 // v3.x
 cache.Events.Added = handler; // Overwrites all handlers! ❌
 
-// v4.0
+// v4.0+
 cache.Events.Added += handler; // Adds handler ✅
-
-// v3.x (abstract class)
-public class MyDriver : IPersistenceDriver<string, string>
-{
-    public override void Write(string key, string data) { }
-}
-
-// v4.0 (interface)
-public class MyDriver : IPersistenceDriver<string, string>
-{
-    public void Write(string key, string data) { } // No 'override'
-}
 ```
 
 ## Contributing

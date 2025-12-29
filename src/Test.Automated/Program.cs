@@ -14,9 +14,13 @@ namespace Test.Automated
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
         static List<TestResult> Results = new List<TestResult>();
+        static System.Diagnostics.Stopwatch _testStopwatch = new System.Diagnostics.Stopwatch();
+        static System.Diagnostics.Stopwatch _overallStopwatch = new System.Diagnostics.Stopwatch();
 
         static void Main(string[] args)
         {
+            _overallStopwatch.Start();
+            _testStopwatch.Start();
             Console.WriteLine("==========================================");
             Console.WriteLine("Caching Library v4.0.0 - Automated Tests");
             Console.WriteLine("==========================================\n");
@@ -38,6 +42,7 @@ namespace Test.Automated
             TestPerformance();
 
             // Print summary
+            _overallStopwatch.Stop();
             Console.WriteLine("\n==========================================");
             Console.WriteLine("TEST SUMMARY");
             Console.WriteLine("==========================================");
@@ -47,7 +52,7 @@ namespace Test.Automated
 
             foreach (var result in Results)
             {
-                Console.WriteLine($"{(result.Passed ? "PASS" : "FAIL")}: {result.TestName}");
+                Console.WriteLine($"{(result.Passed ? "PASS" : "FAIL")}: {result.TestName} ({result.ElapsedMs}ms)");
                 if (!result.Passed && !string.IsNullOrEmpty(result.Message))
                 {
                     Console.WriteLine($"      Error: {result.Message}");
@@ -55,15 +60,17 @@ namespace Test.Automated
             }
 
             Console.WriteLine($"\nTotal: {Results.Count} | Passed: {passed} | Failed: {failed}");
-            Console.WriteLine($"\nOVERALL RESULT: {(failed == 0 ? "PASS" : "FAIL")}");
+            Console.WriteLine($"\nOVERALL RESULT: {(failed == 0 ? "PASS" : "FAIL")} ({_overallStopwatch.ElapsedMilliseconds}ms)");
 
             Environment.ExitCode = failed > 0 ? 1 : 0;
         }
 
         static void RecordTest(string name, bool passed, string message = "")
         {
-            Results.Add(new TestResult { TestName = name, Passed = passed, Message = message });
-            Console.WriteLine($"{(passed ? "[PASS]" : "[FAIL]")} {name}");
+            long elapsedMs = _testStopwatch.ElapsedMilliseconds;
+            _testStopwatch.Restart();
+            Results.Add(new TestResult { TestName = name, Passed = passed, Message = message, ElapsedMs = elapsedMs });
+            Console.WriteLine($"{(passed ? "[PASS]" : "[FAIL]")} {name} ({elapsedMs}ms)");
             if (!passed && !string.IsNullOrEmpty(message))
             {
                 Console.WriteLine($"       {message}");
@@ -115,10 +122,10 @@ namespace Test.Automated
                 RecordTest("FIFO: Remove", !cache.Contains("key2") && cache.Count() == 2);
 
                 // Test TryRemove
-                bool removed = cache.TryRemove("key3");
-                RecordTest("FIFO: TryRemove existing", removed && !cache.Contains("key3"));
+                bool removed = cache.TryRemove("key3", out string removedValue);
+                RecordTest("FIFO: TryRemove existing", removed && !cache.Contains("key3") && removedValue == "value3");
 
-                bool notRemoved = cache.TryRemove("nonexistent");
+                bool notRemoved = cache.TryRemove("nonexistent", out _);
                 RecordTest("FIFO: TryRemove non-existing", !notRemoved);
 
                 // Test Eviction - strict FIFO order validation
@@ -469,7 +476,7 @@ namespace Test.Automated
                             {
                                 string key = $"concurrent_{threadId}_{i}";
                                 cache4.AddReplace(key, $"value_{threadId}_{i}");
-                                if (i % 5 == 0) cache4.TryRemove(key);
+                                if (i % 5 == 0) cache4.TryRemove(key, out _);
                             }
                         }
                         catch
@@ -669,7 +676,7 @@ namespace Test.Automated
                                 int key = threadId * 1000 + i;
                                 cache.AddReplace(key, key * 2);
                                 cache.TryGet(key, out _);
-                                if (i % 10 == 0) cache.TryRemove(key);
+                                if (i % 10 == 0) cache.TryRemove(key, out _);
                             }
                         }
                         catch
@@ -773,7 +780,7 @@ namespace Test.Automated
                 RecordTest("EdgeCase: TryGet null key throws", tryGetNullThrows);
 
                 // TryRemove with null key
-                bool tryRemoveNull = cache.TryRemove(null);
+                bool tryRemoveNull = cache.TryRemove(null, out _);
                 RecordTest("EdgeCase: TryRemove null key returns false", !tryRemoveNull);
 
                 // Remove non-existent (should not fire event)
@@ -807,7 +814,7 @@ namespace Test.Automated
                 sw.Stop();
 
                 bool addPerf = sw.ElapsedMilliseconds < 1000; // Should be fast
-                RecordTest($"Performance: Add 10k items ({sw.ElapsedMilliseconds}ms)", addPerf);
+                RecordTest("Performance: Add 10k items", addPerf);
 
                 // Test get performance (should be O(1))
                 sw.Restart();
@@ -818,7 +825,7 @@ namespace Test.Automated
                 sw.Stop();
 
                 bool getPerf = sw.ElapsedMilliseconds < 100; // Should be very fast
-                RecordTest($"Performance: Get 5k items ({sw.ElapsedMilliseconds}ms)", getPerf);
+                RecordTest("Performance: Get 5k items", getPerf);
 
                 cache.Dispose();
             }
@@ -834,62 +841,69 @@ namespace Test.Automated
         public string TestName { get; set; }
         public bool Passed { get; set; }
         public string Message { get; set; }
+        public long ElapsedMs { get; set; }
     }
 
-    // Simple in-memory persistence for testing
+    // Simple file-based persistence for testing
     class SimplePersistence : IPersistenceDriver<string, string>
     {
-        private Dictionary<string, string> _store = new Dictionary<string, string>();
         private string _directory;
 
         public SimplePersistence(string directory)
         {
             _directory = directory;
+            if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
         }
 
-        public void Delete(string key)
+        public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)
         {
             string path = Path.Combine(_directory, key);
-            if (File.Exists(path)) File.Delete(path);
+            await Task.Run(() => { if (File.Exists(path)) File.Delete(path); }, cancellationToken);
         }
 
-        public void Clear()
+        public async Task ClearAsync(CancellationToken cancellationToken = default)
         {
             if (Directory.Exists(_directory))
             {
                 foreach (var file in Directory.GetFiles(_directory))
                 {
-                    File.Delete(file);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    await Task.Run(() => File.Delete(file), cancellationToken);
                 }
             }
         }
 
-        public string Get(string key)
+        public async Task<string> GetAsync(string key, CancellationToken cancellationToken = default)
         {
             string path = Path.Combine(_directory, key);
-            return File.ReadAllText(path);
+            return await File.ReadAllTextAsync(path, cancellationToken);
         }
 
-        public void Write(string key, string data)
+        public async Task WriteAsync(string key, string data, CancellationToken cancellationToken = default)
         {
             string path = Path.Combine(_directory, key);
-            File.WriteAllText(path, data);
+            await File.WriteAllTextAsync(path, data, cancellationToken);
         }
 
-        public bool Exists(string key)
+        public async Task<bool> ExistsAsync(string key, CancellationToken cancellationToken = default)
         {
             string path = Path.Combine(_directory, key);
-            return File.Exists(path);
+            return await Task.Run(() => File.Exists(path), cancellationToken);
         }
 
-        public List<string> Enumerate()
+        public async Task<List<string>> EnumerateAsync(CancellationToken cancellationToken = default)
         {
             if (!Directory.Exists(_directory)) return new List<string>();
 
-            return Directory.GetFiles(_directory)
+            return await Task.Run(() => Directory.GetFiles(_directory)
                 .Select(f => Path.GetFileName(f))
-                .ToList();
+                .ToList(), cancellationToken);
         }
+
+        // Sync helper methods for test validation
+        public bool Exists(string key) => ExistsAsync(key).GetAwaiter().GetResult();
+        public string Get(string key) => GetAsync(key).GetAwaiter().GetResult();
+        public void Write(string key, string data) => WriteAsync(key, data).GetAwaiter().GetResult();
 
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.

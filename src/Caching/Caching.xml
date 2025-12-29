@@ -24,11 +24,6 @@
             Persistence driver.
             </summary>
         </member>
-        <member name="P:Caching.CacheBase`2.PersistenceAsync">
-            <summary>
-            Async persistence driver (optional).
-            </summary>
-        </member>
         <member name="P:Caching.CacheBase`2.Capacity">
             <summary>
             Cache capacity.
@@ -41,7 +36,7 @@
         </member>
         <member name="P:Caching.CacheBase`2.ExpirationIntervalMs">
             <summary>
-            Frequency with which the cache is evaluated for expired entries.  Default is 1000ms.
+            Frequency with which the cache is evaluated for expired entries. Default is 1000ms.
             </summary>
         </member>
         <member name="P:Caching.CacheBase`2.SlidingExpiration">
@@ -89,6 +84,16 @@
             Cache hit rate (0.0 to 1.0).
             </summary>
         </member>
+        <member name="P:Caching.CacheBase`2.KeyComparer">
+            <summary>
+            Equality comparer used for keys.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheBase`2.Dispose">
+            <summary>
+            Dispose of the object. Do not use after disposal.
+            </summary>
+        </member>
         <member name="M:Caching.CacheBase`2.Count">
             <summary>
             Retrieve the current number of entries in the cache.
@@ -99,24 +104,31 @@
             <summary>
             Retrieve the key of the oldest entry in the cache.
             </summary>
-            <returns>String containing the key.</returns>
+            <returns>Key of the oldest entry.</returns>
         </member>
         <member name="M:Caching.CacheBase`2.Newest">
             <summary>
             Retrieve the key of the newest entry in the cache.
             </summary>
-            <returns>String containing the key.</returns>
+            <returns>Key of the newest entry.</returns>
         </member>
         <member name="M:Caching.CacheBase`2.All">
             <summary>
             Retrieve all entries from the cache.
             </summary>
-            <returns>Dictionary.</returns>
+            <returns>Dictionary of all entries.</returns>
         </member>
         <member name="M:Caching.CacheBase`2.Clear">
             <summary>
             Clear the cache.
             </summary>
+        </member>
+        <member name="M:Caching.CacheBase`2.ClearAsync(System.Threading.CancellationToken)">
+            <summary>
+            Clear the cache asynchronously.
+            </summary>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Task.</returns>
         </member>
         <member name="M:Caching.CacheBase`2.Get(`0)">
             <summary>
@@ -124,6 +136,14 @@
             </summary>
             <param name="key">The key associated with the data you wish to retrieve.</param>
             <returns>The object data associated with the key.</returns>
+        </member>
+        <member name="M:Caching.CacheBase`2.GetOrDefault(`0,`1)">
+            <summary>
+            Retrieve a key's value from the cache, or return a default value if not found.
+            </summary>
+            <param name="key">The key associated with the data you wish to retrieve.</param>
+            <param name="defaultValue">Value to return if key is not found.</param>
+            <returns>The object data associated with the key, or defaultValue if not found.</returns>
         </member>
         <member name="M:Caching.CacheBase`2.TryGet(`0,`1@)">
             <summary>
@@ -156,6 +176,26 @@
             <param name="val">The value associated with the key.</param>
             <param name="expiresIn">Time span until expiration.</param>
         </member>
+        <member name="M:Caching.CacheBase`2.AddReplaceAsync(`0,`1,System.Nullable{System.DateTime},System.Threading.CancellationToken)">
+            <summary>
+            Add or replace a key's value in the cache asynchronously.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="val">The value associated with the key.</param>
+            <param name="expiration">Timestamp at which the entry should expire.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Caching.CacheBase`2.AddReplaceAsync(`0,`1,System.TimeSpan,System.Threading.CancellationToken)">
+            <summary>
+            Add or replace a key's value in the cache asynchronously with relative expiration time.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="val">The value associated with the key.</param>
+            <param name="expiresIn">Time span until expiration.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
         <member name="M:Caching.CacheBase`2.TryAddReplace(`0,`1,System.Nullable{System.DateTime})">
             <summary>
             Attempt to add or replace a key's value in the cache.
@@ -183,6 +223,26 @@
             <param name="expiresIn">Time span until expiration.</param>
             <returns>The value.</returns>
         </member>
+        <member name="M:Caching.CacheBase`2.GetOrAddAsync(`0,System.Func{`0,System.Threading.Tasks.Task{`1}},System.Nullable{System.DateTime},System.Threading.CancellationToken)">
+            <summary>
+            Get a value from cache, or add it if not present asynchronously.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="valueFactory">Async function to create value if not present.</param>
+            <param name="expiration">Timestamp at which the entry should expire.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>The value.</returns>
+        </member>
+        <member name="M:Caching.CacheBase`2.GetOrAddAsync(`0,System.Func{`0,System.Threading.Tasks.Task{`1}},System.Nullable{System.TimeSpan},System.Threading.CancellationToken)">
+            <summary>
+            Get a value from cache, or add it if not present asynchronously (with relative expiration).
+            </summary>
+            <param name="key">The key.</param>
+            <param name="valueFactory">Async function to create value if not present.</param>
+            <param name="expiresIn">Time span until expiration.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>The value.</returns>
+        </member>
         <member name="M:Caching.CacheBase`2.TryGetOrAdd(`0,System.Func{`0,`1},`1@,System.Nullable{System.DateTime})">
             <summary>
             Try to get a value from cache, or add it if not present.
@@ -203,29 +263,56 @@
             <param name="expiration">Timestamp at which the entry should expire.</param>
             <returns>The resulting value.</returns>
         </member>
+        <member name="M:Caching.CacheBase`2.AddOrUpdateAsync(`0,`1,System.Func{`0,`1,System.Threading.Tasks.Task{`1}},System.Nullable{System.DateTime},System.Threading.CancellationToken)">
+            <summary>
+            Add a new value or update existing value asynchronously.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="addValue">Value to add if key doesn't exist.</param>
+            <param name="updateValueFactory">Async function to update value if key exists.</param>
+            <param name="expiration">Timestamp at which the entry should expire.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>The resulting value.</returns>
+        </member>
         <member name="M:Caching.CacheBase`2.Remove(`0)">
             <summary>
             Remove a key from the cache.
             </summary>
             <param name="key">The key.</param>
         </member>
-        <member name="M:Caching.CacheBase`2.TryRemove(`0)">
+        <member name="M:Caching.CacheBase`2.RemoveAsync(`0,System.Threading.CancellationToken)">
             <summary>
-            Attempt to remove a key and value value from the cache.
+            Remove a key from the cache asynchronously.
             </summary>
             <param name="key">The key.</param>
-            <returns>True if successful.</returns>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Caching.CacheBase`2.TryRemove(`0,`1@)">
+            <summary>
+            Attempt to remove a key and its value from the cache.
+            </summary>
+            <param name="key">The key.</param>
+            <param name="val">The removed value, if found.</param>
+            <returns>True if the key was found and removed.</returns>
         </member>
         <member name="M:Caching.CacheBase`2.GetKeys">
             <summary>
             Retrieve all keys in the cache.
             </summary>
-            <returns>List of string.</returns>
+            <returns>List of keys.</returns>
         </member>
         <member name="M:Caching.CacheBase`2.Prepopulate">
             <summary>
             Prepopulate the cache with entries from the persistence layer.
             </summary>
+        </member>
+        <member name="M:Caching.CacheBase`2.PrepopulateAsync(System.Threading.CancellationToken)">
+            <summary>
+            Prepopulate the cache with entries from the persistence layer asynchronously.
+            </summary>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Task.</returns>
         </member>
         <member name="M:Caching.CacheBase`2.GetStatistics">
             <summary>
@@ -249,12 +336,6 @@
             </summary>
             <param name="value">Value to estimate.</param>
             <returns>Estimated size in bytes.</returns>
-        </member>
-        <member name="T:Caching.ICache`2">
-            <summary>
-            Cache base class (deprecated name for backward compatibility).
-            Use CacheBase instead.
-            </summary>
         </member>
         <member name="T:Caching.CacheEvents`2">
             <summary>
@@ -499,464 +580,267 @@
         </member>
         <member name="T:Caching.FIFOCache`2">
             <summary>
-            FIFO cache that internally uses tuples.
+            FIFO cache - evicts oldest entries first based on insertion time.
             </summary>
         </member>
-        <member name="M:Caching.FIFOCache`2.#ctor(System.Int32,System.Int32)">
+        <member name="M:Caching.FIFOCache`2.#ctor(System.Int32,System.Int32,System.Collections.Generic.IEqualityComparer{`0})">
             <summary>
             Initialize the cache.
             </summary>
             <param name="capacity">Maximum number of entries.</param>
             <param name="evictCount">Number to evict when capacity is reached.</param>
+            <param name="comparer">Optional equality comparer for keys.</param>
         </member>
-        <member name="M:Caching.FIFOCache`2.#ctor(System.Int32,System.Int32,Caching.IPersistenceDriver{`0,`1})">
+        <member name="M:Caching.FIFOCache`2.#ctor(System.Int32,System.Int32,Caching.IPersistenceDriver{`0,`1},System.Collections.Generic.IEqualityComparer{`0})">
             <summary>
             Initialize the cache with persistence.
             </summary>
             <param name="capacity">Maximum number of entries.</param>
             <param name="evictCount">Number to evict when capacity is reached.</param>
             <param name="persistence">Persistence driver.</param>
+            <param name="comparer">Optional equality comparer for keys.</param>
         </member>
         <member name="M:Caching.FIFOCache`2.Dispose">
-            <summary>
-            Dispose of the object.  Do not use after disposal.
-            </summary>
+            <inheritdoc />
         </member>
         <member name="M:Caching.FIFOCache`2.Count">
-            <summary>
-            Retrieve the current number of entries in the cache.
-            </summary>
-            <returns>An integer containing the number of entries.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.FIFOCache`2.Oldest">
-            <summary>
-            Retrieve the key of the oldest entry in the cache.
-            </summary>
-            <returns>String containing the key.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.FIFOCache`2.Newest">
-            <summary>
-            Retrieve the key of the newest entry in the cache.
-            </summary>
-            <returns>String containing the key.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.FIFOCache`2.All">
-            <summary>
-            Retrieve all entries from the cache.
-            </summary>
-            <returns>Dictionary.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.FIFOCache`2.Clear">
-            <summary>
-            Clear the cache.
-            </summary>
+            <inheritdoc />
+        </member>
+        <member name="M:Caching.FIFOCache`2.ClearAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
         </member>
         <member name="M:Caching.FIFOCache`2.Get(`0)">
-            <summary>
-            Retrieve a key's value from the cache.
-            </summary>
-            <param name="key">The key associated with the data you wish to retrieve.</param>
-            <returns>The object data associated with the key.</returns>
+            <inheritdoc />
+        </member>
+        <member name="M:Caching.FIFOCache`2.GetOrDefault(`0,`1)">
+            <inheritdoc />
         </member>
         <member name="M:Caching.FIFOCache`2.TryGet(`0,`1@)">
-            <summary>
-            Retrieve a key's value from the cache.
-            </summary>
-            <param name="key">The key associated with the data you wish to retrieve.</param>
-            <param name="val">The value associated with the key.</param>
-            <returns>True if key is found.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.FIFOCache`2.Contains(`0)">
-            <summary>
-            See if a key exists in the cache.
-            </summary>
-            <param name="key">The key of the cached items.</param>
-            <returns>True if cached.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.FIFOCache`2.AddReplace(`0,`1,System.Nullable{System.DateTime})">
-            <summary>
-            Add or replace a key's value in the cache.
-            </summary>
-            <param name="key">The key.</param>
-            <param name="val">The value associated with the key.</param>
-            <param name="expiration">Timestamp at which the entry should expire.</param>
+            <inheritdoc />
+        </member>
+        <member name="M:Caching.FIFOCache`2.AddReplaceAsync(`0,`1,System.Nullable{System.DateTime},System.Threading.CancellationToken)">
+            <inheritdoc />
         </member>
         <member name="M:Caching.FIFOCache`2.TryAddReplace(`0,`1,System.Nullable{System.DateTime})">
-            <summary>
-            Attempt to add or replace a key's value in the cache.
-            </summary>
-            <param name="key">The key.</param>
-            <param name="val">The value associated with the key.</param>
-            <param name="expiration">Timestamp at which the entry should expire.</param>
-            <returns>True if successful.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.FIFOCache`2.GetOrAdd(`0,System.Func{`0,`1},System.Nullable{System.DateTime})">
-            <summary>
-            Get a value from cache, or add it if not present.
-            </summary>
-            <param name="key">The key.</param>
-            <param name="valueFactory">Function to create value if not present.</param>
-            <param name="expiration">Timestamp at which the entry should expire.</param>
-            <returns>The value.</returns>
+            <inheritdoc />
+        </member>
+        <member name="M:Caching.FIFOCache`2.GetOrAddAsync(`0,System.Func{`0,System.Threading.Tasks.Task{`1}},System.Nullable{System.DateTime},System.Threading.CancellationToken)">
+            <inheritdoc />
         </member>
         <member name="M:Caching.FIFOCache`2.TryGetOrAdd(`0,System.Func{`0,`1},`1@,System.Nullable{System.DateTime})">
-            <summary>
-            Try to get a value from cache, or add it if not present.
-            </summary>
-            <param name="key">The key.</param>
-            <param name="valueFactory">Function to create value if not present.</param>
-            <param name="value">The retrieved or created value.</param>
-            <param name="expiration">Timestamp at which the entry should expire.</param>
-            <returns>True if successful.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.FIFOCache`2.AddOrUpdate(`0,`1,System.Func{`0,`1,`1},System.Nullable{System.DateTime})">
-            <summary>
-            Add a new value or update existing value.
-            </summary>
-            <param name="key">The key.</param>
-            <param name="addValue">Value to add if key doesn't exist.</param>
-            <param name="updateValueFactory">Function to update value if key exists.</param>
-            <param name="expiration">Timestamp at which the entry should expire.</param>
-            <returns>The resulting value.</returns>
+            <inheritdoc />
+        </member>
+        <member name="M:Caching.FIFOCache`2.AddOrUpdateAsync(`0,`1,System.Func{`0,`1,System.Threading.Tasks.Task{`1}},System.Nullable{System.DateTime},System.Threading.CancellationToken)">
+            <inheritdoc />
         </member>
         <member name="M:Caching.FIFOCache`2.Remove(`0)">
-            <summary>
-            Remove a key from the cache.
-            </summary>
-            <param name="key">The key.</param>
+            <inheritdoc />
         </member>
-        <member name="M:Caching.FIFOCache`2.TryRemove(`0)">
-            <summary>
-            Attempt to remove a key and value value from the cache.
-            </summary>
-            <param name="key">The key.</param>
-            <returns>True if successful.</returns>
+        <member name="M:Caching.FIFOCache`2.RemoveAsync(`0,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Caching.FIFOCache`2.TryRemove(`0,`1@)">
+            <inheritdoc />
         </member>
         <member name="M:Caching.FIFOCache`2.GetKeys">
-            <summary>
-            Retrieve all keys in the cache.
-            </summary>
-            <returns>List of string.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.FIFOCache`2.Prepopulate">
-            <summary>
-            Prepopulate the cache with entries from the persistence layer.
-            </summary>
+            <inheritdoc />
+        </member>
+        <member name="M:Caching.FIFOCache`2.PrepopulateAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
         </member>
         <member name="M:Caching.FIFOCache`2.ExpirationTask(System.Threading.CancellationToken)">
-            <summary>
-            Expiration task.
-            </summary>
-            <param name="token">Cancellation token.</param>
-            <returns>Task.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.FIFOCache`2.Dispose(System.Boolean)">
             <summary>
-            Dispose of the object.  Do not use after disposal.
+            Dispose of the object. Do not use after disposal.
             </summary>
         </member>
         <member name="T:Caching.IPersistenceDriver`2">
             <summary>
             Persistence driver interface. Implement this interface for custom persistence.
+            All methods are async for non-blocking I/O operations.
             </summary>
             <typeparam name="T1">Type of key.</typeparam>
             <typeparam name="T2">Type of value.</typeparam>
         </member>
-        <member name="M:Caching.IPersistenceDriver`2.Delete(`0)">
+        <member name="M:Caching.IPersistenceDriver`2.DeleteAsync(`0,System.Threading.CancellationToken)">
             <summary>
             Delete data by its key.
             </summary>
             <param name="key">Key.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Task.</returns>
         </member>
-        <member name="M:Caching.IPersistenceDriver`2.Clear">
+        <member name="M:Caching.IPersistenceDriver`2.ClearAsync(System.Threading.CancellationToken)">
             <summary>
             Delete all persisted contents.
             </summary>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Task.</returns>
         </member>
-        <member name="M:Caching.IPersistenceDriver`2.Get(`0)">
+        <member name="M:Caching.IPersistenceDriver`2.GetAsync(`0,System.Threading.CancellationToken)">
             <summary>
             Retrieve data by its key.
             </summary>
             <param name="key">Key.</param>
+            <param name="cancellationToken">Cancellation token.</param>
             <returns>Data.</returns>
         </member>
-        <member name="M:Caching.IPersistenceDriver`2.Write(`0,`1)">
+        <member name="M:Caching.IPersistenceDriver`2.WriteAsync(`0,`1,System.Threading.CancellationToken)">
             <summary>
             Write data associated with a key.
             </summary>
             <param name="key">Key.</param>
             <param name="data">Data.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Task.</returns>
         </member>
-        <member name="M:Caching.IPersistenceDriver`2.Exists(`0)">
+        <member name="M:Caching.IPersistenceDriver`2.ExistsAsync(`0,System.Threading.CancellationToken)">
             <summary>
             Check if data exists for a given key.
             </summary>
             <param name="key">Key.</param>
+            <param name="cancellationToken">Cancellation token.</param>
             <returns>True if exists.</returns>
         </member>
-        <member name="M:Caching.IPersistenceDriver`2.Enumerate">
+        <member name="M:Caching.IPersistenceDriver`2.EnumerateAsync(System.Threading.CancellationToken)">
             <summary>
             Enumerate keys.
-            </summary>
-            <returns>List of keys.</returns>
-        </member>
-        <member name="T:Caching.PersistenceDriverBase`2">
-            <summary>
-            Persistence driver base class for backward compatibility.
-            New code should implement IPersistenceDriver interface directly.
-            </summary>
-            <typeparam name="T1">Type of key.</typeparam>
-            <typeparam name="T2">Type of value.</typeparam>
-        </member>
-        <member name="M:Caching.PersistenceDriverBase`2.Delete(`0)">
-            <summary>
-            Delete data by its key.
-            </summary>
-            <param name="key">Key.</param>
-        </member>
-        <member name="M:Caching.PersistenceDriverBase`2.Clear">
-            <summary>
-            Delete all persisted contents.
-            </summary>
-        </member>
-        <member name="M:Caching.PersistenceDriverBase`2.Get(`0)">
-            <summary>
-            Retrieve data by its key.
-            </summary>
-            <param name="key">Key.</param>
-            <returns>Data.</returns>
-        </member>
-        <member name="M:Caching.PersistenceDriverBase`2.Write(`0,`1)">
-            <summary>
-            Write data associated with a key.
-            </summary>
-            <param name="key">Key.</param>
-            <param name="data">Data.</param>
-        </member>
-        <member name="M:Caching.PersistenceDriverBase`2.Exists(`0)">
-            <summary>
-            Check if data exists for a given key.
-            </summary>
-            <param name="key">Key.</param>
-            <returns>True if exists.</returns>
-        </member>
-        <member name="M:Caching.PersistenceDriverBase`2.Enumerate">
-            <summary>
-            Enumerate keys.
-            </summary>
-            <returns>List of keys.</returns>
-        </member>
-        <member name="T:Caching.IPersistenceDriverAsync`2">
-            <summary>
-            Async persistence driver interface.
-            </summary>
-            <typeparam name="T1">Type of key.</typeparam>
-            <typeparam name="T2">Type of value.</typeparam>
-        </member>
-        <member name="M:Caching.IPersistenceDriverAsync`2.DeleteAsync(`0,System.Threading.CancellationToken)">
-            <summary>
-            Delete data by its key asynchronously.
-            </summary>
-            <param name="key">Key.</param>
-            <param name="cancellationToken">Cancellation token.</param>
-            <returns>Task.</returns>
-        </member>
-        <member name="M:Caching.IPersistenceDriverAsync`2.ClearAsync(System.Threading.CancellationToken)">
-            <summary>
-            Delete all persisted contents asynchronously.
-            </summary>
-            <param name="cancellationToken">Cancellation token.</param>
-            <returns>Task.</returns>
-        </member>
-        <member name="M:Caching.IPersistenceDriverAsync`2.GetAsync(`0,System.Threading.CancellationToken)">
-            <summary>
-            Retrieve data by its key asynchronously.
-            </summary>
-            <param name="key">Key.</param>
-            <param name="cancellationToken">Cancellation token.</param>
-            <returns>Data.</returns>
-        </member>
-        <member name="M:Caching.IPersistenceDriverAsync`2.WriteAsync(`0,`1,System.Threading.CancellationToken)">
-            <summary>
-            Write data associated with a key asynchronously.
-            </summary>
-            <param name="key">Key.</param>
-            <param name="data">Data.</param>
-            <param name="cancellationToken">Cancellation token.</param>
-            <returns>Task.</returns>
-        </member>
-        <member name="M:Caching.IPersistenceDriverAsync`2.ExistsAsync(`0,System.Threading.CancellationToken)">
-            <summary>
-            Check if data exists for a given key asynchronously.
-            </summary>
-            <param name="key">Key.</param>
-            <param name="cancellationToken">Cancellation token.</param>
-            <returns>True if exists.</returns>
-        </member>
-        <member name="M:Caching.IPersistenceDriverAsync`2.EnumerateAsync(System.Threading.CancellationToken)">
-            <summary>
-            Enumerate keys asynchronously.
             </summary>
             <param name="cancellationToken">Cancellation token.</param>
             <returns>List of keys.</returns>
         </member>
         <member name="T:Caching.LRUCache`2">
             <summary>
-            LRU cache that internally uses tuples.  T1 is the type of the key, and T2 is the type of the value.
+            LRU cache - evicts least recently used entries first based on access time.
             </summary>
         </member>
-        <member name="M:Caching.LRUCache`2.#ctor(System.Int32,System.Int32)">
+        <member name="M:Caching.LRUCache`2.#ctor(System.Int32,System.Int32,System.Collections.Generic.IEqualityComparer{`0})">
             <summary>
             Initialize the cache.
             </summary>
             <param name="capacity">Maximum number of entries.</param>
             <param name="evictCount">Number to evict when capacity is reached.</param>
+            <param name="comparer">Optional equality comparer for keys.</param>
         </member>
-        <member name="M:Caching.LRUCache`2.#ctor(System.Int32,System.Int32,Caching.IPersistenceDriver{`0,`1})">
+        <member name="M:Caching.LRUCache`2.#ctor(System.Int32,System.Int32,Caching.IPersistenceDriver{`0,`1},System.Collections.Generic.IEqualityComparer{`0})">
             <summary>
-            Initialize the cache.
+            Initialize the cache with persistence.
             </summary>
             <param name="capacity">Maximum number of entries.</param>
             <param name="evictCount">Number to evict when capacity is reached.</param>
             <param name="persistence">Persistence driver.</param>
+            <param name="comparer">Optional equality comparer for keys.</param>
         </member>
         <member name="M:Caching.LRUCache`2.Dispose">
-            <summary>
-            Dispose of the object.  Do not use after disposal.
-            </summary>
+            <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.Count">
-            <summary>
-            Retrieve the current number of entries in the cache.
-            </summary>
-            <returns>An integer containing the number of entries.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.Oldest">
-            <summary>
-            Retrieve the key of the oldest entry in the cache (by Added time).
-            </summary>
-            <returns>String containing the key.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.Newest">
-            <summary>
-            Retrieve the key of the newest entry in the cache (by Added time).
-            </summary>
-            <returns>String containing the key.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.All">
-            <summary>
-            Retrieve all entries from the cache.
-            </summary>
-            <returns>Dictionary.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.Clear">
-            <summary>
-            Clear the cache.
-            </summary>
+            <inheritdoc />
+        </member>
+        <member name="M:Caching.LRUCache`2.ClearAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.Get(`0)">
-            <summary>
-            Retrieve a key's value from the cache.
-            </summary>
-            <param name="key">The key associated with the data you wish to retrieve.</param>
-            <returns>The object data associated with the key.</returns>
+            <inheritdoc />
+        </member>
+        <member name="M:Caching.LRUCache`2.GetOrDefault(`0,`1)">
+            <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.TryGet(`0,`1@)">
-            <summary>
-            Retrieve a key's value from the cache.
-            </summary>
-            <param name="key">The key associated with the data you wish to retrieve.</param>
-            <param name="val">The value associated with the key.</param>
-            <returns>True if key is found.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.Contains(`0)">
-            <summary>
-            See if a key exists in the cache.
-            </summary>
-            <param name="key">The key of the cached items.</param>
-            <returns>True if cached.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.AddReplace(`0,`1,System.Nullable{System.DateTime})">
-            <summary>
-            Add or replace a key's value in the cache.
-            </summary>
-            <param name="key">The key.</param>
-            <param name="val">The value associated with the key.</param>
-            <param name="expiration">Timestamp at which the entry should expire.</param>
-            <returns>Boolean indicating success.</returns>
+            <inheritdoc />
+        </member>
+        <member name="M:Caching.LRUCache`2.AddReplaceAsync(`0,`1,System.Nullable{System.DateTime},System.Threading.CancellationToken)">
+            <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.TryAddReplace(`0,`1,System.Nullable{System.DateTime})">
-            <summary>
-            Attempt to add or replace a key's value in the cache.
-            </summary>
-            <param name="key">The key.</param>
-            <param name="val">The value associated with the key.</param>
-            <param name="expiration">Timestamp at which the entry should expire.</param>
-            <returns>True if successful.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.GetOrAdd(`0,System.Func{`0,`1},System.Nullable{System.DateTime})">
-            <summary>
-            Get a value from cache, or add it if not present.
-            </summary>
-            <param name="key">The key.</param>
-            <param name="valueFactory">Function to create value if not present.</param>
-            <param name="expiration">Timestamp at which the entry should expire.</param>
-            <returns>The value.</returns>
+            <inheritdoc />
+        </member>
+        <member name="M:Caching.LRUCache`2.GetOrAddAsync(`0,System.Func{`0,System.Threading.Tasks.Task{`1}},System.Nullable{System.DateTime},System.Threading.CancellationToken)">
+            <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.TryGetOrAdd(`0,System.Func{`0,`1},`1@,System.Nullable{System.DateTime})">
-            <summary>
-            Try to get a value from cache, or add it if not present.
-            </summary>
-            <param name="key">The key.</param>
-            <param name="valueFactory">Function to create value if not present.</param>
-            <param name="value">The retrieved or created value.</param>
-            <param name="expiration">Timestamp at which the entry should expire.</param>
-            <returns>True if successful.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.AddOrUpdate(`0,`1,System.Func{`0,`1,`1},System.Nullable{System.DateTime})">
-            <summary>
-            Add a new value or update existing value.
-            </summary>
-            <param name="key">The key.</param>
-            <param name="addValue">Value to add if key doesn't exist.</param>
-            <param name="updateValueFactory">Function to update value if key exists.</param>
-            <param name="expiration">Timestamp at which the entry should expire.</param>
-            <returns>The resulting value.</returns>
+            <inheritdoc />
+        </member>
+        <member name="M:Caching.LRUCache`2.AddOrUpdateAsync(`0,`1,System.Func{`0,`1,System.Threading.Tasks.Task{`1}},System.Nullable{System.DateTime},System.Threading.CancellationToken)">
+            <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.Remove(`0)">
-            <summary>
-            Remove a key from the cache.
-            </summary>
-            <param name="key">The key.</param>
+            <inheritdoc />
         </member>
-        <member name="M:Caching.LRUCache`2.TryRemove(`0)">
-            <summary>
-            Attempt to remove a key and value value from the cache.
-            </summary>
-            <param name="key">The key.</param>
-            <returns>True if successful.</returns>
+        <member name="M:Caching.LRUCache`2.RemoveAsync(`0,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Caching.LRUCache`2.TryRemove(`0,`1@)">
+            <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.GetKeys">
-            <summary>
-            Retrieve all keys in the cache.
-            </summary>
-            <returns>List of string.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.Prepopulate">
-            <summary>
-            Prepopulate the cache with entries from the persistence layer.
-            </summary>
+            <inheritdoc />
+        </member>
+        <member name="M:Caching.LRUCache`2.PrepopulateAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.ExpirationTask(System.Threading.CancellationToken)">
-            <summary>
-            Expiration task.
-            </summary>
-            <param name="token">Cancellation token.</param>
-            <returns>Task.</returns>
+            <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.Dispose(System.Boolean)">
             <summary>
-            Dispose of the object.  Do not use after disposal.
+            Dispose of the object. Do not use after disposal.
             </summary>
         </member>
     </members>
