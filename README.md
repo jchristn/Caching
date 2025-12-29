@@ -1,6 +1,6 @@
 # Caching
 
-<img src="https://github.com/jchristn/Caching/raw/master/assets/icon.png" height="128" width="128">
+<img src="https://github.com/jchristn/Caching/raw/main/assets/icon.png" height="128" width="128">
 
 [![NuGet Version](https://img.shields.io/nuget/v/Caching.svg?style=flat)](https://www.nuget.org/packages/Caching/) [![NuGet](https://img.shields.io/nuget/dt/Caching.svg)](https://www.nuget.org/packages/Caching)
 
