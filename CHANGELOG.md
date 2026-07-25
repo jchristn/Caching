@@ -1,5 +1,17 @@
 # Change Log
 
+## v5.0.1
+
+### Bug Fixes
+- **Sliding expiration**: Refreshes entries using the original TTL instead of growing the expiration window on each access.
+- **Concurrent GetOrAdd**: Ensures `GetOrAdd` and `GetOrAddAsync` only invoke the factory once for the same key under contention.
+- **Concurrent AddOrUpdate**: Prevents lost updates when multiple callers update the same key concurrently.
+- **Memory tracking**: `Prepopulate()` now updates `CurrentMemoryBytes` and honors `MaxMemoryBytes`.
+- **Disposal consistency**: Read-only cache APIs now consistently throw `ObjectDisposedException` after disposal.
+
+### Tests
+- Migrated automated coverage to Touchstone shared descriptors with CLI, xUnit, and NUnit runners.
+
 ## v5.0.0 (Breaking Changes)
 
 ### Breaking Changes

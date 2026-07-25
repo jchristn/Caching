@@ -32,6 +32,10 @@ Or via Package Manager:
 Install-Package Caching
 ```
 
+## Current Release
+
+The current package version is **5.0.1**. This patch fixes sliding expiration TTL refresh, concurrent `GetOrAdd`/`AddOrUpdate` correctness, memory accounting during `Prepopulate()`, and post-dispose API consistency.
+
 ## Quick Start
 
 ### Basic FIFO Cache
