@@ -8,7 +8,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Caching\Caching.csproj" />
+		<PackageReference Include="Touchstone.Cli" Version="0.1.12" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Test.Shared\Test.Shared.csproj" />
 	</ItemGroup>
 
 </Project>

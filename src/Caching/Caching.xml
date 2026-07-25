@@ -337,6 +337,12 @@
             <param name="value">Value to estimate.</param>
             <returns>Estimated size in bytes.</returns>
         </member>
+        <member name="M:Caching.CacheBase`2.MarkAccessed(Caching.DataNode{`1})">
+            <summary>
+            Mark a cache entry as used and refresh sliding expiration when enabled.
+            </summary>
+            <param name="node">Node that was accessed.</param>
+        </member>
         <member name="T:Caching.CacheEvents`2">
             <summary>
             Cache events.
@@ -564,6 +570,11 @@
         <member name="P:Caching.DataNode`1.Expiration">
             <summary>
             Timestamp indicating when the entry should be expired.
+            </summary>
+        </member>
+        <member name="P:Caching.DataNode`1.ExpirationDuration">
+            <summary>
+            Original expiration duration used when sliding expiration refreshes an entry.
             </summary>
         </member>
         <member name="M:Caching.DataNode`1.#ctor">

@@ -156,6 +156,7 @@ namespace Caching
         internal Task _ExpirationTaskInstance = null;
         internal bool _disposed = false;
         internal IEqualityComparer<T1> _KeyComparer;
+        internal readonly SemaphoreSlim _AtomicLock = new SemaphoreSlim(1, 1);
 
         internal long _hitCount = 0;
         internal long _missCount = 0;
@@ -476,6 +477,23 @@ namespace Caching
                 return bytes.Length;
 
             return 0; // Unknown
+        }
+
+        /// <summary>
+        /// Mark a cache entry as used and refresh sliding expiration when enabled.
+        /// </summary>
+        /// <param name="node">Node that was accessed.</param>
+        protected void MarkAccessed(DataNode<T2> node)
+        {
+            if (node == null) throw new ArgumentNullException(nameof(node));
+
+            DateTime now = DateTime.UtcNow;
+            node.LastUsed = now;
+
+            if (SlidingExpiration && node.Expiration.HasValue && node.ExpirationDuration.HasValue)
+            {
+                node.Expiration = now.Add(node.ExpirationDuration.Value);
+            }
         }
 
         #endregion

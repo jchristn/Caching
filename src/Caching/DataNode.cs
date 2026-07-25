@@ -30,6 +30,11 @@
         /// </summary>
         public DateTime? Expiration { get; set; } = null;
 
+        /// <summary>
+        /// Original expiration duration used when sliding expiration refreshes an entry.
+        /// </summary>
+        public TimeSpan? ExpirationDuration { get; set; } = null;
+
         #endregion
 
         #region Private-Members
@@ -60,6 +65,10 @@
             LastUsed = ts;
             Data = val;
             Expiration = expiration;
+            if (expiration.HasValue)
+            {
+                ExpirationDuration = expiration.Value - ts;
+            }
         }
 
         #endregion

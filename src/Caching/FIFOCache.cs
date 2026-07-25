@@ -78,6 +78,8 @@ namespace Caching
         /// <inheritdoc />
         public override int Count()
         {
+            ThrowIfDisposed();
+
             lock (_CacheLock)
             {
                 return _Cache?.Count ?? 0;
@@ -87,6 +89,8 @@ namespace Caching
         /// <inheritdoc />
         public override T1 Oldest()
         {
+            ThrowIfDisposed();
+
             lock (_CacheLock)
             {
                 if (_Cache == null || _Cache.Count < 1) throw new KeyNotFoundException();
@@ -110,6 +114,8 @@ namespace Caching
         /// <inheritdoc />
         public override T1 Newest()
         {
+            ThrowIfDisposed();
+
             lock (_CacheLock)
             {
                 if (_Cache == null || _Cache.Count < 1) throw new KeyNotFoundException();
@@ -133,6 +139,8 @@ namespace Caching
         /// <inheritdoc />
         public override Dictionary<T1, T2> All()
         {
+            ThrowIfDisposed();
+
             Dictionary<T1, T2> ret = _KeyComparer != null
                 ? new Dictionary<T1, T2>(_KeyComparer)
                 : new Dictionary<T1, T2>();
@@ -190,13 +198,7 @@ namespace Caching
                 if (_Cache.TryGetValue(key, out DataNode<T2> node))
                 {
                     Interlocked.Increment(ref _hitCount);
-                    node.LastUsed = DateTime.UtcNow;
-
-                    if (SlidingExpiration && node.Expiration.HasValue)
-                    {
-                        TimeSpan timeToLive = node.Expiration.Value - node.Added;
-                        node.Expiration = DateTime.UtcNow.Add(timeToLive);
-                    }
+                    MarkAccessed(node);
 
                     return node.Data;
                 }
@@ -219,13 +221,7 @@ namespace Caching
                 if (_Cache.TryGetValue(key, out DataNode<T2> node))
                 {
                     Interlocked.Increment(ref _hitCount);
-                    node.LastUsed = DateTime.UtcNow;
-
-                    if (SlidingExpiration && node.Expiration.HasValue)
-                    {
-                        TimeSpan timeToLive = node.Expiration.Value - node.Added;
-                        node.Expiration = DateTime.UtcNow.Add(timeToLive);
-                    }
+                    MarkAccessed(node);
 
                     return node.Data;
                 }
@@ -248,13 +244,7 @@ namespace Caching
                 if (_Cache.TryGetValue(key, out DataNode<T2> node))
                 {
                     Interlocked.Increment(ref _hitCount);
-                    node.LastUsed = DateTime.UtcNow;
-
-                    if (SlidingExpiration && node.Expiration.HasValue)
-                    {
-                        TimeSpan timeToLive = node.Expiration.Value - node.Added;
-                        node.Expiration = DateTime.UtcNow.Add(timeToLive);
-                    }
+                    MarkAccessed(node);
 
                     val = node.Data;
                     return true;
@@ -422,22 +412,29 @@ namespace Caching
             if (key == null) throw new ArgumentNullException(nameof(key));
             if (valueFactory == null) throw new ArgumentNullException(nameof(valueFactory));
 
-            lock (_CacheLock)
+            _AtomicLock.Wait();
+            try
             {
-                if (_Cache.TryGetValue(key, out DataNode<T2> node))
+                lock (_CacheLock)
                 {
-                    Interlocked.Increment(ref _hitCount);
-                    node.LastUsed = DateTime.UtcNow;
-                    return node.Data;
+                    if (_Cache.TryGetValue(key, out DataNode<T2> node))
+                    {
+                        Interlocked.Increment(ref _hitCount);
+                        MarkAccessed(node);
+                        return node.Data;
+                    }
+
+                    Interlocked.Increment(ref _missCount);
+
+                    T2 newValue = valueFactory(key);
+                    AddReplace(key, newValue, expiration);
+                    return newValue;
                 }
-
-                Interlocked.Increment(ref _missCount);
             }
-
-            // Factory called outside lock to avoid blocking other operations
-            T2 newValue = valueFactory(key);
-            AddReplace(key, newValue, expiration);
-            return newValue;
+            finally
+            {
+                _AtomicLock.Release();
+            }
         }
 
         /// <inheritdoc />
@@ -447,21 +444,29 @@ namespace Caching
             if (key == null) throw new ArgumentNullException(nameof(key));
             if (valueFactory == null) throw new ArgumentNullException(nameof(valueFactory));
 
-            lock (_CacheLock)
+            await _AtomicLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
             {
-                if (_Cache.TryGetValue(key, out DataNode<T2> node))
+                lock (_CacheLock)
                 {
-                    Interlocked.Increment(ref _hitCount);
-                    node.LastUsed = DateTime.UtcNow;
-                    return node.Data;
+                    if (_Cache.TryGetValue(key, out DataNode<T2> node))
+                    {
+                        Interlocked.Increment(ref _hitCount);
+                        MarkAccessed(node);
+                        return node.Data;
+                    }
+
+                    Interlocked.Increment(ref _missCount);
                 }
 
-                Interlocked.Increment(ref _missCount);
+                T2 newValue = await valueFactory(key).ConfigureAwait(false);
+                await AddReplaceAsync(key, newValue, expiration, cancellationToken).ConfigureAwait(false);
+                return newValue;
             }
-
-            T2 newValue = await valueFactory(key).ConfigureAwait(false);
-            await AddReplaceAsync(key, newValue, expiration, cancellationToken).ConfigureAwait(false);
-            return newValue;
+            finally
+            {
+                _AtomicLock.Release();
+            }
         }
 
         /// <inheritdoc />
@@ -491,22 +496,30 @@ namespace Caching
             if (key == null) throw new ArgumentNullException(nameof(key));
             if (updateValueFactory == null) throw new ArgumentNullException(nameof(updateValueFactory));
 
-            T2 resultValue;
-
-            lock (_CacheLock)
+            _AtomicLock.Wait();
+            try
             {
-                if (_Cache.TryGetValue(key, out DataNode<T2> existing))
+                T2 resultValue;
+
+                lock (_CacheLock)
                 {
-                    resultValue = updateValueFactory(key, existing.Data);
-                }
-                else
-                {
-                    resultValue = addValue;
+                    if (_Cache.TryGetValue(key, out DataNode<T2> existing))
+                    {
+                        resultValue = updateValueFactory(key, existing.Data);
+                    }
+                    else
+                    {
+                        resultValue = addValue;
+                    }
+
+                    AddReplace(key, resultValue, expiration);
+                    return resultValue;
                 }
             }
-
-            AddReplace(key, resultValue, expiration);
-            return resultValue;
+            finally
+            {
+                _AtomicLock.Release();
+            }
         }
 
         /// <inheritdoc />
@@ -516,30 +529,38 @@ namespace Caching
             if (key == null) throw new ArgumentNullException(nameof(key));
             if (updateValueFactory == null) throw new ArgumentNullException(nameof(updateValueFactory));
 
-            T2 resultValue;
-            T2 existingValue = default;
-            bool exists = false;
-
-            lock (_CacheLock)
+            await _AtomicLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
             {
-                if (_Cache.TryGetValue(key, out DataNode<T2> existing))
+                T2 resultValue;
+                T2 existingValue = default;
+                bool exists = false;
+
+                lock (_CacheLock)
                 {
-                    existingValue = existing.Data;
-                    exists = true;
+                    if (_Cache.TryGetValue(key, out DataNode<T2> existing))
+                    {
+                        existingValue = existing.Data;
+                        exists = true;
+                    }
                 }
-            }
 
-            if (exists)
-            {
-                resultValue = await updateValueFactory(key, existingValue).ConfigureAwait(false);
-            }
-            else
-            {
-                resultValue = addValue;
-            }
+                if (exists)
+                {
+                    resultValue = await updateValueFactory(key, existingValue).ConfigureAwait(false);
+                }
+                else
+                {
+                    resultValue = addValue;
+                }
 
-            await AddReplaceAsync(key, resultValue, expiration, cancellationToken).ConfigureAwait(false);
-            return resultValue;
+                await AddReplaceAsync(key, resultValue, expiration, cancellationToken).ConfigureAwait(false);
+                return resultValue;
+            }
+            finally
+            {
+                _AtomicLock.Release();
+            }
         }
 
         /// <inheritdoc />
@@ -586,6 +607,8 @@ namespace Caching
         /// <inheritdoc />
         public override bool TryRemove(T1 key, out T2 val)
         {
+            ThrowIfDisposed();
+
             if (key == null)
             {
                 val = default;
@@ -626,6 +649,8 @@ namespace Caching
         /// <inheritdoc />
         public override List<T1> GetKeys()
         {
+            ThrowIfDisposed();
+
             lock (_CacheLock)
             {
                 if (_Cache == null) return new List<T1>();
@@ -659,6 +684,7 @@ namespace Caching
                     T1 key = keys[i];
                     T2 data = await _Persistence.GetAsync(key, cancellationToken).ConfigureAwait(false);
                     DataNode<T2> node = new DataNode<T2>(data);
+                    long valueSize = MaxMemoryBytes > 0 ? EstimateSize(data) : 0;
 
                     bool added = false;
 
@@ -669,7 +695,17 @@ namespace Caching
                             // Race condition protection: check if key already exists
                             if (!_Cache.ContainsKey(key))
                             {
+                                if (MaxMemoryBytes > 0 && CurrentMemoryBytes + valueSize > MaxMemoryBytes)
+                                {
+                                    break;
+                                }
+
                                 _Cache.Add(key, node);
+                                if (MaxMemoryBytes > 0)
+                                {
+                                    CurrentMemoryBytes += valueSize;
+                                }
+
                                 added = true;
                             }
                         }
