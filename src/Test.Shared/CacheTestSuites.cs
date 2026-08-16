@@ -56,6 +56,8 @@ namespace Test.Shared
                 {
                     Case(suite, "BasicCrud", "Both cache policies support core CRUD operations", BasicCrudAsync),
                     Case(suite, "ArgumentValidation", "Constructors and public APIs validate invalid inputs", ArgumentValidationAsync),
+                    Case(suite, "TryHelpersSucceed", "Try-prefixed APIs report success and store values", TryHelpersSucceedAsync),
+                    Case(suite, "AddOrUpdateAdds", "AddOrUpdate and AddOrUpdateAsync use the add value for missing keys", AddOrUpdateAddsWhenMissingAsync),
                     Case(suite, "Comparer", "Custom key comparer treats equivalent keys as one entry", ComparerAsync),
                     Case(suite, "Snapshots", "All() and GetKeys() return isolated snapshots", SnapshotsAsync)
                 });
@@ -87,6 +89,8 @@ namespace Test.Shared
                 new List<TestCaseDescriptor>
                 {
                     Case(suite, "Absolute", "Absolute expiration removes only expired entries", AbsoluteExpirationAsync),
+                    Case(suite, "Relative", "Relative (TimeSpan) expiration overloads expire entries and reject past spans", RelativeExpirationAsync),
+                    Case(suite, "IntervalValidation", "ExpirationIntervalMs rejects non-positive values", ExpirationIntervalValidationAsync),
                     Case(suite, "SlidingBoundedTtl", "Sliding expiration refreshes by the original TTL only", SlidingExpirationDoesNotInflateTtlAsync),
                     Case(suite, "GetOrAddRefreshesSliding", "GetOrAdd refreshes an existing sliding-expiration entry", GetOrAddRefreshesSlidingExpirationAsync)
                 });
@@ -102,6 +106,7 @@ namespace Test.Shared
                 new List<TestCaseDescriptor>
                 {
                     Case(suite, "MutationAccounting", "Memory accounting updates on add, replace, remove, and clear", MemoryAccountingMutationsAsync),
+                    Case(suite, "DefaultEstimator", "Default size estimator tracks string and byte[] values without a custom estimator", DefaultSizeEstimatorAsync),
                     Case(suite, "PolicyEviction", "Memory eviction follows each cache policy", MemoryEvictionPoliciesAsync),
                     Case(suite, "ExpirationAccounting", "Expiration decrements tracked memory", ExpirationReducesMemoryAsync),
                     Case(suite, "PrepopulateAccounting", "Prepopulate tracks memory and honors MaxMemoryBytes", PrepopulateTracksMemoryLimitAsync)
@@ -119,6 +124,7 @@ namespace Test.Shared
                 {
                     Case(suite, "PersistenceMutations", "Persistence receives writes, deletes, and clears", PersistenceWritesDeletesClearsAsync),
                     Case(suite, "Prepopulate", "Prepopulate loads up to capacity and raises events", PrepopulateLoadsCapacityAndRaisesEventsAsync),
+                    Case(suite, "PrepopulateAsync", "PrepopulateAsync loads entries and requires a persistence driver", PrepopulateAsyncAndValidationAsync),
                     Case(suite, "EvictExpirePersistence", "Eviction and expiration delete persisted values", EvictionAndExpirationDeletePersistenceAsync),
                     Case(suite, "EventPayloads", "Events expose coherent payloads for cache mutations", EventsPayloadsAsync)
                 });
@@ -233,19 +239,85 @@ namespace Test.Shared
             AssertThrows<ArgumentOutOfRangeException>(() => new LRUCache<string, string>(1, 0), "LRU rejects zero evict count");
             AssertThrows<ArgumentOutOfRangeException>(() => new LRUCache<string, string>(1, 2), "LRU rejects evict count greater than capacity");
 
-            using (CacheBase<string, string> cache = CreateCache<string, string>(CachePolicy.Fifo, 3, 1))
+            foreach (CachePolicy policy in Policies)
             {
-                AssertThrows<ArgumentNullException>(() => cache.AddReplace(null, "value"), "AddReplace rejects null key");
-                AssertThrows<ArgumentException>(() => cache.AddReplace("past", "value", DateTime.UtcNow.AddSeconds(-1)), "AddReplace rejects past expiration");
-                AssertThrows<ArgumentNullException>(() => cache.TryGet(null, out _), "TryGet rejects null key");
-                AssertThrows<ArgumentNullException>(() => cache.GetOrAdd("factory", null), "GetOrAdd rejects null factory");
-                AssertFalse(cache.TryAddReplace(null, "value"), "TryAddReplace returns false for null key");
-                AssertFalse(cache.TryAddReplace("past", "value", DateTime.UtcNow.AddSeconds(-1)), "TryAddReplace returns false for past expiration");
-                AssertFalse(cache.TryGetOrAdd(null, key => "value", out _), "TryGetOrAdd returns false for null key");
-                AssertFalse(cache.TryRemove(null, out _), "TryRemove returns false for null key before disposal");
+                using (CacheBase<string, string> cache = CreateCache<string, string>(policy, 3, 1))
+                {
+                    AssertThrows<ArgumentNullException>(() => cache.AddReplace(null, "value"), PolicyMessage(policy, "AddReplace rejects null key"));
+                    AssertThrows<ArgumentException>(() => cache.AddReplace("past", "value", DateTime.UtcNow.AddSeconds(-1)), PolicyMessage(policy, "AddReplace rejects past expiration"));
+                    AssertThrows<ArgumentNullException>(() => cache.TryGet(null, out _), PolicyMessage(policy, "TryGet rejects null key"));
+                    AssertThrows<ArgumentNullException>(() => cache.Get(null), PolicyMessage(policy, "Get rejects null key"));
+                    AssertThrows<ArgumentNullException>(() => cache.GetOrDefault(null, "value"), PolicyMessage(policy, "GetOrDefault rejects null key"));
+                    AssertThrows<ArgumentNullException>(() => cache.Contains(null), PolicyMessage(policy, "Contains rejects null key"));
+                    AssertThrows<ArgumentNullException>(() => cache.Remove(null), PolicyMessage(policy, "Remove rejects null key"));
+                    AssertThrows<ArgumentNullException>(() => cache.GetOrAdd("factory", null), PolicyMessage(policy, "GetOrAdd rejects null factory"));
+                    AssertThrows<ArgumentNullException>(() => cache.GetOrAdd(null, key => "value"), PolicyMessage(policy, "GetOrAdd rejects null key"));
+                    AssertThrows<ArgumentNullException>(() => cache.AddOrUpdate(null, "add", (k, v) => v), PolicyMessage(policy, "AddOrUpdate rejects null key"));
+                    AssertThrows<ArgumentNullException>(() => cache.AddOrUpdate("key", "add", null), PolicyMessage(policy, "AddOrUpdate rejects null update factory"));
+                    AssertFalse(cache.TryAddReplace(null, "value"), PolicyMessage(policy, "TryAddReplace returns false for null key"));
+                    AssertFalse(cache.TryAddReplace("past", "value", DateTime.UtcNow.AddSeconds(-1)), PolicyMessage(policy, "TryAddReplace returns false for past expiration"));
+                    AssertFalse(cache.TryGetOrAdd(null, key => "value", out _), PolicyMessage(policy, "TryGetOrAdd returns false for null key"));
+                    AssertFalse(cache.TryRemove(null, out _), PolicyMessage(policy, "TryRemove returns false for null key before disposal"));
+                }
             }
 
             return Task.CompletedTask;
+        }
+
+        private static Task TryHelpersSucceedAsync(CancellationToken cancellationToken)
+        {
+            foreach (CachePolicy policy in Policies)
+            {
+                using (CacheBase<string, string> cache = CreateCache<string, string>(policy, 10, 2))
+                {
+                    AssertTrue(cache.TryAddReplace("A", "one"), PolicyMessage(policy, "TryAddReplace should report success"));
+                    AssertEqual("one", cache.Get("A"), PolicyMessage(policy, "TryAddReplace should store the value"));
+
+                    AssertTrue(cache.TryAddReplace("A", "one-updated"), PolicyMessage(policy, "TryAddReplace should report success on replace"));
+                    AssertEqual("one-updated", cache.Get("A"), PolicyMessage(policy, "TryAddReplace should replace the value"));
+
+                    AssertTrue(cache.TryAddReplace("future", "value", DateTime.UtcNow.AddMinutes(5)), PolicyMessage(policy, "TryAddReplace should accept a future expiration"));
+
+                    int factoryCalls = 0;
+                    AssertTrue(cache.TryGetOrAdd("B", key => { factoryCalls++; return "created"; }, out string created), PolicyMessage(policy, "TryGetOrAdd should report success when creating"));
+                    AssertEqual("created", created, PolicyMessage(policy, "TryGetOrAdd should return the created value"));
+                    AssertEqual(1, factoryCalls, PolicyMessage(policy, "TryGetOrAdd should call the factory once for a missing key"));
+
+                    AssertTrue(cache.TryGetOrAdd("B", key => { factoryCalls++; return "unused"; }, out string existing), PolicyMessage(policy, "TryGetOrAdd should report success for an existing key"));
+                    AssertEqual("created", existing, PolicyMessage(policy, "TryGetOrAdd should return the existing value"));
+                    AssertEqual(1, factoryCalls, PolicyMessage(policy, "TryGetOrAdd should not call the factory for an existing key"));
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        private static async Task AddOrUpdateAddsWhenMissingAsync(CancellationToken cancellationToken)
+        {
+            foreach (CachePolicy policy in Policies)
+            {
+                using (CacheBase<string, string> cache = CreateCache<string, string>(policy, 10, 2))
+                {
+                    bool updateCalled = false;
+                    string added = cache.AddOrUpdate("A", "add-value", (key, oldValue) => { updateCalled = true; return oldValue + "-updated"; });
+                    AssertEqual("add-value", added, PolicyMessage(policy, "AddOrUpdate should return the add value for a missing key"));
+                    AssertFalse(updateCalled, PolicyMessage(policy, "AddOrUpdate should not invoke the update factory for a missing key"));
+                    AssertEqual("add-value", cache.Get("A"), PolicyMessage(policy, "AddOrUpdate should store the add value"));
+
+                    string updated = cache.AddOrUpdate("A", "ignored", (key, oldValue) => oldValue + "-updated");
+                    AssertEqual("add-value-updated", updated, PolicyMessage(policy, "AddOrUpdate should apply the update factory for an existing key"));
+
+                    bool asyncUpdateCalled = false;
+                    string addedAsync = await cache.AddOrUpdateAsync(
+                        "B",
+                        "add-async",
+                        (key, oldValue) => { asyncUpdateCalled = true; return Task.FromResult(oldValue + "-updated"); },
+                        cancellationToken: cancellationToken);
+                    AssertEqual("add-async", addedAsync, PolicyMessage(policy, "AddOrUpdateAsync should return the add value for a missing key"));
+                    AssertFalse(asyncUpdateCalled, PolicyMessage(policy, "AddOrUpdateAsync should not invoke the update factory for a missing key"));
+                    AssertEqual("add-async", cache.Get("B"), PolicyMessage(policy, "AddOrUpdateAsync should store the add value"));
+                }
+            }
         }
 
         private static Task ComparerAsync(CancellationToken cancellationToken)
@@ -381,6 +453,66 @@ namespace Test.Shared
             }
         }
 
+        private static async Task RelativeExpirationAsync(CancellationToken cancellationToken)
+        {
+            foreach (CachePolicy policy in Policies)
+            {
+                using (CacheBase<string, string> cache = CreateCache<string, string>(policy, 10, 2))
+                {
+                    cache.ExpirationIntervalMs = (int)CacheTestExpectations.ExpirationPollInterval.TotalMilliseconds;
+
+                    AssertThrows<ArgumentException>(
+                        () => cache.AddReplace("past", "value", TimeSpan.FromSeconds(-1)),
+                        PolicyMessage(policy, "AddReplace should reject a negative TimeSpan"));
+
+                    cache.AddReplace("relative", "value", TimeSpan.FromMilliseconds(120));
+                    AssertEqual("value", cache.Get("relative"), PolicyMessage(policy, "relative expiration entry should be readable before expiry"));
+
+                    string createdRelative = cache.GetOrAdd(
+                        "factory-relative",
+                        key => "created",
+                        TimeSpan.FromMilliseconds(120));
+                    AssertEqual("created", createdRelative, PolicyMessage(policy, "GetOrAdd with relative expiration should create the value"));
+
+                    string createdRelativeAsync = await cache.GetOrAddAsync(
+                        "factory-relative-async",
+                        key => Task.FromResult("created-async"),
+                        TimeSpan.FromMilliseconds(120),
+                        cancellationToken);
+                    AssertEqual("created-async", createdRelativeAsync, PolicyMessage(policy, "GetOrAddAsync with relative expiration should create the value"));
+
+                    await cache.AddReplaceAsync("relative-async", "value", TimeSpan.FromMilliseconds(120), cancellationToken);
+                    AssertEqual("value", cache.Get("relative-async"), PolicyMessage(policy, "AddReplaceAsync relative entry should be readable before expiry"));
+
+                    await WaitUntilAsync(
+                        () => !cache.Contains("relative")
+                              && !cache.Contains("relative-async")
+                              && !cache.Contains("factory-relative")
+                              && !cache.Contains("factory-relative-async"),
+                        CacheTestExpectations.ExpirationTimeout,
+                        PolicyMessage(policy, "relative-expiration entries did not expire"),
+                        cancellationToken);
+                }
+            }
+        }
+
+        private static Task ExpirationIntervalValidationAsync(CancellationToken cancellationToken)
+        {
+            foreach (CachePolicy policy in Policies)
+            {
+                using (CacheBase<string, string> cache = CreateCache<string, string>(policy, 10, 2))
+                {
+                    AssertThrows<ArgumentException>(() => cache.ExpirationIntervalMs = 0, PolicyMessage(policy, "ExpirationIntervalMs should reject zero"));
+                    AssertThrows<ArgumentException>(() => cache.ExpirationIntervalMs = -5, PolicyMessage(policy, "ExpirationIntervalMs should reject negative values"));
+
+                    cache.ExpirationIntervalMs = 250;
+                    AssertEqual(250, cache.ExpirationIntervalMs, PolicyMessage(policy, "ExpirationIntervalMs should accept positive values"));
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
         private static async Task SlidingExpirationDoesNotInflateTtlAsync(CancellationToken cancellationToken)
         {
             foreach (CachePolicy policy in Policies)
@@ -458,6 +590,28 @@ namespace Test.Shared
 
                     cache.Clear();
                     AssertEqual(0L, cache.CurrentMemoryBytes, PolicyMessage(policy, "clear should reset memory"));
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        private static Task DefaultSizeEstimatorAsync(CancellationToken cancellationToken)
+        {
+            foreach (CachePolicy policy in Policies)
+            {
+                using (CacheBase<string, string> stringCache = CreateCache<string, string>(policy, 10, 2))
+                {
+                    stringCache.MaxMemoryBytes = 1000;
+                    stringCache.AddReplace("A", "abc");
+                    AssertEqual(6L, stringCache.CurrentMemoryBytes, PolicyMessage(policy, "default estimator should count strings as two bytes per character"));
+                }
+
+                using (CacheBase<string, byte[]> byteCache = CreateCache<string, byte[]>(policy, 10, 2))
+                {
+                    byteCache.MaxMemoryBytes = 1000;
+                    byteCache.AddReplace("A", new byte[] { 1, 2, 3, 4 });
+                    AssertEqual(4L, byteCache.CurrentMemoryBytes, PolicyMessage(policy, "default estimator should count byte arrays by length"));
                 }
             }
 
@@ -595,6 +749,35 @@ namespace Test.Shared
             }
 
             return Task.CompletedTask;
+        }
+
+        private static async Task PrepopulateAsyncAndValidationAsync(CancellationToken cancellationToken)
+        {
+            foreach (CachePolicy policy in Policies)
+            {
+                RecordingPersistence<string, string> persistence = new RecordingPersistence<string, string>();
+                persistence.Seed("A", "one");
+                persistence.Seed("B", "two");
+
+                using (CacheBase<string, string> cache = CreatePersistentCache(policy, 10, 2, persistence))
+                {
+                    int prepopulated = 0;
+                    cache.Events.Prepopulated += (sender, args) => prepopulated++;
+
+                    await cache.PrepopulateAsync(cancellationToken);
+
+                    AssertEqual(2, cache.Count(), PolicyMessage(policy, "PrepopulateAsync should load persisted entries"));
+                    AssertEqual(2, prepopulated, PolicyMessage(policy, "PrepopulateAsync should raise one event per loaded entry"));
+                    AssertEqual("one", cache.Get("A"), PolicyMessage(policy, "PrepopulateAsync should load persisted values"));
+                }
+
+                using (CacheBase<string, string> cacheWithoutPersistence = CreateCache<string, string>(policy, 10, 2))
+                {
+                    AssertThrows<InvalidOperationException>(
+                        () => cacheWithoutPersistence.Prepopulate(),
+                        PolicyMessage(policy, "Prepopulate should throw without a persistence driver"));
+                }
+            }
         }
 
         private static async Task EvictionAndExpirationDeletePersistenceAsync(CancellationToken cancellationToken)
