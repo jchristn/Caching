@@ -34,7 +34,7 @@ Install-Package Caching
 
 ## Current Release
 
-The current package version is **5.0.1**. This patch fixes sliding expiration TTL refresh, concurrent `GetOrAdd`/`AddOrUpdate` correctness, memory accounting during `Prepopulate()`, and post-dispose API consistency.
+The current package version is **5.1.0**. This release adds built-in observability: metrics and traces through the standard .NET `Meter` and `ActivitySource` APIs (both named `Caching`), ready for Prometheus, Tempo, Grafana, or any OTLP backend. See [Telemetry](#9-telemetry) and [TELEMETRY.md](TELEMETRY.md).
 
 ## Quick Start
 
@@ -271,6 +271,29 @@ cache.MaxMemoryBytes = 50 * 1024 * 1024; // 50MB
 cache.SizeEstimator = str => str.Length * 2; // Unicode estimation
 ```
 
+### 9. Telemetry
+
+Every cache emits metrics and traces through the BCL `System.Diagnostics.Metrics.Meter` and `System.Diagnostics.ActivitySource`, both named `Caching`. There is no dependency on OpenTelemetry or any exporter, and the cost is effectively zero until a collector subscribes.
+
+```csharp
+var cache = new LRUCache<string, Product>(10000, 100, persistenceDriver);
+cache.Name = "products"; // cache.name label; use a short static value
+
+// In the host, subscribe a collector to the "Caching" meter and activity source, for example with Radiant:
+settings.Sources.AddMeter(CacheTelemetryNames.MeterName);
+settings.Sources.AddActivitySource(CacheTelemetryNames.ActivitySourceName);
+
+// or with the OpenTelemetry SDK:
+// .WithMetrics(m => m.AddMeter("Caching")).WithTracing(t => t.AddSource("Caching"))
+```
+
+What an operator gets:
+
+- **Metrics**: duration and outcome of every operation, hit/miss counts, evictions by reason, expirations, persistence driver call latency and failures, atomic lock wait time and queue depth, entries/capacity/memory gauges, expiration sweep duration and last-success time, and a build info gauge.
+- **Traces**: a span per mutation (`caching add_replace`, `caching get_or_add`, ...) nested under the caller's span, `stage:lock_wait` and `stage:value_factory` child spans, a client span per persistence call (`persistence write`, ...), and a root span per expiration sweep that removed entries.
+
+Per-instance switches live on `cache.Telemetry` (`Enable`, `EnableMetrics`, `EnableTraces`, `TraceLookups`, `RecordExceptionMessages`). Keys and values are never recorded. See [TELEMETRY.md](TELEMETRY.md) for the full metrics and spans catalog, PromQL, alerts, and a suggested dashboard.
+
 ## API Reference
 
 ### Core Methods
@@ -338,6 +361,8 @@ new LRUCache<TKey, TValue>(capacity, evictCount, persistenceDriver, comparer);
 | `KeyComparer` | The equality comparer used for keys |
 | `Events` | Event handlers |
 | `Persistence` | Persistence driver |
+| `Name` | Cache name used as the `cache.name` telemetry label (default `default`) |
+| `Telemetry` | Per-instance telemetry settings (`Enable`, `EnableMetrics`, `EnableTraces`, `TraceLookups`, `RecordExceptionMessages`) |
 
 ## Thread Safety
 

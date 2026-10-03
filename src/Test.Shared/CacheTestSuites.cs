@@ -34,7 +34,8 @@ namespace Test.Shared
                     PersistenceAndEventsSuite(),
                     StatisticsSuite(),
                     AsyncAndConcurrencySuite(),
-                    DisposalSuite()
+                    DisposalSuite(),
+                    CacheTelemetryTestSuite.Suite()
                 };
             }
         }

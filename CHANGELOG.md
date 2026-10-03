@@ -1,5 +1,21 @@
 # Change Log
 
+## v5.1.0
+
+### New Features
+- **Built-in telemetry**: Metrics and traces through the BCL `Meter` and `ActivitySource`, both named `Caching`. No OpenTelemetry or exporter dependency; effectively free until a collector subscribes. See `TELEMETRY.md`.
+- **Metrics**: `caching.operation.duration` (per operation and outcome), `caching.lookups` (hit/miss), `caching.evictions` (by reason), `caching.expirations`, `caching.prepopulated`, `caching.errors` (by component and error type), `caching.persistence.duration` and `caching.persistence.calls`, `caching.expiration.sweep.duration` and `caching.expiration.sweep.last_success`, `caching.lock.wait.duration` and `caching.lock.waiting`, and gauges for entries, capacity, evict count, memory usage and limit, expiration interval, and build info.
+- **Traces**: spans for every mutation, `stage:lock_wait` and `stage:value_factory` stages inside `GetOrAdd`/`AddOrUpdate`, a client span per persistence driver call, and a root span (linked to the creating trace) per expiration sweep that removed entries. Optional lookup spans via `Telemetry.TraceLookups`.
+- **`CacheBase.Name`**: cache name used as the `cache.name` label.
+- **`CacheBase.Telemetry`**: per-instance `CacheTelemetrySettings` (`Enable`, `EnableMetrics`, `EnableTraces`, `TraceLookups`, `RecordExceptionMessages`).
+- **`CacheTelemetryNames`**: public constants for every meter, source, instrument, attribute, and span name.
+
+### Dependencies
+- Adds `System.Diagnostics.DiagnosticSource` 10.0.12 on `netstandard2.0`, `netstandard2.1`, and `net8.0` (in-box on `net10.0`).
+
+### Tests
+- New Touchstone `Telemetry` suite (17 cases) using in-memory `MeterListener`/`ActivityListener` capture, covering every instrument, span, failure path, cancellation, context propagation, and the no-listener path.
+
 ## v5.0.1
 
 ### Bug Fixes

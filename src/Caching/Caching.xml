@@ -9,6 +9,20 @@
             Cache base class.
             </summary>
         </member>
+        <member name="P:Caching.CacheBase`2.Name">
+            <summary>
+            Cache name, emitted as the cache.name label on every metric and span so several caches in one process can be told apart.
+            Use a short, static value (for example "sessions" or "products"). Never use per-request or per-user values: the name is a metric label.
+            Default is "default". Null or empty resets to the default.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheBase`2.Telemetry">
+            <summary>
+            Telemetry settings for this cache instance. Metrics and spans are emitted through the Meter and ActivitySource
+            named in CacheTelemetryNames and cost effectively nothing until a collector subscribes.
+            Setting null restores the defaults.
+            </summary>
+        </member>
         <member name="P:Caching.CacheBase`2.Token">
             <summary>
             Cancellation token.
@@ -343,6 +357,33 @@
             </summary>
             <param name="node">Node that was accessed.</param>
         </member>
+        <member name="M:Caching.CacheBase`2.RegisterTelemetry">
+            <summary>
+            Register with the process-wide gauges and capture the creation trace context. Called at the end of each constructor.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheBase`2.FailOperation(System.String,System.Int64,System.Exception,System.Diagnostics.Activity)">
+            <summary>
+            Record a failed operation. Always returns false so it can be used as an exception filter without catching.
+            A KeyNotFoundException from Get is recorded as a miss, not an error.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheBase`2.StartSweepActivity(System.DateTime,System.Int32)">
+            <summary>
+            Start the span for an expiration sweep. Sweeps that remove nothing produce no span, so the span is started
+            retroactively at the sweep start time once there is work. The span is a trace root linked to the trace that created the cache.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheBase`2.FailSweep(System.Int64,System.Exception,System.Diagnostics.Activity)">
+            <summary>
+            Record a failed expiration sweep. Always returns false so it can be used as an exception filter.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheBase`2.RecordActivityException(System.Diagnostics.Activity,System.Exception,System.String)">
+            <summary>
+            Mark a span as failed and attach an OpenTelemetry exception event. Always returns false so it can be used as an exception filter.
+            </summary>
+        </member>
         <member name="T:Caching.CacheEvents`2">
             <summary>
             Cache events.
@@ -433,6 +474,13 @@
             Invoke Disposed event.
             </summary>
         </member>
+        <member name="T:Caching.CacheInstrumentation">
+            <summary>
+            Process-wide Meter, ActivitySource, and instruments for the Caching library.
+            Instruments are created once. Observable gauges enumerate live cache instances through a weak registry
+            so an undisposed cache never leaks because of telemetry.
+            </summary>
+        </member>
         <member name="T:Caching.CacheOptions`1">
             <summary>
             Cache configuration options.
@@ -520,6 +568,402 @@
             </summary>
         </member>
         <member name="M:Caching.CacheStatistics.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Caching.CacheTelemetryNames">
+            <summary>
+            Stable public names for every telemetry point emitted by the Caching library.
+            Meter, activity source, instrument, attribute, and span names are public contract consumed by dashboards and alerts.
+            Do not rename them without a major version change.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.MeterName">
+            <summary>
+            Name of the System.Diagnostics.Metrics.Meter used by the library.
+            Subscribe a collector to this name to receive cache metrics.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.ActivitySourceName">
+            <summary>
+            Name of the System.Diagnostics.ActivitySource used by the library.
+            Subscribe a collector to this name to receive cache spans.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.OperationDuration">
+            <summary>
+            Histogram (seconds). Duration of a public cache operation, labeled by cache, operation, and outcome.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.Lookups">
+            <summary>
+            Counter ({lookup}). Cache lookups, labeled by hit or miss.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.Evictions">
+            <summary>
+            Counter ({entry}). Entries evicted, labeled by eviction reason (capacity or memory).
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.Expirations">
+            <summary>
+            Counter ({entry}). Entries removed by the background expiration task.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.Prepopulated">
+            <summary>
+            Counter ({entry}). Entries loaded from the persistence driver by Prepopulate.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.Errors">
+            <summary>
+            Counter ({error}). Failures, labeled by component and error type.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.PersistenceDuration">
+            <summary>
+            Histogram (seconds). Duration of a call into the persistence driver, labeled by persistence operation and outcome.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.PersistenceCalls">
+            <summary>
+            Counter ({call}). Calls into the persistence driver, labeled by persistence operation and outcome.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.ExpirationSweepDuration">
+            <summary>
+            Histogram (seconds). Duration of one background expiration sweep, labeled by outcome.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.ExpirationSweepLastSuccess">
+            <summary>
+            Gauge (seconds). Unix time of the last expiration sweep that completed successfully.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.LockWaitDuration">
+            <summary>
+            Histogram (seconds). Time spent waiting for the single-slot atomic lock used by GetOrAdd and AddOrUpdate.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.LockWaiting">
+            <summary>
+            Gauge ({operation}). Operations currently waiting for the atomic lock.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.Entries">
+            <summary>
+            Gauge ({entry}). Current number of entries.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.Capacity">
+            <summary>
+            Gauge ({entry}). Configured maximum number of entries.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.EvictCount">
+            <summary>
+            Gauge ({entry}). Configured number of entries evicted when capacity is reached.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.MemoryUsage">
+            <summary>
+            Gauge (bytes). Current estimated memory usage.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.MemoryLimit">
+            <summary>
+            Gauge (bytes). Configured memory limit. Zero means no limit.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.ExpirationInterval">
+            <summary>
+            Gauge (seconds). Configured interval between expiration sweeps.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.BuildInfo">
+            <summary>
+            Gauge ({cache}). Always 1 per live cache instance, labeled with the library version. Used as build info.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.AttributeCacheName">
+            <summary>
+            Attribute: cache name, from CacheBase.Name. Must be a small, static set of values.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.AttributeCacheType">
+            <summary>
+            Attribute: cache eviction policy, one of fifo or lru.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.AttributeOperation">
+            <summary>
+            Attribute: public cache operation, for example get, add_replace, get_or_add.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.AttributeOutcome">
+            <summary>
+            Attribute: outcome of an operation, one of success, miss, or error.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.AttributeLookupResult">
+            <summary>
+            Attribute: lookup result, one of hit or miss.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.AttributeEvictionReason">
+            <summary>
+            Attribute: eviction reason, one of capacity or memory.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.AttributeComponent">
+            <summary>
+            Attribute: failing component, one of operation, persistence, or expiration.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.AttributePersistenceOperation">
+            <summary>
+            Attribute: persistence driver operation, one of write, delete, clear, get, or enumerate.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.AttributePersistenceDriver">
+            <summary>
+            Span-only attribute: persistence driver type name.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.AttributeErrorType">
+            <summary>
+            Attribute: exception type name (OpenTelemetry semantic convention).
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.AttributeVersion">
+            <summary>
+            Attribute: library version, on the build info gauge.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.AttributeEntryCount">
+            <summary>
+            Span-only attribute: number of entries affected (evicted, expired, loaded).
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.AttributeHit">
+            <summary>
+            Span-only attribute: lookup hit (true) or miss (false).
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.SpanOperationPrefix">
+            <summary>
+            Span name prefix for public operations. Spans are named "caching {operation}".
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.SpanPersistencePrefix">
+            <summary>
+            Span name prefix for persistence driver client spans. Spans are named "persistence {operation}".
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.SpanExpirationSweep">
+            <summary>
+            Span name for a background expiration sweep that removed at least one entry or failed.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.SpanValueFactory">
+            <summary>
+            Span name for the user-supplied value factory stage inside GetOrAdd and AddOrUpdate.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.SpanLockWait">
+            <summary>
+            Span name for the atomic lock wait stage inside GetOrAdd and AddOrUpdate.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.OperationGet">
+            <summary>
+            Operation value: Get.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.OperationGetOrDefault">
+            <summary>
+            Operation value: GetOrDefault.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.OperationTryGet">
+            <summary>
+            Operation value: TryGet.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.OperationContains">
+            <summary>
+            Operation value: Contains.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.OperationAddReplace">
+            <summary>
+            Operation value: AddReplace and AddReplaceAsync.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.OperationGetOrAdd">
+            <summary>
+            Operation value: GetOrAdd and GetOrAddAsync.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.OperationAddOrUpdate">
+            <summary>
+            Operation value: AddOrUpdate and AddOrUpdateAsync.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.OperationRemove">
+            <summary>
+            Operation value: Remove and RemoveAsync.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.OperationTryRemove">
+            <summary>
+            Operation value: TryRemove.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.OperationClear">
+            <summary>
+            Operation value: Clear and ClearAsync.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.OperationPrepopulate">
+            <summary>
+            Operation value: Prepopulate and PrepopulateAsync.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.OutcomeSuccess">
+            <summary>
+            Outcome value: completed successfully.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.OutcomeMiss">
+            <summary>
+            Outcome value: lookup completed but the key was not present.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.OutcomeError">
+            <summary>
+            Outcome value: failed with an exception.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.OutcomeCanceled">
+            <summary>
+            Outcome value: canceled through a CancellationToken.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.LookupHit">
+            <summary>
+            Lookup result value: hit.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.LookupMiss">
+            <summary>
+            Lookup result value: miss.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.EvictionReasonCapacity">
+            <summary>
+            Eviction reason value: entry count reached capacity.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.EvictionReasonMemory">
+            <summary>
+            Eviction reason value: estimated memory reached MaxMemoryBytes.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.ComponentOperation">
+            <summary>
+            Component value: public cache operation.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.ComponentPersistence">
+            <summary>
+            Component value: persistence driver call.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.ComponentExpiration">
+            <summary>
+            Component value: background expiration task.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.PersistenceWrite">
+            <summary>
+            Persistence operation value: WriteAsync.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.PersistenceDelete">
+            <summary>
+            Persistence operation value: DeleteAsync.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.PersistenceClear">
+            <summary>
+            Persistence operation value: ClearAsync.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.PersistenceGet">
+            <summary>
+            Persistence operation value: GetAsync.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.PersistenceEnumerate">
+            <summary>
+            Persistence operation value: EnumerateAsync.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.CacheTypeFifo">
+            <summary>
+            Cache type value: FIFOCache.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.CacheTypeLru">
+            <summary>
+            Cache type value: LRUCache.
+            </summary>
+        </member>
+        <member name="F:Caching.CacheTelemetryNames.DefaultCacheName">
+            <summary>
+            Default cache name used when CacheBase.Name is not set.
+            </summary>
+        </member>
+        <member name="T:Caching.CacheTelemetrySettings">
+            <summary>
+            Per-cache telemetry settings.
+            Telemetry is emitted through the BCL Meter and ActivitySource named in CacheTelemetryNames and costs
+            effectively nothing until a collector subscribes. These settings are read on every operation and may be changed at any time.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheTelemetrySettings.Enable">
+            <summary>
+            Master switch for this cache instance. When false, the instance emits no metrics and no spans.
+            Default is true.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheTelemetrySettings.EnableMetrics">
+            <summary>
+            Emit metrics for this cache instance. Default is true.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheTelemetrySettings.EnableTraces">
+            <summary>
+            Emit spans for this cache instance. Default is true.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheTelemetrySettings.TraceLookups">
+            <summary>
+            Emit spans for pure in-memory lookups (Get, GetOrDefault, TryGet, Contains).
+            Lookups are always measured by metrics; spans on them are high volume and usually add noise rather than insight.
+            Default is false.
+            </summary>
+        </member>
+        <member name="P:Caching.CacheTelemetrySettings.RecordExceptionMessages">
+            <summary>
+            Record exception messages on spans. Exception messages from persistence drivers or value factories may contain keys,
+            file paths, or other data that should not leave the process, so only the exception type is recorded by default.
+            Default is false.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheTelemetrySettings.#ctor">
             <summary>
             Instantiate.
             </summary>
@@ -686,12 +1130,20 @@
         <member name="M:Caching.FIFOCache`2.PrepopulateAsync(System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="P:Caching.FIFOCache`2.TelemetryCacheType">
+            <inheritdoc />
+        </member>
         <member name="M:Caching.FIFOCache`2.ExpirationTask(System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:Caching.FIFOCache`2.Dispose(System.Boolean)">
             <summary>
             Dispose of the object. Do not use after disposal.
+            </summary>
+        </member>
+        <member name="T:Caching.ICacheTelemetrySource">
+            <summary>
+            Non-generic view of a cache instance used by the observable gauges.
             </summary>
         </member>
         <member name="T:Caching.IPersistenceDriver`2">
@@ -844,6 +1296,9 @@
             <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.PrepopulateAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="P:Caching.LRUCache`2.TelemetryCacheType">
             <inheritdoc />
         </member>
         <member name="M:Caching.LRUCache`2.ExpirationTask(System.Threading.CancellationToken)">

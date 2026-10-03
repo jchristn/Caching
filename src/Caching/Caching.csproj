@@ -4,16 +4,16 @@
 		<TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net10.0</TargetFrameworks>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>Caching</PackageId>
-		<Version>5.0.1</Version>
+		<Version>5.1.0</Version>
 		<Authors>Joel Christner</Authors>
-		<Description>Caching library including a FIFO and LRU cache, async operations, events, expiration, and data persistence</Description>
+		<Description>Caching library including a FIFO and LRU cache, async operations, events, expiration, data persistence, and built-in OpenTelemetry-compatible metrics and traces</Description>
 		<Copyright>(c)2025 Joel Christner</Copyright>
 		<PackageProjectUrl>https://github.com/jchristn/caching</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/jchristn/caching</RepositoryUrl>
 		<RepositoryType>Github</RepositoryType>
 		<PackageLicenseUrl></PackageLicenseUrl>
-		<PackageReleaseNotes>Patch release: fixes sliding expiration TTL refresh, atomic GetOrAdd/AddOrUpdate behavior under contention, memory tracking during Prepopulate, and post-dispose API consistency.</PackageReleaseNotes>
-		<PackageTags>fifo lru cache caching least recently used first in first out simple</PackageTags>
+		<PackageReleaseNotes>Adds built-in observability: a System.Diagnostics.Metrics Meter and ActivitySource named "Caching" covering operations, hits and misses, evictions, expirations, persistence driver calls, lock waits, and cache size. See TELEMETRY.md.</PackageReleaseNotes>
+		<PackageTags>fifo lru cache caching least recently used first in first out simple telemetry metrics tracing opentelemetry</PackageTags>
 		<PackageIconUrl></PackageIconUrl>
 		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
 		<PackageIcon>icon.png</PackageIcon>
@@ -32,6 +32,16 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+	</ItemGroup>
+
+	<PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0' Or '$(TargetFramework)' == 'netstandard2.1'">
+		<!-- C# 9 is required to set InstrumentAdvice init-only properties on the down-level targets. -->
+		<LangVersion>9.0</LangVersion>
+	</PropertyGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' != 'net10.0'">
+		<!-- Meter, ActivitySource, and InstrumentAdvice (histogram buckets) for targets whose BCL predates them. Not an exporter or SDK. -->
+		<PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.12" />
 	</ItemGroup>
 
 	<ItemGroup>

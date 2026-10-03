@@ -69,6 +69,16 @@ dotnet run --project src/Test.Events/Test.Events.csproj
 - Expired entries trigger the `Expired` event and are removed automatically (src/Caching/FIFOCache.cs:435)
 - Expiration timestamps must be in UTC and in the future
 
+### Telemetry
+
+- BCL-only: `Meter` and `ActivitySource` named `Caching` (src/Caching/CacheInstrumentation.cs). No OpenTelemetry/Radiant/exporter dependency in the library.
+- Every telemetry name lives in `CacheTelemetryNames` (src/Caching/CacheTelemetryNames.cs); names are public contract.
+- Public operations in `FIFOCache`/`LRUCache` are thin wrappers (timestamp, span, outcome via exception filter) around private `*Core` methods holding the logic.
+- Persistence calls go through `CacheBase.InvokePersistenceAsync`, lock waits through `WaitAtomicLock[Async]`, factories through `InvokeValueFactory[Async]`.
+- `LRUCache.cs` mirrors `FIFOCache.cs` exactly except for eviction ordering (`LastUsed` vs `Added`), names, and `TelemetryCacheType`.
+- Labels must stay bounded; never record keys or values. Telemetry is best-effort and must never change cache behavior.
+- Documented in TELEMETRY.md; covered by src/Test.Shared/CacheTelemetryTestSuite.cs.
+
 ## Code Patterns
 
 **Eviction Logic:**
@@ -87,6 +97,6 @@ dotnet run --project src/Test.Events/Test.Events.csproj
 ## NuGet Package Details
 
 - Package ID: `Caching`
-- Current version: 3.1.3 (see src/Caching/Caching.csproj:7)
+- Current version: see `<Version>` in src/Caching/Caching.csproj
 - Package is generated on Release builds (`GeneratePackageOnBuild`)
 - XML documentation is auto-generated (Caching.xml)

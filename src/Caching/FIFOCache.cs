@@ -2,6 +2,7 @@ namespace Caching
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -36,6 +37,7 @@ namespace Caching
             _Token = _TokenSource.Token;
 
             _ExpirationTaskInstance = Task.Run(() => ExpirationTask(_Token));
+            RegisterTelemetry();
         }
 
         /// <summary>
@@ -62,6 +64,7 @@ namespace Caching
             _Token = _TokenSource.Token;
 
             _ExpirationTaskInstance = Task.Run(() => ExpirationTask(_Token));
+            RegisterTelemetry();
         }
 
         #endregion
@@ -169,6 +172,26 @@ namespace Caching
         /// <inheritdoc />
         public override async Task ClearAsync(CancellationToken cancellationToken = default)
         {
+            long start = OperationTimestamp();
+            Activity activity = StartOperationActivity(CacheTelemetryNames.OperationClear);
+
+            try
+            {
+                await ClearCoreAsync(cancellationToken).ConfigureAwait(false);
+                CompleteOperation(CacheTelemetryNames.OperationClear, start, CacheTelemetryNames.OutcomeSuccess, activity);
+            }
+            catch (Exception e) when (FailOperation(CacheTelemetryNames.OperationClear, start, e, activity))
+            {
+                throw;
+            }
+            finally
+            {
+                activity?.Dispose();
+            }
+        }
+
+        private async Task ClearCoreAsync(CancellationToken cancellationToken)
+        {
             ThrowIfDisposed();
 
             lock (_CacheLock)
@@ -181,7 +204,7 @@ namespace Caching
 
             if (_Persistence != null)
             {
-                await _Persistence.ClearAsync(cancellationToken).ConfigureAwait(false);
+                await InvokePersistenceAsync(CacheTelemetryNames.PersistenceClear, p => p.ClearAsync(cancellationToken)).ConfigureAwait(false);
             }
 
             _Events?.OnCleared(this, EventArgs.Empty);
@@ -190,6 +213,27 @@ namespace Caching
         /// <inheritdoc />
         public override T2 Get(T1 key)
         {
+            long start = OperationTimestamp();
+            Activity activity = StartOperationActivity(CacheTelemetryNames.OperationGet, true);
+
+            try
+            {
+                T2 ret = GetCore(key);
+                CompleteOperation(CacheTelemetryNames.OperationGet, start, CacheTelemetryNames.OutcomeSuccess, activity);
+                return ret;
+            }
+            catch (Exception e) when (FailOperation(CacheTelemetryNames.OperationGet, start, e, activity))
+            {
+                throw;
+            }
+            finally
+            {
+                activity?.Dispose();
+            }
+        }
+
+        private T2 GetCore(T1 key)
+        {
             ThrowIfDisposed();
             if (key == null) throw new ArgumentNullException(nameof(key));
 
@@ -197,14 +241,14 @@ namespace Caching
             {
                 if (_Cache.TryGetValue(key, out DataNode<T2> node))
                 {
-                    Interlocked.Increment(ref _hitCount);
+                    RecordHit();
                     MarkAccessed(node);
 
                     return node.Data;
                 }
                 else
                 {
-                    Interlocked.Increment(ref _missCount);
+                    RecordMiss();
                     throw new KeyNotFoundException();
                 }
             }
@@ -213,28 +257,26 @@ namespace Caching
         /// <inheritdoc />
         public override T2 GetOrDefault(T1 key, T2 defaultValue = default)
         {
-            ThrowIfDisposed();
-            if (key == null) throw new ArgumentNullException(nameof(key));
+            long start = OperationTimestamp();
+            Activity activity = StartOperationActivity(CacheTelemetryNames.OperationGetOrDefault, true);
 
-            lock (_CacheLock)
+            try
             {
-                if (_Cache.TryGetValue(key, out DataNode<T2> node))
-                {
-                    Interlocked.Increment(ref _hitCount);
-                    MarkAccessed(node);
-
-                    return node.Data;
-                }
-                else
-                {
-                    Interlocked.Increment(ref _missCount);
-                    return defaultValue;
-                }
+                T2 ret = GetOrDefaultCore(key, defaultValue, out bool hit);
+                CompleteOperation(CacheTelemetryNames.OperationGetOrDefault, start, hit ? CacheTelemetryNames.OutcomeSuccess : CacheTelemetryNames.OutcomeMiss, activity);
+                return ret;
+            }
+            catch (Exception e) when (FailOperation(CacheTelemetryNames.OperationGetOrDefault, start, e, activity))
+            {
+                throw;
+            }
+            finally
+            {
+                activity?.Dispose();
             }
         }
 
-        /// <inheritdoc />
-        public override bool TryGet(T1 key, out T2 val)
+        private T2 GetOrDefaultCore(T1 key, T2 defaultValue, out bool hit)
         {
             ThrowIfDisposed();
             if (key == null) throw new ArgumentNullException(nameof(key));
@@ -243,7 +285,54 @@ namespace Caching
             {
                 if (_Cache.TryGetValue(key, out DataNode<T2> node))
                 {
-                    Interlocked.Increment(ref _hitCount);
+                    RecordHit();
+                    MarkAccessed(node);
+
+                    hit = true;
+                    return node.Data;
+                }
+                else
+                {
+                    RecordMiss();
+                    hit = false;
+                    return defaultValue;
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public override bool TryGet(T1 key, out T2 val)
+        {
+            val = default;
+            long start = OperationTimestamp();
+            Activity activity = StartOperationActivity(CacheTelemetryNames.OperationTryGet, true);
+
+            try
+            {
+                bool ret = TryGetCore(key, out val);
+                CompleteOperation(CacheTelemetryNames.OperationTryGet, start, ret ? CacheTelemetryNames.OutcomeSuccess : CacheTelemetryNames.OutcomeMiss, activity);
+                return ret;
+            }
+            catch (Exception e) when (FailOperation(CacheTelemetryNames.OperationTryGet, start, e, activity))
+            {
+                throw;
+            }
+            finally
+            {
+                activity?.Dispose();
+            }
+        }
+
+        private bool TryGetCore(T1 key, out T2 val)
+        {
+            ThrowIfDisposed();
+            if (key == null) throw new ArgumentNullException(nameof(key));
+
+            lock (_CacheLock)
+            {
+                if (_Cache.TryGetValue(key, out DataNode<T2> node))
+                {
+                    RecordHit();
                     MarkAccessed(node);
 
                     val = node.Data;
@@ -251,7 +340,7 @@ namespace Caching
                 }
                 else
                 {
-                    Interlocked.Increment(ref _missCount);
+                    RecordMiss();
                     val = default;
                     return false;
                 }
@@ -260,6 +349,27 @@ namespace Caching
 
         /// <inheritdoc />
         public override bool Contains(T1 key)
+        {
+            long start = OperationTimestamp();
+            Activity activity = StartOperationActivity(CacheTelemetryNames.OperationContains, true);
+
+            try
+            {
+                bool ret = ContainsCore(key);
+                CompleteOperation(CacheTelemetryNames.OperationContains, start, ret ? CacheTelemetryNames.OutcomeSuccess : CacheTelemetryNames.OutcomeMiss, activity);
+                return ret;
+            }
+            catch (Exception e) when (FailOperation(CacheTelemetryNames.OperationContains, start, e, activity))
+            {
+                throw;
+            }
+            finally
+            {
+                activity?.Dispose();
+            }
+        }
+
+        private bool ContainsCore(T1 key)
         {
             ThrowIfDisposed();
             if (key == null) throw new ArgumentNullException(nameof(key));
@@ -278,6 +388,26 @@ namespace Caching
 
         /// <inheritdoc />
         public override async Task AddReplaceAsync(T1 key, T2 val, DateTime? expiration = null, CancellationToken cancellationToken = default)
+        {
+            long start = OperationTimestamp();
+            Activity activity = StartOperationActivity(CacheTelemetryNames.OperationAddReplace);
+
+            try
+            {
+                await AddReplaceCoreAsync(key, val, expiration, cancellationToken).ConfigureAwait(false);
+                CompleteOperation(CacheTelemetryNames.OperationAddReplace, start, CacheTelemetryNames.OutcomeSuccess, activity);
+            }
+            catch (Exception e) when (FailOperation(CacheTelemetryNames.OperationAddReplace, start, e, activity))
+            {
+                throw;
+            }
+            finally
+            {
+                activity?.Dispose();
+            }
+        }
+
+        private async Task AddReplaceCoreAsync(T1 key, T2 val, DateTime? expiration, CancellationToken cancellationToken)
         {
             ThrowIfDisposed();
             if (key == null) throw new ArgumentNullException(nameof(key));
@@ -333,7 +463,7 @@ namespace Caching
                     if (toEvict.Count > 0)
                     {
                         evictedKeys = toEvict;
-                        Interlocked.Add(ref _evictionCount, toEvict.Count);
+                        RecordEvictions(toEvict.Count, CacheTelemetryNames.EvictionReasonCapacity);
                     }
                 }
 
@@ -351,7 +481,7 @@ namespace Caching
 
                         if (evictedKeys == null) evictedKeys = new List<T1>();
                         evictedKeys.Add(toEvict.Key);
-                        Interlocked.Increment(ref _evictionCount);
+                        RecordEvictions(1, CacheTelemetryNames.EvictionReasonMemory);
                     }
 
                     CurrentMemoryBytes += valueSize;
@@ -364,7 +494,7 @@ namespace Caching
             // Persistence and events outside the lock
             if (_Persistence != null)
             {
-                await _Persistence.WriteAsync(key, val, cancellationToken).ConfigureAwait(false);
+                await InvokePersistenceAsync(CacheTelemetryNames.PersistenceWrite, p => p.WriteAsync(key, val, cancellationToken)).ConfigureAwait(false);
             }
 
             if (evictedKeys != null && evictedKeys.Count > 0)
@@ -373,7 +503,7 @@ namespace Caching
                 {
                     foreach (T1 evictKey in evictedKeys)
                     {
-                        await _Persistence.DeleteAsync(evictKey, cancellationToken).ConfigureAwait(false);
+                        await InvokePersistenceAsync(CacheTelemetryNames.PersistenceDelete, p => p.DeleteAsync(evictKey, cancellationToken)).ConfigureAwait(false);
                     }
                 }
                 _Events?.OnEvicted(this, evictedKeys);
@@ -408,25 +538,46 @@ namespace Caching
         /// <inheritdoc />
         public override T2 GetOrAdd(T1 key, Func<T1, T2> valueFactory, DateTime? expiration = null)
         {
+            long start = OperationTimestamp();
+            Activity activity = StartOperationActivity(CacheTelemetryNames.OperationGetOrAdd);
+
+            try
+            {
+                T2 ret = GetOrAddCore(key, valueFactory, expiration);
+                CompleteOperation(CacheTelemetryNames.OperationGetOrAdd, start, CacheTelemetryNames.OutcomeSuccess, activity);
+                return ret;
+            }
+            catch (Exception e) when (FailOperation(CacheTelemetryNames.OperationGetOrAdd, start, e, activity))
+            {
+                throw;
+            }
+            finally
+            {
+                activity?.Dispose();
+            }
+        }
+
+        private T2 GetOrAddCore(T1 key, Func<T1, T2> valueFactory, DateTime? expiration)
+        {
             ThrowIfDisposed();
             if (key == null) throw new ArgumentNullException(nameof(key));
             if (valueFactory == null) throw new ArgumentNullException(nameof(valueFactory));
 
-            _AtomicLock.Wait();
+            WaitAtomicLock(CacheTelemetryNames.OperationGetOrAdd);
             try
             {
                 lock (_CacheLock)
                 {
                     if (_Cache.TryGetValue(key, out DataNode<T2> node))
                     {
-                        Interlocked.Increment(ref _hitCount);
+                        RecordHit();
                         MarkAccessed(node);
                         return node.Data;
                     }
 
-                    Interlocked.Increment(ref _missCount);
+                    RecordMiss();
 
-                    T2 newValue = valueFactory(key);
+                    T2 newValue = InvokeValueFactory(() => valueFactory(key));
                     AddReplace(key, newValue, expiration);
                     return newValue;
                 }
@@ -440,26 +591,47 @@ namespace Caching
         /// <inheritdoc />
         public override async Task<T2> GetOrAddAsync(T1 key, Func<T1, Task<T2>> valueFactory, DateTime? expiration = null, CancellationToken cancellationToken = default)
         {
+            long start = OperationTimestamp();
+            Activity activity = StartOperationActivity(CacheTelemetryNames.OperationGetOrAdd);
+
+            try
+            {
+                T2 ret = await GetOrAddCoreAsync(key, valueFactory, expiration, cancellationToken).ConfigureAwait(false);
+                CompleteOperation(CacheTelemetryNames.OperationGetOrAdd, start, CacheTelemetryNames.OutcomeSuccess, activity);
+                return ret;
+            }
+            catch (Exception e) when (FailOperation(CacheTelemetryNames.OperationGetOrAdd, start, e, activity))
+            {
+                throw;
+            }
+            finally
+            {
+                activity?.Dispose();
+            }
+        }
+
+        private async Task<T2> GetOrAddCoreAsync(T1 key, Func<T1, Task<T2>> valueFactory, DateTime? expiration, CancellationToken cancellationToken)
+        {
             ThrowIfDisposed();
             if (key == null) throw new ArgumentNullException(nameof(key));
             if (valueFactory == null) throw new ArgumentNullException(nameof(valueFactory));
 
-            await _AtomicLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await WaitAtomicLockAsync(CacheTelemetryNames.OperationGetOrAdd, cancellationToken).ConfigureAwait(false);
             try
             {
                 lock (_CacheLock)
                 {
                     if (_Cache.TryGetValue(key, out DataNode<T2> node))
                     {
-                        Interlocked.Increment(ref _hitCount);
+                        RecordHit();
                         MarkAccessed(node);
                         return node.Data;
                     }
 
-                    Interlocked.Increment(ref _missCount);
+                    RecordMiss();
                 }
 
-                T2 newValue = await valueFactory(key).ConfigureAwait(false);
+                T2 newValue = await InvokeValueFactoryAsync(() => valueFactory(key)).ConfigureAwait(false);
                 await AddReplaceAsync(key, newValue, expiration, cancellationToken).ConfigureAwait(false);
                 return newValue;
             }
@@ -492,11 +664,32 @@ namespace Caching
         /// <inheritdoc />
         public override T2 AddOrUpdate(T1 key, T2 addValue, Func<T1, T2, T2> updateValueFactory, DateTime? expiration = null)
         {
+            long start = OperationTimestamp();
+            Activity activity = StartOperationActivity(CacheTelemetryNames.OperationAddOrUpdate);
+
+            try
+            {
+                T2 ret = AddOrUpdateCore(key, addValue, updateValueFactory, expiration);
+                CompleteOperation(CacheTelemetryNames.OperationAddOrUpdate, start, CacheTelemetryNames.OutcomeSuccess, activity);
+                return ret;
+            }
+            catch (Exception e) when (FailOperation(CacheTelemetryNames.OperationAddOrUpdate, start, e, activity))
+            {
+                throw;
+            }
+            finally
+            {
+                activity?.Dispose();
+            }
+        }
+
+        private T2 AddOrUpdateCore(T1 key, T2 addValue, Func<T1, T2, T2> updateValueFactory, DateTime? expiration)
+        {
             ThrowIfDisposed();
             if (key == null) throw new ArgumentNullException(nameof(key));
             if (updateValueFactory == null) throw new ArgumentNullException(nameof(updateValueFactory));
 
-            _AtomicLock.Wait();
+            WaitAtomicLock(CacheTelemetryNames.OperationAddOrUpdate);
             try
             {
                 T2 resultValue;
@@ -505,7 +698,8 @@ namespace Caching
                 {
                     if (_Cache.TryGetValue(key, out DataNode<T2> existing))
                     {
-                        resultValue = updateValueFactory(key, existing.Data);
+                        T2 existingData = existing.Data;
+                        resultValue = InvokeValueFactory(() => updateValueFactory(key, existingData));
                     }
                     else
                     {
@@ -525,11 +719,32 @@ namespace Caching
         /// <inheritdoc />
         public override async Task<T2> AddOrUpdateAsync(T1 key, T2 addValue, Func<T1, T2, Task<T2>> updateValueFactory, DateTime? expiration = null, CancellationToken cancellationToken = default)
         {
+            long start = OperationTimestamp();
+            Activity activity = StartOperationActivity(CacheTelemetryNames.OperationAddOrUpdate);
+
+            try
+            {
+                T2 ret = await AddOrUpdateCoreAsync(key, addValue, updateValueFactory, expiration, cancellationToken).ConfigureAwait(false);
+                CompleteOperation(CacheTelemetryNames.OperationAddOrUpdate, start, CacheTelemetryNames.OutcomeSuccess, activity);
+                return ret;
+            }
+            catch (Exception e) when (FailOperation(CacheTelemetryNames.OperationAddOrUpdate, start, e, activity))
+            {
+                throw;
+            }
+            finally
+            {
+                activity?.Dispose();
+            }
+        }
+
+        private async Task<T2> AddOrUpdateCoreAsync(T1 key, T2 addValue, Func<T1, T2, Task<T2>> updateValueFactory, DateTime? expiration, CancellationToken cancellationToken)
+        {
             ThrowIfDisposed();
             if (key == null) throw new ArgumentNullException(nameof(key));
             if (updateValueFactory == null) throw new ArgumentNullException(nameof(updateValueFactory));
 
-            await _AtomicLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await WaitAtomicLockAsync(CacheTelemetryNames.OperationAddOrUpdate, cancellationToken).ConfigureAwait(false);
             try
             {
                 T2 resultValue;
@@ -547,7 +762,7 @@ namespace Caching
 
                 if (exists)
                 {
-                    resultValue = await updateValueFactory(key, existingValue).ConfigureAwait(false);
+                    resultValue = await InvokeValueFactoryAsync(() => updateValueFactory(key, existingValue)).ConfigureAwait(false);
                 }
                 else
                 {
@@ -571,6 +786,26 @@ namespace Caching
 
         /// <inheritdoc />
         public override async Task RemoveAsync(T1 key, CancellationToken cancellationToken = default)
+        {
+            long start = OperationTimestamp();
+            Activity activity = StartOperationActivity(CacheTelemetryNames.OperationRemove);
+
+            try
+            {
+                bool ret = await RemoveCoreAsync(key, cancellationToken).ConfigureAwait(false);
+                CompleteOperation(CacheTelemetryNames.OperationRemove, start, ret ? CacheTelemetryNames.OutcomeSuccess : CacheTelemetryNames.OutcomeMiss, activity);
+            }
+            catch (Exception e) when (FailOperation(CacheTelemetryNames.OperationRemove, start, e, activity))
+            {
+                throw;
+            }
+            finally
+            {
+                activity?.Dispose();
+            }
+        }
+
+        private async Task<bool> RemoveCoreAsync(T1 key, CancellationToken cancellationToken)
         {
             ThrowIfDisposed();
             if (key == null) throw new ArgumentNullException(nameof(key));
@@ -598,14 +833,38 @@ namespace Caching
             {
                 if (_Persistence != null)
                 {
-                    await _Persistence.DeleteAsync(key, cancellationToken).ConfigureAwait(false);
+                    await InvokePersistenceAsync(CacheTelemetryNames.PersistenceDelete, p => p.DeleteAsync(key, cancellationToken)).ConfigureAwait(false);
                 }
                 _Events?.OnRemoved(this, new DataEventArgs<T1, T2>(key, val));
             }
+
+            return existed;
         }
 
         /// <inheritdoc />
         public override bool TryRemove(T1 key, out T2 val)
+        {
+            val = default;
+            long start = OperationTimestamp();
+            Activity activity = StartOperationActivity(CacheTelemetryNames.OperationTryRemove);
+
+            try
+            {
+                bool ret = TryRemoveCore(key, out val);
+                CompleteOperation(CacheTelemetryNames.OperationTryRemove, start, ret ? CacheTelemetryNames.OutcomeSuccess : CacheTelemetryNames.OutcomeMiss, activity);
+                return ret;
+            }
+            catch (Exception e) when (FailOperation(CacheTelemetryNames.OperationTryRemove, start, e, activity))
+            {
+                throw;
+            }
+            finally
+            {
+                activity?.Dispose();
+            }
+        }
+
+        private bool TryRemoveCore(T1 key, out T2 val)
         {
             ThrowIfDisposed();
 
@@ -636,7 +895,8 @@ namespace Caching
 
             if (existed)
             {
-                _Persistence?.DeleteAsync(key).GetAwaiter().GetResult();
+                if (_Persistence != null)
+                    InvokePersistenceAsync(CacheTelemetryNames.PersistenceDelete, p => p.DeleteAsync(key)).GetAwaiter().GetResult();
                 _Events?.OnRemoved(this, new DataEventArgs<T1, T2>(key, node));
                 val = node.Data;
                 return true;
@@ -667,11 +927,34 @@ namespace Caching
         /// <inheritdoc />
         public override async Task PrepopulateAsync(CancellationToken cancellationToken = default)
         {
+            long start = OperationTimestamp();
+            Activity activity = StartOperationActivity(CacheTelemetryNames.OperationPrepopulate);
+
+            try
+            {
+                int ret = await PrepopulateCoreAsync(cancellationToken).ConfigureAwait(false);
+                RecordPrepopulated(ret, activity);
+                CompleteOperation(CacheTelemetryNames.OperationPrepopulate, start, CacheTelemetryNames.OutcomeSuccess, activity);
+            }
+            catch (Exception e) when (FailOperation(CacheTelemetryNames.OperationPrepopulate, start, e, activity))
+            {
+                throw;
+            }
+            finally
+            {
+                activity?.Dispose();
+            }
+        }
+
+        private async Task<int> PrepopulateCoreAsync(CancellationToken cancellationToken)
+        {
             ThrowIfDisposed();
             if (_Persistence == null)
                 throw new InvalidOperationException("No persistence driver has been defined for the cache.");
 
-            List<T1> keys = await _Persistence.EnumerateAsync(cancellationToken).ConfigureAwait(false);
+            List<T1> keys = await InvokePersistenceAsync(CacheTelemetryNames.PersistenceEnumerate, p => p.EnumerateAsync(cancellationToken)).ConfigureAwait(false);
+
+            int loaded = 0;
 
             if (keys != null && keys.Count > 0)
             {
@@ -682,7 +965,7 @@ namespace Caching
                     cancellationToken.ThrowIfCancellationRequested();
 
                     T1 key = keys[i];
-                    T2 data = await _Persistence.GetAsync(key, cancellationToken).ConfigureAwait(false);
+                    T2 data = await InvokePersistenceAsync(CacheTelemetryNames.PersistenceGet, p => p.GetAsync(key, cancellationToken)).ConfigureAwait(false);
                     DataNode<T2> node = new DataNode<T2>(data);
                     long valueSize = MaxMemoryBytes > 0 ? EstimateSize(data) : 0;
 
@@ -717,11 +1000,21 @@ namespace Caching
 
                     if (added)
                     {
+                        loaded++;
                         _Events?.OnPrepopulated(this, new DataEventArgs<T1, T2>(key, node));
                     }
                 }
             }
+
+            return loaded;
         }
+
+        #endregion
+
+        #region Internal-Members
+
+        /// <inheritdoc />
+        internal override string TelemetryCacheType => CacheTelemetryNames.CacheTypeFifo;
 
         #endregion
 
@@ -730,55 +1023,78 @@ namespace Caching
         /// <inheritdoc />
         internal override async Task ExpirationTask(CancellationToken token = default)
         {
+            // The task is started from the constructor and inherits the caller's ambient span through the execution context.
+            // Detach it so each sweep is its own trace root (linked back to the creating trace) instead of a child of an unrelated request.
+            Activity.Current = null;
+
             while (!token.IsCancellationRequested)
             {
                 try
                 {
                     await Task.Delay(_ExpirationIntervalMs, token).ConfigureAwait(false);
 
-                    List<KeyValuePair<T1, DataNode<T2>>> expired = null;
+                    long sweepStart = Stopwatch.GetTimestamp();
+                    DateTime sweepStartUtc = DateTime.UtcNow;
+                    Activity sweepActivity = null;
 
-                    lock (_CacheLock)
+                    try
                     {
-                        if (_Cache == null) continue;
+                        List<KeyValuePair<T1, DataNode<T2>>> expired = null;
 
-                        expired = _Cache.Where(
-                            c => c.Value.Expiration != null && c.Value.Expiration.Value < DateTime.UtcNow)
-                            .ToList();
+                        lock (_CacheLock)
+                        {
+                            if (_Cache == null) continue;
+
+                            expired = _Cache.Where(
+                                c => c.Value.Expiration != null && c.Value.Expiration.Value < DateTime.UtcNow)
+                                .ToList();
+
+                            if (expired != null && expired.Count > 0)
+                            {
+                                foreach (KeyValuePair<T1, DataNode<T2>> entry in expired)
+                                {
+                                    _Cache.Remove(entry.Key);
+
+                                    if (MaxMemoryBytes > 0)
+                                    {
+                                        CurrentMemoryBytes -= EstimateSize(entry.Value.Data);
+                                    }
+                                }
+
+                                RecordExpirations(expired.Count);
+                            }
+                        }
 
                         if (expired != null && expired.Count > 0)
                         {
+                            sweepActivity = StartSweepActivity(sweepStartUtc, expired.Count);
+
                             foreach (KeyValuePair<T1, DataNode<T2>> entry in expired)
                             {
-                                _Cache.Remove(entry.Key);
-
-                                if (MaxMemoryBytes > 0)
+                                if (_Persistence != null)
                                 {
-                                    CurrentMemoryBytes -= EstimateSize(entry.Value.Data);
+                                    try
+                                    {
+                                        await InvokePersistenceAsync(CacheTelemetryNames.PersistenceDelete, p => p.DeleteAsync(entry.Key, token)).ConfigureAwait(false);
+                                    }
+                                    catch (OperationCanceledException)
+                                    {
+                                        break;
+                                    }
                                 }
+                                _Events?.OnExpired(this, entry.Key);
                             }
-
-                            Interlocked.Add(ref _expirationCount, expired.Count);
                         }
+
+                        CompleteSweep(sweepStart, sweepActivity);
                     }
-
-                    if (expired != null && expired.Count > 0)
+                    catch (Exception e) when (FailSweep(sweepStart, e, sweepActivity))
                     {
-                        foreach (KeyValuePair<T1, DataNode<T2>> entry in expired)
-                        {
-                            if (_Persistence != null)
-                            {
-                                try
-                                {
-                                    await _Persistence.DeleteAsync(entry.Key, token).ConfigureAwait(false);
-                                }
-                                catch (OperationCanceledException)
-                                {
-                                    break;
-                                }
-                            }
-                            _Events?.OnExpired(this, entry.Key);
-                        }
+                        throw;
+                    }
+                    finally
+                    {
+                        sweepActivity?.Dispose();
                     }
                 }
                 catch (TaskCanceledException)
@@ -824,6 +1140,8 @@ namespace Caching
                     EvictCount = 0;
                     _disposed = true;
                 }
+
+                UnregisterTelemetry();
 
                 _Events?.OnDisposed(this, EventArgs.Empty);
                 _Events = null;
