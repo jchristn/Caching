@@ -104,7 +104,8 @@ namespace Caching
         public int EvictCount { get; internal set; } = 0;
 
         /// <summary>
-        /// Frequency with which the cache is evaluated for expired entries. Default is 1000ms.
+        /// Frequency with which the cache is evaluated for expired entries. Default is 1000ms, minimum is 1ms.
+        /// A change takes effect immediately: the pending wait is shortened or lengthened to the new interval.
         /// </summary>
         public int ExpirationIntervalMs
         {
@@ -116,6 +117,7 @@ namespace Caching
             {
                 if (value < 1) throw new ArgumentException("ExpirationIntervalMs must be at least 1ms.");
                 _ExpirationIntervalMs = value;
+                WakeExpirationTask();
             }
         }
 
@@ -192,6 +194,7 @@ namespace Caching
         internal bool _disposed = false;
         internal IEqualityComparer<T1> _KeyComparer;
         internal readonly SemaphoreSlim _AtomicLock = new SemaphoreSlim(1, 1);
+        internal readonly SemaphoreSlim _ExpirationWake = new SemaphoreSlim(0, 1);
 
         internal long _hitCount = 0;
         internal long _missCount = 0;
@@ -544,6 +547,37 @@ namespace Caching
         #endregion
 
         #region Internal-Methods
+
+        /// <summary>
+        /// Wait until the next expiration sweep is due. Re-evaluates the remaining time whenever ExpirationIntervalMs changes,
+        /// measured from the start of the wait, so a shorter interval applies to the pending wait instead of the next one.
+        /// </summary>
+        internal async Task WaitForNextSweepAsync(CancellationToken token)
+        {
+            long waitStart = Stopwatch.GetTimestamp();
+
+            while (true)
+            {
+                long elapsedMs = (Stopwatch.GetTimestamp() - waitStart) * 1000 / Stopwatch.Frequency;
+                long remainingMs = _ExpirationIntervalMs - elapsedMs;
+                if (remainingMs <= 0) return;
+
+                bool woken = await _ExpirationWake.WaitAsync((int)Math.Min(remainingMs, Int32.MaxValue), token).ConfigureAwait(false);
+                if (!woken) return;
+            }
+        }
+
+        internal void WakeExpirationTask()
+        {
+            try
+            {
+                if (_ExpirationWake.CurrentCount == 0) _ExpirationWake.Release();
+            }
+            catch (SemaphoreFullException)
+            {
+                // Already signaled.
+            }
+        }
 
         bool ICacheTelemetrySource.TelemetryMetricsEnabled => !_disposed && MetricsEnabled;
 

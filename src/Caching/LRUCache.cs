@@ -576,11 +576,13 @@ namespace Caching
                     }
 
                     RecordMiss();
-
-                    T2 newValue = InvokeValueFactory(() => valueFactory(key));
-                    AddReplace(key, newValue, expiration);
-                    return newValue;
                 }
+
+                // The factory, persistence write, and events run outside the cache lock so they can neither block
+                // other cache users nor deadlock against them. The atomic lock still serializes GetOrAdd/AddOrUpdate.
+                T2 newValue = InvokeValueFactory(() => valueFactory(key));
+                AddReplace(key, newValue, expiration);
+                return newValue;
             }
             finally
             {
@@ -693,22 +695,31 @@ namespace Caching
             try
             {
                 T2 resultValue;
+                T2 existingValue = default;
+                bool exists = false;
 
                 lock (_CacheLock)
                 {
                     if (_Cache.TryGetValue(key, out DataNode<T2> existing))
                     {
-                        T2 existingData = existing.Data;
-                        resultValue = InvokeValueFactory(() => updateValueFactory(key, existingData));
+                        existingValue = existing.Data;
+                        exists = true;
                     }
-                    else
-                    {
-                        resultValue = addValue;
-                    }
-
-                    AddReplace(key, resultValue, expiration);
-                    return resultValue;
                 }
+
+                // The factory, persistence write, and events run outside the cache lock so they can neither block
+                // other cache users nor deadlock against them. The atomic lock still serializes GetOrAdd/AddOrUpdate.
+                if (exists)
+                {
+                    resultValue = InvokeValueFactory(() => updateValueFactory(key, existingValue));
+                }
+                else
+                {
+                    resultValue = addValue;
+                }
+
+                AddReplace(key, resultValue, expiration);
+                return resultValue;
             }
             finally
             {
@@ -1031,11 +1042,12 @@ namespace Caching
             {
                 try
                 {
-                    await Task.Delay(_ExpirationIntervalMs, token).ConfigureAwait(false);
+                    await WaitForNextSweepAsync(token).ConfigureAwait(false);
 
                     long sweepStart = Stopwatch.GetTimestamp();
                     DateTime sweepStartUtc = DateTime.UtcNow;
                     Activity sweepActivity = null;
+                    Exception sweepFailure = null;
 
                     try
                     {
@@ -1069,6 +1081,8 @@ namespace Caching
                         {
                             sweepActivity = StartSweepActivity(sweepStartUtc, expired.Count);
 
+                            // Each entry is processed independently: a failing persistence delete or Expired handler is
+                            // recorded and the remaining entries are still processed. There is no caller to rethrow to.
                             foreach (KeyValuePair<T1, DataNode<T2>> entry in expired)
                             {
                                 if (_Persistence != null)
@@ -1077,16 +1091,31 @@ namespace Caching
                                     {
                                         await InvokePersistenceAsync(CacheTelemetryNames.PersistenceDelete, p => p.DeleteAsync(entry.Key, token)).ConfigureAwait(false);
                                     }
-                                    catch (OperationCanceledException)
+                                    catch (OperationCanceledException) when (token.IsCancellationRequested)
                                     {
                                         break;
                                     }
+                                    catch (Exception e)
+                                    {
+                                        if (sweepFailure == null) sweepFailure = e;
+                                    }
                                 }
-                                _Events?.OnExpired(this, entry.Key);
+
+                                try
+                                {
+                                    _Events?.OnExpired(this, entry.Key);
+                                }
+                                catch (Exception e)
+                                {
+                                    if (sweepFailure == null) sweepFailure = e;
+                                }
                             }
                         }
 
-                        CompleteSweep(sweepStart, sweepActivity);
+                        if (sweepFailure != null)
+                            FailSweep(sweepStart, sweepFailure, sweepActivity);
+                        else
+                            CompleteSweep(sweepStart, sweepActivity);
                     }
                     catch (Exception e) when (FailSweep(sweepStart, e, sweepActivity))
                     {
@@ -1097,13 +1126,13 @@ namespace Caching
                         sweepActivity?.Dispose();
                     }
                 }
-                catch (TaskCanceledException)
+                catch (OperationCanceledException) when (token.IsCancellationRequested)
                 {
                     break;
                 }
-                catch (OperationCanceledException)
+                catch (Exception)
                 {
-                    break;
+                    // Already recorded by FailSweep. Keep the expiration task alive; the next sweep runs after the interval.
                 }
             }
         }

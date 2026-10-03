@@ -1,5 +1,15 @@
 # Change Log
 
+## v5.1.1
+
+### Bug Fixes
+- **Expiration task resilience**: A non-cancellation exception from the persistence driver's `DeleteAsync` or from an `Expired` event handler previously ended the background expiration task for that cache permanently, and skipped the remaining entries in that sweep. Each expired entry is now processed independently, failures are recorded (`caching.errors{cache.component="expiration"}`, sweep `outcome="error"`), and the task keeps running.
+- **Sync GetOrAdd/AddOrUpdate lock scope**: The synchronous `GetOrAdd` and `AddOrUpdate` ran the caller's factory, the persistence write, and `Added`/`Replaced`/`Evicted` handlers while holding the internal cache lock, blocking every other cache operation and deadlocking if that code waited on another thread using the cache. They now match the async variants: the lookup holds the cache lock briefly, and the factory, persistence, and events run outside it. GetOrAdd and AddOrUpdate remain serialized with each other.
+- **ExpirationIntervalMs takes effect immediately**: Setting `ExpirationIntervalMs` after construction (the only way to set it) only applied after the pending wait on the previous interval (1000ms by default) elapsed. The pending wait is now re-evaluated against the new interval.
+
+### Tests
+- New Touchstone `Resilience` suite (5 cases) reproducing each bug.
+
 ## v5.1.0
 
 ### New Features

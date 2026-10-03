@@ -50,7 +50,8 @@
         </member>
         <member name="P:Caching.CacheBase`2.ExpirationIntervalMs">
             <summary>
-            Frequency with which the cache is evaluated for expired entries. Default is 1000ms.
+            Frequency with which the cache is evaluated for expired entries. Default is 1000ms, minimum is 1ms.
+            A change takes effect immediately: the pending wait is shortened or lengthened to the new interval.
             </summary>
         </member>
         <member name="P:Caching.CacheBase`2.SlidingExpiration">
@@ -356,6 +357,12 @@
             Mark a cache entry as used and refresh sliding expiration when enabled.
             </summary>
             <param name="node">Node that was accessed.</param>
+        </member>
+        <member name="M:Caching.CacheBase`2.WaitForNextSweepAsync(System.Threading.CancellationToken)">
+            <summary>
+            Wait until the next expiration sweep is due. Re-evaluates the remaining time whenever ExpirationIntervalMs changes,
+            measured from the start of the wait, so a shorter interval applies to the pending wait instead of the next one.
+            </summary>
         </member>
         <member name="M:Caching.CacheBase`2.RegisterTelemetry">
             <summary>

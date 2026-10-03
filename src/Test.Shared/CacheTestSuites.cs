@@ -35,6 +35,7 @@ namespace Test.Shared
                     StatisticsSuite(),
                     AsyncAndConcurrencySuite(),
                     DisposalSuite(),
+                    ResilienceSuite(),
                     CacheTelemetryTestSuite.Suite()
                 };
             }
@@ -172,6 +173,179 @@ namespace Test.Shared
                 {
                     Case(suite, "PostDispose", "Dispose is idempotent and post-dispose APIs throw ObjectDisposedException", DisposalAsync)
                 });
+        }
+
+        private static TestSuiteDescriptor ResilienceSuite()
+        {
+            const string suite = "Resilience";
+
+            return new TestSuiteDescriptor(
+                suite,
+                "Resilience",
+                new List<TestCaseDescriptor>
+                {
+                    Case(suite, "ExpirationSurvivesPersistenceFailure", "Expiration keeps running and processes every entry when the persistence driver throws", ExpirationSurvivesPersistenceFailureAsync),
+                    Case(suite, "ExpirationSurvivesHandlerFailure", "Expiration keeps running and processes every entry when an Expired handler throws", ExpirationSurvivesHandlerFailureAsync),
+                    Case(suite, "GetOrAddOutsideCacheLock", "Sync GetOrAdd runs the value factory and Added handlers without holding the cache lock", GetOrAddDoesNotHoldCacheLockAsync),
+                    Case(suite, "IntervalChangeAppliesImmediately", "Shortening ExpirationIntervalMs applies to the pending wait, not after the default interval", IntervalChangeAppliesImmediatelyAsync),
+                    Case(suite, "AddOrUpdateOutsideCacheLock", "Sync AddOrUpdate runs the update factory and handlers without holding the cache lock", AddOrUpdateDoesNotHoldCacheLockAsync)
+                });
+        }
+
+        private static async Task ExpirationSurvivesPersistenceFailureAsync(CancellationToken cancellationToken)
+        {
+            foreach (CachePolicy policy in Policies)
+            {
+                FaultablePersistence<string, string> persistence = new FaultablePersistence<string, string>();
+                ConcurrentQueue<string> expired = new ConcurrentQueue<string>();
+
+                using (CacheBase<string, string> cache = CreatePersistentCache<string, string>(policy, 10, 1, persistence))
+                {
+                    cache.ExpirationIntervalMs = 20;
+                    cache.Events.Expired += (sender, key) => expired.Enqueue(key);
+
+                    persistence.FailDelete = true;
+                    cache.AddReplace("a", "1", TimeSpan.FromMilliseconds(30));
+                    cache.AddReplace("b", "2", TimeSpan.FromMilliseconds(30));
+
+                    await WaitUntilAsync(
+                        () => expired.Contains("a") && expired.Contains("b"),
+                        CacheTestExpectations.ExpirationTimeout,
+                        PolicyMessage(policy, "every expired entry should raise Expired even when the persistence delete fails"),
+                        cancellationToken);
+                    AssertFalse(cache.Contains("a") || cache.Contains("b"), PolicyMessage(policy, "failed-delete entries should still leave the cache"));
+
+                    persistence.FailDelete = false;
+                    cache.AddReplace("c", "3", TimeSpan.FromMilliseconds(30));
+
+                    await WaitUntilAsync(
+                        () => expired.Contains("c"),
+                        CacheTestExpectations.ExpirationTimeout,
+                        PolicyMessage(policy, "expiration task should keep running after a persistence failure"),
+                        cancellationToken);
+                    await WaitUntilAsync(
+                        () => !persistence.ExistsAsync("c").Result,
+                        CacheTestExpectations.ExpirationTimeout,
+                        PolicyMessage(policy, "persistence delete should resume after the failure clears"),
+                        cancellationToken);
+                }
+            }
+        }
+
+        private static async Task ExpirationSurvivesHandlerFailureAsync(CancellationToken cancellationToken)
+        {
+            foreach (CachePolicy policy in Policies)
+            {
+                ConcurrentQueue<string> expired = new ConcurrentQueue<string>();
+
+                using (CacheBase<string, string> cache = CreateCache<string, string>(policy, 10, 1))
+                {
+                    cache.ExpirationIntervalMs = 20;
+                    cache.Events.Expired += (sender, key) =>
+                    {
+                        expired.Enqueue(key);
+                        throw new InvalidOperationException("handler failure for " + key);
+                    };
+
+                    cache.AddReplace("a", "1", TimeSpan.FromMilliseconds(30));
+                    cache.AddReplace("b", "2", TimeSpan.FromMilliseconds(30));
+
+                    await WaitUntilAsync(
+                        () => expired.Contains("a") && expired.Contains("b"),
+                        CacheTestExpectations.ExpirationTimeout,
+                        PolicyMessage(policy, "a throwing handler should not stop the remaining entries in the sweep"),
+                        cancellationToken);
+
+                    cache.AddReplace("c", "3", TimeSpan.FromMilliseconds(30));
+
+                    await WaitUntilAsync(
+                        () => expired.Contains("c") && !cache.Contains("c"),
+                        CacheTestExpectations.ExpirationTimeout,
+                        PolicyMessage(policy, "expiration task should keep running after a handler failure"),
+                        cancellationToken);
+                }
+            }
+        }
+
+        private static async Task IntervalChangeAppliesImmediatelyAsync(CancellationToken cancellationToken)
+        {
+            foreach (CachePolicy policy in Policies)
+            {
+                using (CacheBase<string, string> cache = CreateCache<string, string>(policy, 10, 1))
+                {
+                    // Let the expiration task start its wait on the 1000ms default before shortening the interval.
+                    await Task.Delay(100, cancellationToken);
+                    cache.ExpirationIntervalMs = 20;
+                    cache.AddReplace("a", "1", TimeSpan.FromMilliseconds(30));
+
+                    await WaitUntilAsync(
+                        () => !cache.Contains("a"),
+                        TimeSpan.FromMilliseconds(600),
+                        PolicyMessage(policy, "entry should expire well before the original 1000ms interval elapses"),
+                        cancellationToken);
+                }
+            }
+        }
+
+        private static Task GetOrAddDoesNotHoldCacheLockAsync(CancellationToken cancellationToken)
+        {
+            foreach (CachePolicy policy in Policies)
+            {
+                using (CacheBase<string, string> cache = CreateCache<string, string>(policy, 10, 1))
+                {
+                    bool factoryCouldReadCache = false;
+                    bool handlerCouldReadCache = false;
+
+                    cache.Events.Added += (sender, args) =>
+                    {
+                        handlerCouldReadCache = Task.Run(() => cache.Count()).Wait(TimeSpan.FromSeconds(2));
+                    };
+
+                    string value = cache.GetOrAdd("a", key =>
+                    {
+                        factoryCouldReadCache = Task.Run(() => cache.Count()).Wait(TimeSpan.FromSeconds(2));
+                        return "1";
+                    });
+
+                    AssertEqual("1", value, PolicyMessage(policy, "GetOrAdd should return the factory value"));
+                    AssertTrue(factoryCouldReadCache, PolicyMessage(policy, "another thread should be able to use the cache while the value factory runs"));
+                    AssertTrue(handlerCouldReadCache, PolicyMessage(policy, "another thread should be able to use the cache while an Added handler runs"));
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        private static Task AddOrUpdateDoesNotHoldCacheLockAsync(CancellationToken cancellationToken)
+        {
+            foreach (CachePolicy policy in Policies)
+            {
+                using (CacheBase<string, string> cache = CreateCache<string, string>(policy, 10, 1))
+                {
+                    cache.AddReplace("a", "1");
+
+                    bool factoryCouldReadCache = false;
+                    bool handlerCouldReadCache = false;
+
+                    cache.Events.Replaced += (sender, args) =>
+                    {
+                        handlerCouldReadCache = Task.Run(() => cache.Count()).Wait(TimeSpan.FromSeconds(2));
+                    };
+
+                    string value = cache.AddOrUpdate("a", "unused", (key, existing) =>
+                    {
+                        factoryCouldReadCache = Task.Run(() => cache.Count()).Wait(TimeSpan.FromSeconds(2));
+                        return existing + "!";
+                    });
+
+                    AssertEqual("1!", value, PolicyMessage(policy, "AddOrUpdate should return the updated value"));
+                    AssertEqual("1!", cache.Get("a"), PolicyMessage(policy, "AddOrUpdate should store the updated value"));
+                    AssertTrue(factoryCouldReadCache, PolicyMessage(policy, "another thread should be able to use the cache while the update factory runs"));
+                    AssertTrue(handlerCouldReadCache, PolicyMessage(policy, "another thread should be able to use the cache while a Replaced handler runs"));
+                }
+            }
+
+            return Task.CompletedTask;
         }
 
         private static TestCaseDescriptor Case(

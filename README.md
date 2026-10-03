@@ -34,7 +34,7 @@ Install-Package Caching
 
 ## Current Release
 
-The current package version is **5.1.0**. This release adds built-in observability: metrics and traces through the standard .NET `Meter` and `ActivitySource` APIs (both named `Caching`), ready for Prometheus, Tempo, Grafana, or any OTLP backend. See [Telemetry](#9-telemetry) and [TELEMETRY.md](TELEMETRY.md).
+The current package version is **5.1.1**. This patch keeps the expiration task running after persistence or `Expired` handler failures, stops synchronous `GetOrAdd`/`AddOrUpdate` from running factories, persistence, and event handlers under the cache lock, and makes `ExpirationIntervalMs` changes take effect immediately. Version 5.1.0 added built-in observability: metrics and traces through the standard .NET `Meter` and `ActivitySource` APIs (both named `Caching`), ready for Prometheus, Tempo, Grafana, or any OTLP backend. See [Telemetry](#9-telemetry) and [TELEMETRY.md](TELEMETRY.md).
 
 ## Quick Start
 
