@@ -4,7 +4,7 @@
 		<TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net10.0</TargetFrameworks>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>Caching</PackageId>
-		<Version>5.1.2</Version>
+		<Version>5.1.3</Version>
 		<Authors>Joel Christner</Authors>
 		<Description>Caching library including a FIFO and LRU cache, async operations, events, expiration, data persistence, and built-in OpenTelemetry-compatible metrics and traces</Description>
 		<Copyright>(c)2025 Joel Christner</Copyright>

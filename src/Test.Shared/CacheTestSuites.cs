@@ -763,9 +763,9 @@ namespace Test.Shared
                     int factoryCalls = 0;
                     cache.ExpirationIntervalMs = (int)CacheTestExpectations.ExpirationPollInterval.TotalMilliseconds;
                     cache.SlidingExpiration = true;
-                    cache.AddReplace("item", "cached", DateTime.UtcNow.AddMilliseconds(150));
+                    cache.AddReplace("item", "cached", DateTime.UtcNow.AddMilliseconds(400));
 
-                    await Task.Delay(75, cancellationToken);
+                    await Task.Delay(200, cancellationToken);
                     string value = cache.GetOrAdd("item", key =>
                     {
                         factoryCalls++;
@@ -775,7 +775,7 @@ namespace Test.Shared
                     AssertEqual("cached", value, PolicyMessage(policy, "GetOrAdd should return existing value"));
                     AssertEqual(0, factoryCalls, PolicyMessage(policy, "GetOrAdd should not call factory for existing value"));
 
-                    await Task.Delay(100, cancellationToken);
+                    await Task.Delay(300, cancellationToken);
                     AssertTrue(cache.Contains("item"), PolicyMessage(policy, "GetOrAdd should refresh sliding expiration"));
 
                     await WaitUntilAsync(

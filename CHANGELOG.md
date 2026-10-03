@@ -1,5 +1,14 @@
 # Change Log
 
+## v5.1.3
+
+### Maintenance
+- No library code or dependency changes; the `Caching` package's public API and behavior are unchanged from 5.1.2.
+- Test dependencies updated: `Touchstone.Core`, `Touchstone.Cli`, `Touchstone.XunitAdapter`, `Touchstone.NunitAdapter` (0.1.12 -> 0.2.0), `NUnit` (4.6.1 -> 5.0.0), `NUnit.Analyzers` (4.14.0 -> 4.15.0), `NUnit3TestAdapter` (6.2.0 -> 6.3.0), `Microsoft.NET.Test.Sdk` (18.9.0 -> 18.10.1).
+
+### Tests
+- `GetOrAdd refreshes an existing sliding-expiration entry` used a 50ms timing margin and failed intermittently; margins widened to 100ms on each side.
+
 ## v5.1.2
 
 ### Bug Fixes
