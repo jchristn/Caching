@@ -34,7 +34,7 @@ Install-Package Caching
 
 ## Current Release
 
-The current package version is **5.1.1**. This patch keeps the expiration task running after persistence or `Expired` handler failures, stops synchronous `GetOrAdd`/`AddOrUpdate` from running factories, persistence, and event handlers under the cache lock, and makes `ExpirationIntervalMs` changes take effect immediately. Version 5.1.0 added built-in observability: metrics and traces through the standard .NET `Meter` and `ActivitySource` APIs (both named `Caching`), ready for Prometheus, Tempo, Grafana, or any OTLP backend. See [Telemetry](#9-telemetry) and [TELEMETRY.md](TELEMETRY.md).
+The current package version is **5.1.2**. This patch makes every `Try*` method (`TryGet`, `TryAddReplace`, `TryGetOrAdd`, `TryRemove`) return `false` instead of throwing for any failure, including null keys, value factory exceptions, and persistence driver exceptions; only `ObjectDisposedException` is thrown after disposal. Version 5.1.1 keeps the expiration task running after persistence or `Expired` handler failures, stops synchronous `GetOrAdd`/`AddOrUpdate` from running factories, persistence, and event handlers under the cache lock, and makes `ExpirationIntervalMs` changes take effect immediately. Version 5.1.0 added built-in observability: metrics and traces through the standard .NET `Meter` and `ActivitySource` APIs (both named `Caching`), ready for Prometheus, Tempo, Grafana, or any OTLP backend. See [Telemetry](#9-telemetry) and [TELEMETRY.md](TELEMETRY.md).
 
 ## Quick Start
 
@@ -296,6 +296,8 @@ Per-instance switches live on `cache.Telemetry` (`Enable`, `EnableMetrics`, `Ena
 
 ## API Reference
 
+All `Try*` methods follow one contract: they return `false` (with any `out` value set to `default`) instead of throwing for every failure, including invalid arguments, value factory exceptions, and persistence driver exceptions. The only exception they throw is `ObjectDisposedException` after the cache is disposed. Failures are still visible through [telemetry](TELEMETRY.md). If the persistence driver fails, the in-memory change has already been applied, as with the throwing variant.
+
 ### Core Methods
 
 | Method | Description |
@@ -304,7 +306,7 @@ Per-instance switches live on `cache.Telemetry` (`Enable`, `EnableMetrics`, `Ena
 | `AddReplaceAsync(key, value, expiration?, ct?)` | Async version of AddReplace |
 | `Get(key)` | Get value (throws if not found) |
 | `GetOrDefault(key, defaultValue?)` | Get value or return default if not found |
-| `TryGet(key, out value)` | Try to get value (returns false if not found) |
+| `TryGet(key, out value)` | Try to get value (returns false if not found or on any failure) |
 | `GetOrAdd(key, factory, expiration?)` | Get existing or add new value atomically |
 | `GetOrAddAsync(key, asyncFactory, expiration?, ct?)` | Async version of GetOrAdd |
 | `AddOrUpdate(key, addValue, updateFactory, expiration?)` | Add new or update existing value |

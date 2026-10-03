@@ -91,8 +91,8 @@ dotnet run --project src/Test.Events/Test.Events.csproj
 - Get operations update `LastUsed` timestamp within the lock
 
 **Try Pattern:**
-- Methods with `Try` prefix (e.g., `TryGet`, `TryAddReplace`, `TryRemove`) return bool instead of throwing exceptions
-- Implemented as simple exception wrappers around the throwing variants
+- Methods with `Try` prefix (`TryGet`, `TryAddReplace`, `TryGetOrAdd`, `TryRemove`) return false (out = default) for every failure; the only exception they throw is `ObjectDisposedException`
+- Implemented with `catch (Exception e) when (!(e is ObjectDisposedException))`; telemetry still records the swallowed failure
 
 ## NuGet Package Details
 

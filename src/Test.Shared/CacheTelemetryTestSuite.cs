@@ -45,6 +45,7 @@ namespace Test.Shared
                     Case("Cancellation", "A canceled lock wait is recorded as canceled, not as an error", CancellationAsync),
                     Case("Persistence", "Persistence calls produce client spans, counters, and duration histograms", PersistenceAsync),
                     Case("PersistenceFailure", "A failing persistence driver is recorded by operation, persistence, and error metrics", PersistenceFailureAsync),
+                    Case("TryFailuresRecorded", "Failures swallowed by Try methods are still recorded as errors", TryFailuresRecordedAsync),
                     Case("Prepopulate", "Prepopulate records loaded entries and persistence calls", PrepopulateAsync),
                     Case("ContextPropagation", "Cache spans nest under the caller's span and persistence spans nest under cache spans", ContextPropagationAsync),
                     Case("ExpirationSweep", "Expiration sweeps record counters, duration, last success, and a linked root span", ExpirationSweepAsync),
@@ -499,6 +500,35 @@ namespace Test.Shared
                 AssertEqual(ActivityStatusCode.Error, write.Status, "persistence span error");
                 AssertFalse(write.Events.SelectMany(e => e.Tags).Any(t => (t.Value as string ?? "").Contains("secret-key-123")), "driver exception message not recorded");
                 AssertEqual(ActivityStatusCode.Error, capture.Spans("caching add_replace").First().Status, "operation span error");
+            }
+
+            return Task.CompletedTask;
+        }
+
+        private static Task TryFailuresRecordedAsync(CancellationToken token)
+        {
+            string name = UniqueName();
+            FaultablePersistence<string, string> persistence = new FaultablePersistence<string, string>();
+
+            using (TelemetryCapture capture = new TelemetryCapture(name))
+            {
+                using (FIFOCache<string, string> cache = new FIFOCache<string, string>(10, 1, persistence))
+                {
+                    cache.Name = name;
+                    persistence.FailWrite = true;
+                    AssertFalse(cache.TryAddReplace("a", "1"), "TryAddReplace returns false");
+                    persistence.FailWrite = false;
+
+                    persistence.FailDelete = true;
+                    AssertFalse(cache.TryRemove("a", out _), "TryRemove returns false");
+                    AssertFalse(cache.TryGet(null, out _), "TryGet returns false");
+                }
+
+                AssertEqual(1, capture.For(N.OperationDuration, N.AttributeOperation, N.OperationAddReplace, N.AttributeOutcome, N.OutcomeError, N.AttributeErrorType, "IOException").Count, "add_replace error recorded");
+                AssertEqual(1, capture.For(N.OperationDuration, N.AttributeOperation, N.OperationTryRemove, N.AttributeOutcome, N.OutcomeError, N.AttributeErrorType, "IOException").Count, "try_remove error recorded");
+                AssertEqual(1, capture.For(N.OperationDuration, N.AttributeOperation, N.OperationTryGet, N.AttributeOutcome, N.OutcomeError, N.AttributeErrorType, "ArgumentNullException").Count, "try_get error recorded");
+                AssertEqual(2.0, capture.Sum(N.Errors, N.AttributeComponent, N.ComponentPersistence), "persistence errors recorded");
+                AssertEqual(ActivityStatusCode.Error, capture.Spans("caching try_remove").Single().Status, "try_remove span is an error");
             }
 
             return Task.CompletedTask;

@@ -282,7 +282,13 @@ namespace Caching
         /// </summary>
         /// <param name="key">The key associated with the data you wish to retrieve.</param>
         /// <param name="val">The value associated with the key.</param>
+        /// <remarks>
+        /// Like every Try method, this never throws for a failure (invalid argument, value factory exception, persistence driver exception):
+        /// it returns false and sets the out value to default. Failures are still recorded by telemetry.
+        /// If the persistence driver fails, the in-memory change has already been applied, exactly as with the throwing variant.
+        /// </remarks>
         /// <returns>True if key is found.</returns>
+        /// <exception cref="ObjectDisposedException">The cache has been disposed. This is the only exception a Try method throws.</exception>
         public abstract bool TryGet(T1 key, out T2 val);
 
         /// <summary>
@@ -340,7 +346,13 @@ namespace Caching
         /// <param name="key">The key.</param>
         /// <param name="val">The value associated with the key.</param>
         /// <param name="expiration">Timestamp at which the entry should expire.</param>
+        /// <remarks>
+        /// Like every Try method, this never throws for a failure (invalid argument, value factory exception, persistence driver exception):
+        /// it returns false and sets the out value to default. Failures are still recorded by telemetry.
+        /// If the persistence driver fails, the in-memory change has already been applied, exactly as with the throwing variant.
+        /// </remarks>
         /// <returns>True if successful.</returns>
+        /// <exception cref="ObjectDisposedException">The cache has been disposed. This is the only exception a Try method throws.</exception>
         public abstract bool TryAddReplace(T1 key, T2 val, DateTime? expiration = null);
 
         /// <summary>
@@ -400,7 +412,13 @@ namespace Caching
         /// <param name="valueFactory">Function to create value if not present.</param>
         /// <param name="value">The retrieved or created value.</param>
         /// <param name="expiration">Timestamp at which the entry should expire.</param>
+        /// <remarks>
+        /// Like every Try method, this never throws for a failure (invalid argument, value factory exception, persistence driver exception):
+        /// it returns false and sets the out value to default. Failures are still recorded by telemetry.
+        /// If the persistence driver fails, the in-memory change has already been applied, exactly as with the throwing variant.
+        /// </remarks>
         /// <returns>True if successful.</returns>
+        /// <exception cref="ObjectDisposedException">The cache has been disposed. This is the only exception a Try method throws.</exception>
         public abstract bool TryGetOrAdd(T1 key, Func<T1, T2> valueFactory, out T2 value, DateTime? expiration = null);
 
         /// <summary>
@@ -443,7 +461,13 @@ namespace Caching
         /// </summary>
         /// <param name="key">The key.</param>
         /// <param name="val">The removed value, if found.</param>
+        /// <remarks>
+        /// Like every Try method, this never throws for a failure (invalid argument, value factory exception, persistence driver exception):
+        /// it returns false and sets the out value to default. Failures are still recorded by telemetry.
+        /// If the persistence driver fails, the in-memory change has already been applied, exactly as with the throwing variant.
+        /// </remarks>
         /// <returns>True if the key was found and removed.</returns>
+        /// <exception cref="ObjectDisposedException">The cache has been disposed. This is the only exception a Try method throws.</exception>
         public abstract bool TryRemove(T1 key, out T2 val);
 
         /// <summary>

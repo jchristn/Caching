@@ -1,5 +1,19 @@
 # Change Log
 
+## v5.1.2
+
+### Bug Fixes
+- **Consistent Try contract**: `TryGet`, `TryAddReplace`, `TryGetOrAdd`, and `TryRemove` now return `false` (with the `out` value set to `default`) for every failure, and throw only `ObjectDisposedException` after disposal. Previously:
+  - `TryGet(null)` threw `ArgumentNullException`, while the other Try methods returned `false` for a null key.
+  - `TryAddReplace` and `TryGetOrAdd` let persistence driver exceptions (for example `IOException`) escape.
+  - `TryGetOrAdd` let value factory exceptions escape.
+  - `TryRemove` let persistence driver exceptions escape.
+- Failures swallowed by Try methods are still recorded by telemetry (`outcome="error"`, `caching.errors`, error span status).
+- If the persistence driver fails, the in-memory change has already been applied, exactly as with the throwing variant; `false` means the operation did not fully complete.
+
+### Tests
+- New `TryHelpersNeverThrow` and `TryFailuresRecorded` cases; `ArgumentValidation` now expects `TryGet(null)` to return `false`.
+
 ## v5.1.1
 
 ### Bug Fixes

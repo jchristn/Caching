@@ -166,7 +166,13 @@
             </summary>
             <param name="key">The key associated with the data you wish to retrieve.</param>
             <param name="val">The value associated with the key.</param>
+            <remarks>
+            Like every Try method, this never throws for a failure (invalid argument, value factory exception, persistence driver exception):
+            it returns false and sets the out value to default. Failures are still recorded by telemetry.
+            If the persistence driver fails, the in-memory change has already been applied, exactly as with the throwing variant.
+            </remarks>
             <returns>True if key is found.</returns>
+            <exception cref="T:System.ObjectDisposedException">The cache has been disposed. This is the only exception a Try method throws.</exception>
         </member>
         <member name="M:Caching.CacheBase`2.Contains(`0)">
             <summary>
@@ -218,7 +224,13 @@
             <param name="key">The key.</param>
             <param name="val">The value associated with the key.</param>
             <param name="expiration">Timestamp at which the entry should expire.</param>
+            <remarks>
+            Like every Try method, this never throws for a failure (invalid argument, value factory exception, persistence driver exception):
+            it returns false and sets the out value to default. Failures are still recorded by telemetry.
+            If the persistence driver fails, the in-memory change has already been applied, exactly as with the throwing variant.
+            </remarks>
             <returns>True if successful.</returns>
+            <exception cref="T:System.ObjectDisposedException">The cache has been disposed. This is the only exception a Try method throws.</exception>
         </member>
         <member name="M:Caching.CacheBase`2.GetOrAdd(`0,System.Func{`0,`1},System.Nullable{System.DateTime})">
             <summary>
@@ -266,7 +278,13 @@
             <param name="valueFactory">Function to create value if not present.</param>
             <param name="value">The retrieved or created value.</param>
             <param name="expiration">Timestamp at which the entry should expire.</param>
+            <remarks>
+            Like every Try method, this never throws for a failure (invalid argument, value factory exception, persistence driver exception):
+            it returns false and sets the out value to default. Failures are still recorded by telemetry.
+            If the persistence driver fails, the in-memory change has already been applied, exactly as with the throwing variant.
+            </remarks>
             <returns>True if successful.</returns>
+            <exception cref="T:System.ObjectDisposedException">The cache has been disposed. This is the only exception a Try method throws.</exception>
         </member>
         <member name="M:Caching.CacheBase`2.AddOrUpdate(`0,`1,System.Func{`0,`1,`1},System.Nullable{System.DateTime})">
             <summary>
@@ -309,7 +327,13 @@
             </summary>
             <param name="key">The key.</param>
             <param name="val">The removed value, if found.</param>
+            <remarks>
+            Like every Try method, this never throws for a failure (invalid argument, value factory exception, persistence driver exception):
+            it returns false and sets the out value to default. Failures are still recorded by telemetry.
+            If the persistence driver fails, the in-memory change has already been applied, exactly as with the throwing variant.
+            </remarks>
             <returns>True if the key was found and removed.</returns>
+            <exception cref="T:System.ObjectDisposedException">The cache has been disposed. This is the only exception a Try method throws.</exception>
         </member>
         <member name="M:Caching.CacheBase`2.GetKeys">
             <summary>

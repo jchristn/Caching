@@ -4,7 +4,7 @@
 		<TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net10.0</TargetFrameworks>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>Caching</PackageId>
-		<Version>5.1.1</Version>
+		<Version>5.1.2</Version>
 		<Authors>Joel Christner</Authors>
 		<Description>Caching library including a FIFO and LRU cache, async operations, events, expiration, data persistence, and built-in OpenTelemetry-compatible metrics and traces</Description>
 		<Copyright>(c)2025 Joel Christner</Copyright>
@@ -12,7 +12,7 @@
 		<RepositoryUrl>https://github.com/jchristn/caching</RepositoryUrl>
 		<RepositoryType>Github</RepositoryType>
 		<PackageLicenseUrl></PackageLicenseUrl>
-		<PackageReleaseNotes>Patch release: the expiration task no longer stops after a persistence or Expired handler failure; synchronous GetOrAdd and AddOrUpdate no longer run factories, persistence, or event handlers under the cache lock; ExpirationIntervalMs changes take effect immediately.</PackageReleaseNotes>
+		<PackageReleaseNotes>Patch release: Try methods (TryGet, TryAddReplace, TryGetOrAdd, TryRemove) now consistently return false instead of throwing for every failure except disposal. 5.1.1: the expiration task no longer stops after a persistence or Expired handler failure; synchronous GetOrAdd and AddOrUpdate no longer run factories, persistence, or event handlers under the cache lock; ExpirationIntervalMs changes take effect immediately.</PackageReleaseNotes>
 		<PackageTags>fifo lru cache caching least recently used first in first out simple telemetry metrics tracing opentelemetry</PackageTags>
 		<PackageIconUrl></PackageIconUrl>
 		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>

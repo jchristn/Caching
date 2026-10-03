@@ -58,6 +58,7 @@ namespace Test.Shared
                 {
                     Case(suite, "BasicCrud", "Both cache policies support core CRUD operations", BasicCrudAsync),
                     Case(suite, "ArgumentValidation", "Constructors and public APIs validate invalid inputs", ArgumentValidationAsync),
+                    Case(suite, "TryHelpersNeverThrow", "Try-prefixed APIs return false instead of throwing for every failure except disposal", TryHelpersNeverThrowAsync),
                     Case(suite, "TryHelpersSucceed", "Try-prefixed APIs report success and store values", TryHelpersSucceedAsync),
                     Case(suite, "AddOrUpdateAdds", "AddOrUpdate and AddOrUpdateAsync use the add value for missing keys", AddOrUpdateAddsWhenMissingAsync),
                     Case(suite, "Comparer", "Custom key comparer treats equivalent keys as one entry", ComparerAsync),
@@ -420,7 +421,7 @@ namespace Test.Shared
                 {
                     AssertThrows<ArgumentNullException>(() => cache.AddReplace(null, "value"), PolicyMessage(policy, "AddReplace rejects null key"));
                     AssertThrows<ArgumentException>(() => cache.AddReplace("past", "value", DateTime.UtcNow.AddSeconds(-1)), PolicyMessage(policy, "AddReplace rejects past expiration"));
-                    AssertThrows<ArgumentNullException>(() => cache.TryGet(null, out _), PolicyMessage(policy, "TryGet rejects null key"));
+                    AssertFalse(cache.TryGet(null, out _), PolicyMessage(policy, "TryGet returns false for null key, like the other Try methods"));
                     AssertThrows<ArgumentNullException>(() => cache.Get(null), PolicyMessage(policy, "Get rejects null key"));
                     AssertThrows<ArgumentNullException>(() => cache.GetOrDefault(null, "value"), PolicyMessage(policy, "GetOrDefault rejects null key"));
                     AssertThrows<ArgumentNullException>(() => cache.Contains(null), PolicyMessage(policy, "Contains rejects null key"));
@@ -434,6 +435,49 @@ namespace Test.Shared
                     AssertFalse(cache.TryGetOrAdd(null, key => "value", out _), PolicyMessage(policy, "TryGetOrAdd returns false for null key"));
                     AssertFalse(cache.TryRemove(null, out _), PolicyMessage(policy, "TryRemove returns false for null key before disposal"));
                 }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        private static Task TryHelpersNeverThrowAsync(CancellationToken cancellationToken)
+        {
+            foreach (CachePolicy policy in Policies)
+            {
+                FaultablePersistence<string, string> persistence = new FaultablePersistence<string, string>();
+                CacheBase<string, string> cache = CreatePersistentCache<string, string>(policy, 10, 2, persistence);
+
+                using (cache)
+                {
+                    AssertFalse(cache.TryGet(null, out string nullGet), PolicyMessage(policy, "TryGet returns false for null key"));
+                    AssertEqual(null, nullGet, PolicyMessage(policy, "TryGet outputs default on failure"));
+                    AssertFalse(cache.TryGetOrAdd("x", null, out _), PolicyMessage(policy, "TryGetOrAdd returns false for null factory"));
+
+                    AssertFalse(cache.TryGetOrAdd("f", key => throw new InvalidOperationException("factory failure"), out string factoryValue),
+                        PolicyMessage(policy, "TryGetOrAdd returns false when the factory throws"));
+                    AssertEqual(null, factoryValue, PolicyMessage(policy, "TryGetOrAdd outputs default when the factory throws"));
+                    AssertFalse(cache.Contains("f"), PolicyMessage(policy, "a failed factory adds nothing"));
+
+                    persistence.FailWrite = true;
+                    AssertFalse(cache.TryAddReplace("w", "1"), PolicyMessage(policy, "TryAddReplace returns false when the persistence write fails"));
+                    AssertFalse(cache.TryGetOrAdd("g", key => "1", out string writeValue), PolicyMessage(policy, "TryGetOrAdd returns false when the persistence write fails"));
+                    AssertEqual(null, writeValue, PolicyMessage(policy, "TryGetOrAdd outputs default when persistence fails"));
+                    persistence.FailWrite = false;
+
+                    cache.AddReplace("d", "1");
+                    persistence.FailDelete = true;
+                    AssertFalse(cache.TryRemove("d", out string removed), PolicyMessage(policy, "TryRemove returns false when the persistence delete fails"));
+                    AssertEqual(null, removed, PolicyMessage(policy, "TryRemove outputs default on failure"));
+                    persistence.FailDelete = false;
+
+                    AssertTrue(cache.TryAddReplace("ok", "1"), PolicyMessage(policy, "TryAddReplace still succeeds after failures"));
+                    AssertTrue(cache.TryRemove("ok", out string okValue) && okValue == "1", PolicyMessage(policy, "TryRemove still succeeds after failures"));
+                }
+
+                AssertThrows<ObjectDisposedException>(() => cache.TryGet("a", out _), PolicyMessage(policy, "TryGet throws after dispose"));
+                AssertThrows<ObjectDisposedException>(() => cache.TryAddReplace("a", "1"), PolicyMessage(policy, "TryAddReplace throws after dispose"));
+                AssertThrows<ObjectDisposedException>(() => cache.TryGetOrAdd("a", key => "1", out _), PolicyMessage(policy, "TryGetOrAdd throws after dispose"));
+                AssertThrows<ObjectDisposedException>(() => cache.TryRemove("a", out _), PolicyMessage(policy, "TryRemove throws after dispose"));
             }
 
             return Task.CompletedTask;

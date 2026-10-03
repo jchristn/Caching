@@ -317,6 +317,12 @@ namespace Caching
             {
                 throw;
             }
+            catch (Exception e) when (!(e is ObjectDisposedException))
+            {
+                // Try contract: report failure (already recorded above) as false instead of throwing. Disposal still throws.
+                val = default;
+                return false;
+            }
             finally
             {
                 activity?.Dispose();
@@ -525,12 +531,9 @@ namespace Caching
                 AddReplace(key, val, expiration);
                 return true;
             }
-            catch (ArgumentNullException)
+            catch (Exception e) when (!(e is ObjectDisposedException))
             {
-                return false;
-            }
-            catch (ArgumentException)
-            {
+                // Try contract: report failure (recorded by AddReplace telemetry) as false instead of throwing. Disposal still throws.
                 return false;
             }
         }
@@ -651,13 +654,9 @@ namespace Caching
                 value = GetOrAdd(key, valueFactory, expiration);
                 return true;
             }
-            catch (ArgumentNullException)
+            catch (Exception e) when (!(e is ObjectDisposedException))
             {
-                value = default;
-                return false;
-            }
-            catch (ArgumentException)
-            {
+                // Try contract: report failure (recorded by GetOrAdd telemetry) as false instead of throwing. Disposal still throws.
                 value = default;
                 return false;
             }
@@ -868,6 +867,12 @@ namespace Caching
             catch (Exception e) when (FailOperation(CacheTelemetryNames.OperationTryRemove, start, e, activity))
             {
                 throw;
+            }
+            catch (Exception e) when (!(e is ObjectDisposedException))
+            {
+                // Try contract: report failure (already recorded above) as false instead of throwing. Disposal still throws.
+                val = default;
+                return false;
             }
             finally
             {
