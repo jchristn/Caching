@@ -34,7 +34,7 @@ Install-Package Caching
 
 ## Current Release
 
-The current package version is **5.1.3**, a maintenance release that updates test dependencies (no library changes). Version 5.1.2 makes every `Try*` method (`TryGet`, `TryAddReplace`, `TryGetOrAdd`, `TryRemove`) return `false` instead of throwing for any failure, including null keys, value factory exceptions, and persistence driver exceptions; only `ObjectDisposedException` is thrown after disposal. Version 5.1.1 keeps the expiration task running after persistence or `Expired` handler failures, stops synchronous `GetOrAdd`/`AddOrUpdate` from running factories, persistence, and event handlers under the cache lock, and makes `ExpirationIntervalMs` changes take effect immediately. Version 5.1.0 added built-in observability: metrics and traces through the standard .NET `Meter` and `ActivitySource` APIs (both named `Caching`), ready for Prometheus, Tempo, Grafana, or any OTLP backend. See [Telemetry](#9-telemetry) and [TELEMETRY.md](TELEMETRY.md).
+The current package version is **5.1.4**, which fixes eviction order: `FIFOCache` and `LRUCache` now order entries by an internal sequence instead of wall-clock timestamps, so entries added or used within the same clock tick are evicted in the correct order. Previously, an LRU cache could evict the most recently used entry. Version 5.1.3 was a maintenance release that updated test dependencies. Version 5.1.2 makes every `Try*` method (`TryGet`, `TryAddReplace`, `TryGetOrAdd`, `TryRemove`) return `false` instead of throwing for any failure, including null keys, value factory exceptions, and persistence driver exceptions; only `ObjectDisposedException` is thrown after disposal. Version 5.1.1 keeps the expiration task running after persistence or `Expired` handler failures, stops synchronous `GetOrAdd`/`AddOrUpdate` from running factories, persistence, and event handlers under the cache lock, and makes `ExpirationIntervalMs` changes take effect immediately. Version 5.1.0 added built-in observability: metrics and traces through the standard .NET `Meter` and `ActivitySource` APIs (both named `Caching`), ready for Prometheus, Tempo, Grafana, or any OTLP backend. See [Telemetry](#9-telemetry) and [TELEMETRY.md](TELEMETRY.md).
 
 ## Quick Start
 
@@ -72,7 +72,7 @@ cache.Dispose();
 var cache = new LRUCache<string, byte[]>(capacity: 500, evictCount: 50);
 
 cache.AddReplace("image:1", imageBytes);
-cache.Get("image:1"); // Updates last-used timestamp
+cache.Get("image:1"); // Marks image:1 as most recently used
 
 cache.Dispose();
 ```

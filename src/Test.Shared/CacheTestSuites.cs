@@ -78,7 +78,11 @@ namespace Test.Shared
                     Case(suite, "FifoOrder", "FIFO eviction removes the oldest inserted entry", FifoEvictsOldestAsync),
                     Case(suite, "LruGetOrder", "LRU eviction respects Get access", LruGetRefreshesUsageAsync),
                     Case(suite, "LruTryGetOrder", "LRU eviction respects TryGet and GetOrDefault access", LruTryGetAndDefaultRefreshUsageAsync),
-                    Case(suite, "BulkCapacity", "Bulk inserts stay within capacity and complete within budget", BulkCapacityAsync)
+                    Case(suite, "BulkCapacity", "Bulk inserts stay within capacity and complete within budget", BulkCapacityAsync),
+                    Case(suite, "FifoTiedTimestamps", "FIFO eviction, Oldest, and Newest follow insertion order when timestamps tie", FifoTiedTimestampsAsync),
+                    Case(suite, "LruTiedTimestamps", "LRU eviction follows access order when timestamps tie", LruTiedTimestampsAsync),
+                    Case(suite, "MemoryTiedTimestamps", "Memory eviction follows each cache policy when timestamps tie", MemoryEvictionTiedTimestampsAsync),
+                    Case(suite, "TightLoopOrder", "Eviction order is exact for back-to-back operations with no delays", TightLoopEvictionOrderAsync)
                 });
         }
 
@@ -603,7 +607,6 @@ namespace Test.Shared
             {
                 await AddSequentialAsync(cache, cancellationToken, "A", "B", "C");
                 cache.Get("A");
-                await Task.Delay(10, cancellationToken);
                 cache.AddReplace("D", "value-D");
 
                 AssertSetEqual(CacheTestExpectations.LruAfterAccessEviction, cache.GetKeys(), "LRU should retain expected keys after Get refresh");
@@ -619,14 +622,168 @@ namespace Test.Shared
             {
                 await AddSequentialAsync(cache, cancellationToken, "A", "B", "C");
                 AssertTrue(cache.TryGet("B", out _), "TryGet should find B");
-                await Task.Delay(10, cancellationToken);
                 AssertEqual("value-C", cache.GetOrDefault("C", "missing"), "GetOrDefault should return C");
-                await Task.Delay(10, cancellationToken);
                 cache.AddReplace("D", "value-D");
 
                 AssertSetEqual(new[] { "B", "C", "D" }, cache.GetKeys(), "TryGet and GetOrDefault should refresh LRU usage");
                 AssertFalse(cache.Contains("A"), "A should be the least recently used entry");
             }
+        }
+
+        private static Task FifoTiedTimestampsAsync(CancellationToken cancellationToken)
+        {
+            using (CacheBase<string, string> cache = CreateCache<string, string>(CachePolicy.Fifo, 3, 1))
+            {
+                List<DataNode<string>> nodes = CaptureNodes(cache);
+                cache.AddReplace("A", "value-A");
+                cache.AddReplace("B", "value-B");
+                cache.AddReplace("C", "value-C");
+                cache.Remove("A");
+                cache.AddReplace("D", "value-D"); // reuses A's dictionary slot, so D enumerates before B and C
+                FreezeTimestamps(nodes);
+                cache.AddReplace("E", "value-E"); // reuses B's slot after B is evicted
+                FreezeTimestamps(nodes);
+
+                AssertSetEqual(new[] { "C", "D", "E" }, cache.GetKeys(), "FIFO should evict the oldest insertion (B) despite tied timestamps");
+                AssertEqual("C", cache.Oldest(), "Oldest should be the earliest remaining insertion despite tied timestamps");
+                AssertEqual("E", cache.Newest(), "Newest should be the latest insertion despite tied timestamps");
+            }
+
+            return Task.CompletedTask;
+        }
+
+        private static async Task LruTiedTimestampsAsync(CancellationToken cancellationToken)
+        {
+            using (LRUCache<string, string> cache = new LRUCache<string, string>(3, 1))
+            {
+                List<DataNode<string>> nodes = CaptureNodes(cache);
+                cache.AddReplace("A", "value-A");
+                cache.AddReplace("B", "value-B");
+                cache.AddReplace("C", "value-C");
+                cache.Get("A");
+                cache.Get("B");
+                FreezeTimestamps(nodes);
+                cache.AddReplace("D", "value-D");
+
+                AssertSetEqual(new[] { "A", "B", "D" }, cache.GetKeys(), "LRU should evict the least recently used key (C) despite tied timestamps");
+
+                // Every access path must refresh recency: TryGet, GetOrDefault, GetOrAdd (hit), GetOrAddAsync (hit), and replace.
+                AssertTrue(cache.TryGet("A", out _), "TryGet should find A");
+                AssertEqual("value-B", cache.GetOrDefault("B", "missing"), "GetOrDefault should return B");
+                FreezeTimestamps(nodes);
+                cache.AddReplace("E", "value-E");
+                AssertSetEqual(new[] { "A", "B", "E" }, cache.GetKeys(), "TryGet and GetOrDefault should refresh recency despite tied timestamps");
+
+                AssertEqual("value-A", cache.GetOrAdd("A", k => "unused"), "GetOrAdd should hit A");
+                AssertEqual("value-B", await cache.GetOrAddAsync("B", k => Task.FromResult("unused"), cancellationToken: cancellationToken), "GetOrAddAsync should hit B");
+                FreezeTimestamps(nodes);
+                cache.AddReplace("F", "value-F");
+                AssertSetEqual(new[] { "A", "B", "F" }, cache.GetKeys(), "GetOrAdd hits should refresh recency despite tied timestamps");
+
+                cache.AddReplace("A", "value-A2");
+                FreezeTimestamps(nodes);
+                cache.AddReplace("G", "value-G");
+                AssertSetEqual(new[] { "A", "F", "G" }, cache.GetKeys(), "Replace should count as the most recent use despite tied timestamps");
+            }
+        }
+
+        private static Task MemoryEvictionTiedTimestampsAsync(CancellationToken cancellationToken)
+        {
+            using (CacheBase<string, string> fifo = CreateCache<string, string>(CachePolicy.Fifo, 10, 1))
+            {
+                fifo.MaxMemoryBytes = 8;
+                fifo.SizeEstimator = value => value.Length;
+                List<DataNode<string>> nodes = CaptureNodes(fifo);
+                fifo.AddReplace("A", "1111");
+                fifo.AddReplace("B", "2222");
+                fifo.Remove("A");
+                fifo.AddReplace("C", "3333"); // reuses A's slot, so C enumerates before B
+                FreezeTimestamps(nodes);
+                fifo.AddReplace("D", "4444");
+
+                AssertSetEqual(new[] { "C", "D" }, fifo.GetKeys(), "FIFO memory eviction should remove the oldest insertion despite tied timestamps");
+            }
+
+            using (LRUCache<string, string> lru = new LRUCache<string, string>(10, 1))
+            {
+                lru.MaxMemoryBytes = 8;
+                lru.SizeEstimator = value => value.Length;
+                List<DataNode<string>> nodes = CaptureNodes(lru);
+                lru.AddReplace("A", "1111");
+                lru.AddReplace("B", "2222");
+                lru.Get("A");
+                FreezeTimestamps(nodes);
+                lru.AddReplace("C", "3333");
+
+                AssertSetEqual(new[] { "A", "C" }, lru.GetKeys(), "LRU memory eviction should remove the least recently used entry despite tied timestamps");
+            }
+
+            return Task.CompletedTask;
+        }
+
+        private static Task TightLoopEvictionOrderAsync(CancellationToken cancellationToken)
+        {
+            const int capacity = 64;
+            const int rounds = 2000;
+
+            using (CacheBase<int, int> fifo = CreateCache<int, int>(CachePolicy.Fifo, capacity, 1))
+            {
+                List<int> order = new List<int>(); // oldest insertion first
+
+                for (int i = 0; i < rounds; i++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    if (order.Count >= capacity) order.RemoveAt(0);
+                    fifo.AddReplace(i, i);
+                    order.Add(i);
+
+                    if (i > 0 && i % 3 == 0)
+                    {
+                        // Churn dictionary slots so enumeration order diverges from insertion order.
+                        fifo.Remove(i - 1);
+                        order.Remove(i - 1);
+                    }
+                }
+
+                AssertSetEqual(order, fifo.GetKeys(), "FIFO should retain exactly the most recent insertions");
+                AssertEqual(order[0], fifo.Oldest(), "FIFO Oldest should match insertion order");
+                AssertEqual(order[order.Count - 1], fifo.Newest(), "FIFO Newest should match insertion order");
+            }
+
+            using (LRUCache<int, int> lru = new LRUCache<int, int>(capacity, 1))
+            {
+                List<int> order = new List<int>(); // least recently used first
+                Random random = new Random(1234);
+
+                for (int i = 0; i < rounds; i++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    if (order.Count > 0 && random.Next(2) == 0)
+                    {
+                        int key = order[random.Next(order.Count)];
+                        lru.Get(key);
+                        order.Remove(key);
+                        order.Add(key);
+                    }
+                    else
+                    {
+                        if (order.Count >= capacity) order.RemoveAt(0);
+                        lru.AddReplace(i, i);
+                        order.Add(i);
+                    }
+
+                    if (i % 97 == 0)
+                    {
+                        AssertSetEqual(order, lru.GetKeys(), "LRU should retain exactly the most recently used keys at step " + i);
+                    }
+                }
+
+                AssertSetEqual(order, lru.GetKeys(), "LRU should retain exactly the most recently used keys");
+            }
+
+            return Task.CompletedTask;
         }
 
         private static Task BulkCapacityAsync(CancellationToken cancellationToken)
@@ -837,7 +994,7 @@ namespace Test.Shared
             return Task.CompletedTask;
         }
 
-        private static async Task MemoryEvictionPoliciesAsync(CancellationToken cancellationToken)
+        private static Task MemoryEvictionPoliciesAsync(CancellationToken cancellationToken)
         {
             using (CacheBase<string, string> fifo = CreateCache<string, string>(CachePolicy.Fifo, 10, 2))
             {
@@ -856,16 +1013,15 @@ namespace Test.Shared
                 lru.MaxMemoryBytes = CacheTestExpectations.MemoryLimitBytes;
                 lru.SizeEstimator = value => value.Length;
                 lru.AddReplace("A", "1111");
-                await Task.Delay(10, cancellationToken);
                 lru.AddReplace("B", "2222");
-                await Task.Delay(10, cancellationToken);
                 lru.Get("A");
-                await Task.Delay(10, cancellationToken);
                 lru.AddReplace("C", "3333");
 
                 AssertSetEqual(new[] { "A", "C" }, lru.GetKeys(), "LRU memory eviction should remove least recently used entry");
                 AssertTrue(lru.CurrentMemoryBytes <= CacheTestExpectations.MemoryLimitBytes, "LRU memory should stay within limit");
             }
+
+            return Task.CompletedTask;
         }
 
         private static async Task ExpirationReducesMemoryAsync(CancellationToken cancellationToken)
@@ -1327,15 +1483,36 @@ namespace Test.Shared
             return new LRUCache<TKey, TValue>(capacity, evictCount, persistence, comparer);
         }
 
-        private static async Task AddSequentialAsync(
+        private static Task AddSequentialAsync(
             CacheBase<string, string> cache,
             CancellationToken cancellationToken,
             params string[] keys)
         {
+            // No delays between adds: eviction order must not depend on the wall clock advancing.
             foreach (string key in keys)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 cache.AddReplace(key, "value-" + key);
-                await Task.Delay(10, cancellationToken);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        private static List<DataNode<string>> CaptureNodes(CacheBase<string, string> cache)
+        {
+            List<DataNode<string>> nodes = new List<DataNode<string>>();
+            cache.Events.Added += (sender, e) => nodes.Add(e.Data);
+            return nodes;
+        }
+
+        private static void FreezeTimestamps(IEnumerable<DataNode<string>> nodes)
+        {
+            // Force every entry onto the same clock tick so wall-clock time cannot order them.
+            DateTime tick = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            foreach (DataNode<string> node in nodes)
+            {
+                node.Added = tick;
+                node.LastUsed = tick;
             }
         }
 

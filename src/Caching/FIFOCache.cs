@@ -99,13 +99,13 @@ namespace Caching
                 if (_Cache == null || _Cache.Count < 1) throw new KeyNotFoundException();
 
                 T1 oldestKey = default;
-                DateTime oldestTime = DateTime.MaxValue;
+                long oldestSequence = long.MaxValue;
 
                 foreach (var kvp in _Cache)
                 {
-                    if (kvp.Value.Added < oldestTime)
+                    if (kvp.Value.AddedSequence < oldestSequence)
                     {
-                        oldestTime = kvp.Value.Added;
+                        oldestSequence = kvp.Value.AddedSequence;
                         oldestKey = kvp.Key;
                     }
                 }
@@ -124,13 +124,13 @@ namespace Caching
                 if (_Cache == null || _Cache.Count < 1) throw new KeyNotFoundException();
 
                 T1 newestKey = default;
-                DateTime newestTime = DateTime.MinValue;
+                long newestSequence = long.MinValue;
 
                 foreach (var kvp in _Cache)
                 {
-                    if (kvp.Value.Added > newestTime)
+                    if (kvp.Value.AddedSequence > newestSequence)
                     {
-                        newestTime = kvp.Value.Added;
+                        newestSequence = kvp.Value.AddedSequence;
                         newestKey = kvp.Key;
                     }
                 }
@@ -445,10 +445,10 @@ namespace Caching
                     wasReplaced = true;
                 }
 
-                // Capacity-based eviction
+                // Capacity-based eviction (FIFO: evict by insertion order)
                 if (_Cache.Count >= Capacity)
                 {
-                    var toEvict = _Cache.OrderBy(x => x.Value.Added)
+                    var toEvict = _Cache.OrderBy(x => x.Value.AddedSequence)
                                         .Take(EvictCount)
                                         .Select(x => x.Key)
                                         .ToList();
@@ -473,14 +473,14 @@ namespace Caching
                     }
                 }
 
-                // Memory-based eviction
+                // Memory-based eviction (FIFO: evict by insertion order)
                 if (MaxMemoryBytes > 0)
                 {
                     long valueSize = EstimateSize(val);
 
                     while (CurrentMemoryBytes + valueSize > MaxMemoryBytes && _Cache.Count > 0)
                     {
-                        var toEvict = _Cache.OrderBy(x => x.Value.Added).First();
+                        var toEvict = _Cache.OrderBy(x => x.Value.AddedSequence).First();
                         _Cache.Remove(toEvict.Key);
 
                         CurrentMemoryBytes -= EstimateSize(toEvict.Value.Data);

@@ -44,10 +44,11 @@ dotnet run --project src/Test.Events/Test.Events.csproj
 **DataNode** (src/Caching/DataNode.cs:9)
 - Wraps cached values with metadata: `Added`, `LastUsed`, `Expiration`
 - Tracks when entries were added and last accessed
+- `Added`/`LastUsed` are informational only; ordering uses the internal `AddedSequence`/`LastUsedSequence`, stamped from `CacheSequence.Next()` (src/Caching/CacheSequence.cs), a process-wide `Interlocked` counter. Never order entries by wall-clock time: operations within one clock tick tie, and the tie falls back to dictionary slot order.
 
 **Key Behavioral Differences:**
-- **FIFO**: Eviction is based on `Added` timestamp - oldest entries are removed first regardless of access patterns (src/Caching/FIFOCache.cs:278)
-- **LRU**: Eviction is based on `LastUsed` timestamp - least recently accessed entries are removed first
+- **FIFO**: Eviction, `Oldest()`, and `Newest()` use `AddedSequence` - oldest entries are removed first regardless of access patterns (src/Caching/FIFOCache.cs:451)
+- **LRU**: Eviction uses `LastUsedSequence` - least recently accessed entries are removed first; `MarkAccessed` (src/Caching/CacheBase.cs) refreshes it
 
 ### Persistence Layer
 
@@ -75,7 +76,7 @@ dotnet run --project src/Test.Events/Test.Events.csproj
 - Every telemetry name lives in `CacheTelemetryNames` (src/Caching/CacheTelemetryNames.cs); names are public contract.
 - Public operations in `FIFOCache`/`LRUCache` are thin wrappers (timestamp, span, outcome via exception filter) around private `*Core` methods holding the logic.
 - Persistence calls go through `CacheBase.InvokePersistenceAsync`, lock waits through `WaitAtomicLock[Async]`, factories through `InvokeValueFactory[Async]`.
-- `LRUCache.cs` mirrors `FIFOCache.cs` exactly except for eviction ordering (`LastUsed` vs `Added`), names, and `TelemetryCacheType`.
+- `LRUCache.cs` mirrors `FIFOCache.cs` exactly except for eviction ordering (`LastUsedSequence` vs `AddedSequence`), names, and `TelemetryCacheType`.
 - Labels must stay bounded; never record keys or values. Telemetry is best-effort and must never change cache behavior.
 - Documented in TELEMETRY.md; covered by src/Test.Shared/CacheTelemetryTestSuite.cs.
 
@@ -83,12 +84,12 @@ dotnet run --project src/Test.Events/Test.Events.csproj
 
 **Eviction Logic:**
 - When capacity is reached, the oldest (FIFO) or least recently used (LRU) `EvictCount` entries are removed
-- Uses LINQ `.OrderBy()` and `.Skip()` to select entries to retain (src/Caching/FIFOCache.cs:278)
+- Uses LINQ `.OrderBy()` on the sequence and `.Take(EvictCount)` to select entries to evict (src/Caching/FIFOCache.cs:451)
 - Persistence layer is notified of all deletions
 
 **Thread Safety:**
 - All public methods use `lock (_CacheLock)` for synchronization
-- Get operations update `LastUsed` timestamp within the lock
+- Get operations call `MarkAccessed` within the lock (updates `LastUsed` and `LastUsedSequence`)
 
 **Try Pattern:**
 - Methods with `Try` prefix (`TryGet`, `TryAddReplace`, `TryGetOrAdd`, `TryRemove`) return false (out = default) for every failure; the only exception they throw is `ObjectDisposedException`

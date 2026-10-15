@@ -553,6 +553,18 @@
             Instantiate.
             </summary>
         </member>
+        <member name="T:Caching.CacheSequence">
+            <summary>
+            Process-wide, strictly increasing sequence used to order cache entries by insertion and use.
+            Wall-clock timestamps cannot be used for ordering because operations within one clock tick tie.
+            </summary>
+        </member>
+        <member name="M:Caching.CacheSequence.Next">
+            <summary>
+            Retrieve the next sequence value.
+            </summary>
+            <returns>A value greater than every value previously returned.</returns>
+        </member>
         <member name="T:Caching.CacheStatistics">
             <summary>
             Cache statistics snapshot.
@@ -1035,11 +1047,13 @@
         <member name="P:Caching.DataNode`1.Added">
             <summary>
             Time when added.
+            Informational only; FIFO ordering uses an internal sequence so entries added within the same clock tick stay ordered.
             </summary>
         </member>
         <member name="P:Caching.DataNode`1.LastUsed">
             <summary>
             Time of last use.
+            Informational only; LRU ordering uses an internal sequence so entries used within the same clock tick stay ordered.
             </summary>
         </member>
         <member name="P:Caching.DataNode`1.Expiration">
@@ -1050,6 +1064,16 @@
         <member name="P:Caching.DataNode`1.ExpirationDuration">
             <summary>
             Original expiration duration used when sliding expiration refreshes an entry.
+            </summary>
+        </member>
+        <member name="P:Caching.DataNode`1.AddedSequence">
+            <summary>
+            Insertion order. Used for FIFO eviction, Oldest, and Newest.
+            </summary>
+        </member>
+        <member name="P:Caching.DataNode`1.LastUsedSequence">
+            <summary>
+            Use order. Used for LRU eviction.
             </summary>
         </member>
         <member name="M:Caching.DataNode`1.#ctor">

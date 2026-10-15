@@ -17,11 +17,13 @@
 
         /// <summary>
         /// Time when added.
+        /// Informational only; FIFO ordering uses an internal sequence so entries added within the same clock tick stay ordered.
         /// </summary>
         public DateTime Added { get; set; }
 
         /// <summary>
         /// Time of last use.
+        /// Informational only; LRU ordering uses an internal sequence so entries used within the same clock tick stay ordered.
         /// </summary>
         public DateTime LastUsed { get; set; }
 
@@ -34,6 +36,20 @@
         /// Original expiration duration used when sliding expiration refreshes an entry.
         /// </summary>
         public TimeSpan? ExpirationDuration { get; set; } = null;
+
+        #endregion
+
+        #region Internal-Members
+
+        /// <summary>
+        /// Insertion order. Used for FIFO eviction, Oldest, and Newest.
+        /// </summary>
+        internal long AddedSequence { get; set; }
+
+        /// <summary>
+        /// Use order. Used for LRU eviction.
+        /// </summary>
+        internal long LastUsedSequence { get; set; }
 
         #endregion
 
@@ -51,6 +67,8 @@
             DateTime ts = DateTime.UtcNow;
             Added = ts;
             LastUsed = ts;
+            AddedSequence = CacheSequence.Next();
+            LastUsedSequence = AddedSequence;
         }
 
         /// <summary>
@@ -63,6 +81,8 @@
             DateTime ts = DateTime.UtcNow;
             Added = ts;
             LastUsed = ts;
+            AddedSequence = CacheSequence.Next();
+            LastUsedSequence = AddedSequence;
             Data = val;
             Expiration = expiration;
             if (expiration.HasValue)

@@ -561,6 +561,7 @@ namespace Caching
 
             DateTime now = DateTime.UtcNow;
             node.LastUsed = now;
+            node.LastUsedSequence = CacheSequence.Next();
 
             if (SlidingExpiration && node.Expiration.HasValue && node.ExpirationDuration.HasValue)
             {

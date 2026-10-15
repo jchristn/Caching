@@ -1,5 +1,20 @@
 # Change Log
 
+## v5.1.4
+
+### Bug Fixes
+- **Eviction order with tied timestamps**: `FIFOCache` ordered entries by `DataNode.Added` and `LRUCache` by `DataNode.LastUsed`, both `DateTime.UtcNow` values. Entries added or used within the same clock tick tied, and the tie was broken by `Dictionary` enumeration order, which after any removal reflects slot reuse rather than insertion or use. As a result:
+  - `LRUCache` could evict the most recently used entry instead of the least recently used one.
+  - `FIFOCache` could evict a newer entry instead of the oldest one.
+  - `Oldest()` and `Newest()` could return the wrong key.
+  - Both capacity-based and memory-based (`MaxMemoryBytes`) eviction were affected.
+- Ordering now uses a strictly increasing internal sequence, assigned when an entry is added and, for LRU, every time it is used (`Get`, `TryGet`, `GetOrDefault`, a `GetOrAdd`/`GetOrAddAsync` hit, or a replace). Operations that happen back to back are always ordered correctly, whatever the clock resolution.
+- `DataNode.Added` and `DataNode.LastUsed` are still set as before, but they are now informational only: changing them no longer affects eviction, `Oldest()`, or `Newest()`. No public API changes.
+
+### Tests
+- New `Eviction` cases: `FifoTiedTimestamps`, `LruTiedTimestamps`, and `MemoryTiedTimestamps` force every entry onto the same timestamp, and `TightLoopOrder` checks exact FIFO and LRU retention over 2,000 operations run back to back with no delays. All four failed on 5.1.3.
+- Removed the `Task.Delay` calls between operations in the eviction tests; they had been hiding this bug.
+
 ## v5.1.3
 
 ### Maintenance
