@@ -4,17 +4,15 @@
 		<TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net10.0</TargetFrameworks>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>Caching</PackageId>
-		<Version>5.1.4</Version>
+		<Version>5.1.5</Version>
 		<Authors>Joel Christner</Authors>
 		<Description>Caching library including a FIFO and LRU cache, async operations, events, expiration, data persistence, and built-in OpenTelemetry-compatible metrics and traces</Description>
-		<Copyright>(c)2025 Joel Christner</Copyright>
+		<Copyright>(c)2026 Joel Christner</Copyright>
 		<PackageProjectUrl>https://github.com/jchristn/caching</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/jchristn/caching</RepositoryUrl>
-		<RepositoryType>Github</RepositoryType>
-		<PackageLicenseUrl></PackageLicenseUrl>
+		<RepositoryType>git</RepositoryType>
 		<PackageReleaseNotes>Patch release: FIFO and LRU eviction (capacity and memory), Oldest, and Newest now order entries by an internal sequence instead of wall-clock timestamps, so entries added or used within the same clock tick are ordered correctly. Previously LRUCache could evict the most recently used entry.</PackageReleaseNotes>
 		<PackageTags>fifo lru cache caching least recently used first in first out simple telemetry metrics tracing opentelemetry</PackageTags>
-		<PackageIconUrl></PackageIconUrl>
 		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
@@ -24,6 +22,9 @@
 		<Title>Caching</Title>
 		<IncludeSymbols>True</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
 	</PropertyGroup>
 
 	<ItemGroup>
